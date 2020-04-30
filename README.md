@@ -4,6 +4,42 @@
 # vls
 This tool is a Verilog IEEE 1364-2005 [language server](https://microsoft.github.io/language-server-protocol/) written in [Nim](https://nim-lang.org). The parsing is handled by [vparse](https://github.com/sthenic/vparse).
 
+# Supported Protocol Features
+
+## Workspace
+- [ ] workspace/executeCommand
+- [ ] workspace/symbol
+
+## Text synchronization
+- [ ] textDocument/didChange
+- [ ] textDocument/didClose
+- [ ] textDocument/didOpen
+- [ ] textDocument/didSave
+
+## Language Features
+- [ ] textDocument/completion
+- [ ] textDocument/hover
+- [ ] textDocument/signatureHelp
+- [ ] textDocument/declaration
+- [ ] textDocument/definition
+- [ ] ~~textDocument/typeDefinition~~
+- [ ] ~~textDocument/implementation~~
+- [ ] textDocument/references
+- [ ] textDocument/documentHighlight
+- [ ] ~~textDocument/documentSymbol~~
+- [ ] ~~textDocument/codeAction~~
+- [ ] ~~textDocument/codeLens~~
+- [ ] ~~textDocument/documentLink~~
+- [ ] ~~textDocument/documentColor~~
+- [ ] ~~textDocument/colorPresentation~~
+- [ ] ~~textDocument/formatting~~
+- [ ] ~~textDocument/rangeFormatting~~
+- [ ] ~~textDocument/onTypeFormatting~~
+- [ ] textDocument/rename
+- [ ] textDocument/prepareRename
+- [ ] ~~textDocument/foldingRange~~
+- [ ] ~~textDocument/selectionRange~~
+
 ## Documentation
 Coming soon.
 
