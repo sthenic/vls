@@ -8,7 +8,7 @@ import ../../src/protocol
 var nof_passed = 0
 var nof_failed = 0
 
-template run_test(title, stimuli: string, reference: LspRequest, expect_error = false) =
+template run_test(title, stimuli: string, reference: LspMessage, expect_error = false) =
    try:
       let response = recv_request(new_string_stream(stimuli))
       if response == reference:
@@ -31,10 +31,6 @@ template run_test(title, stimuli: string, reference: LspRequest, expect_error = 
                         fgWhite, "Test '",  title, "'")
          inc(nof_failed)
          echo e.msg
-
-
-proc new_request(length, id: int, m: string, parameters: JsonNode): LspRequest =
-   result = LspRequest(length: length, id: id, m: m, parameters: parameters)
 
 
 proc prepare_stimuli(id, m, parameters: string): string =
@@ -65,46 +61,46 @@ proc prepare_stimuli(id: int, m, parameters: string): string =
 #
 # Test cases
 #
-run_test("Missing Content-Length header", "\r\n", LspRequest(), true)
+run_test("Missing Content-Length header", "\r\n", LspMessage(), true)
 
 
 run_test("Invalid Content-Type", """
 Content-Length: 0
-Content-Type: foo""", LspRequest(), true)
+Content-Type: foo""", LspMessage(), true)
 
 
 var reference = prepare_stimuli(0, "", "")
-run_test("No parameters", reference): new_request(
+run_test("No parameters", reference): new_lsp_request_message(
    52, 0, "", nil
 )
 
 
 reference = prepare_stimuli(0, "", "{}")
-run_test("Empty JSON object", reference): new_request(
+run_test("Empty JSON object", reference): new_lsp_request_message(
    69, 0, "", %*{}
 )
 
 
 reference = prepare_stimuli(0, "", "[]")
-run_test("Empty JSON array", reference): new_request(
+run_test("Empty JSON array", reference): new_lsp_request_message(
    69, 0, "", %*[]
 )
 
 
 reference = prepare_stimuli(0, "textDocument/didSave", "")
-run_test("Method", reference): new_request(
+run_test("Method", reference): new_lsp_request_message(
    72, 0, "textDocument/didSave", nil
 )
 
 
 reference = prepare_stimuli("\"1\"", "", "")
-run_test("Id as a string", reference): new_request(
+run_test("Id as a string", reference): new_lsp_request_message(
    54, 1, "", nil
 )
 
 
 reference = prepare_stimuli("\"foo\"", "", "")
-run_test("Invalid id", reference, LspRequest(), true)
+run_test("Invalid id", reference, LspMessage(), true)
 
 
 # Print summary

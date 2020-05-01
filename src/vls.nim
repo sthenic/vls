@@ -1,6 +1,4 @@
 import streams
-import strutils
-
 import ./protocol
 
 const
@@ -22,10 +20,10 @@ while true:
       try:
          recv_request(ifs)
       except LspIoError as e:
-         write_line(ofs, format("Error: $1", e.msg))
+         send_response(ofs, new_lsp_response(0, RPC_INTERNAL_ERROR, e.msg, nil))
          quit(-ESTREAM)
       except LspParseError as e:
-         send_response(ofs, new_lsp_error_response(0, RPC_PARSE_ERROR, e.msg, nil))
+         send_response(ofs, new_lsp_response(0, RPC_PARSE_ERROR, e.msg, nil))
          continue
 
    write_line(ofs, pretty(req.parameters))

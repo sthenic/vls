@@ -1,13 +1,14 @@
 import streams
 import terminal
 import strformat
+import strutils
 
 import ../../src/protocol
 
 var nof_passed = 0
 var nof_failed = 0
 
-template run_test(title: string, stimuli: LspResponse, reference: string, expect_error = false) =
+template run_test(title: string, stimuli: LspMessage, reference: string, expect_error = false) =
    try:
       var ss = new_string_stream()
       send_response(ss, stimuli)
@@ -36,13 +37,16 @@ template run_test(title: string, stimuli: LspResponse, reference: string, expect
          echo e.msg
 
 
+proc prepare_header(length: int): string =
+   result = format("Content-Length: $1\r\nContent-Type: application/vscode-jsonrpc; charset=utf-8\r\n\r\n", length)
+
 #
 # Test cases
 #
-var response = new_lsp_success_response(0, %*{
+var response = new_lsp_response(0, %*{
    "foo": "bar"
 })
-run_test("Test success (object)", response, $parse_json("""
+run_test("Test success (object)", response, prepare_header(47) & $parse_json("""
 {
    "jsonrpc": "2.0",
    "id": 0,
@@ -50,26 +54,26 @@ run_test("Test success (object)", response, $parse_json("""
 }"""))
 
 
-response = new_lsp_error_response(10, 0x8000, "Something went wrong.", %*{})
-run_test("Test error (data is a JSON object)", response, $parse_json("""
+response = new_lsp_response(10, RPC_PARSE_ERROR, "Something went wrong.", %*{})
+run_test("Test error (data is a JSON object)", response, prepare_header(93) & $parse_json("""
 {
    "jsonrpc": "2.0",
    "id": 10,
    "error": {
-      "code":32768,
+      "code": -32700,
       "message": "Something went wrong.",
       "data": {}
    }
 }"""))
 
 
-response = new_lsp_error_response(2, 0x8000, "Something went wrong.", nil)
-run_test("Test error (no data)", response, $parse_json("""
+response = new_lsp_response(2, RPC_PARSE_ERROR, "Something went wrong.", nil)
+run_test("Test error (no data)", response, prepare_header(82) & $parse_json("""
 {
    "jsonrpc": "2.0",
    "id": 2,
    "error": {
-      "code": 32768,
+      "code": -32700,
       "message": "Something went wrong."
    }
 }"""))
