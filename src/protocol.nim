@@ -29,8 +29,22 @@ type
       of RkError:
          error*: LspError
 
-   RequestValueError* = object of ValueError
+   RequestParseError* = object of ValueError
    RequestIoError* = object of IOError
+
+
+const
+   RPC_PARSE_ERROR* = -32700
+   RPC_INVALID_REQUEST* = -32600
+   RPC_METHOD_NOT_FOUND* = -32601
+   RPC_INVALID_PARAMS* = -32602
+   RPC_INTERNAL_ERROR* = -32603
+   RPC_SERVER_ERROR_START* = -32099
+   RPC_SERVER_ERROR_END* = -32000
+   RPC_SERVER_NOT_INITIALIZED* = -32002
+   RPC_UNKNOWN_ERROR_CODE* = -32001
+   RPC_REQUEST_CANCELLED* = -32800
+   RPC_CONTENT_MODIFIED* = -32801
 
 
 proc new_request_io_error(msg: string, args: varargs[string, `$`]): ref RequestIoError =
@@ -38,7 +52,7 @@ proc new_request_io_error(msg: string, args: varargs[string, `$`]): ref RequestI
    result.msg = format(msg, args)
 
 
-proc new_request_value_error(msg: string, args: varargs[string, `$`]): ref RequestValueError =
+proc new_request_parse_error(msg: string, args: varargs[string, `$`]): ref RequestParseError =
    new result
    result.msg = format(msg, args)
 
@@ -76,7 +90,7 @@ proc parse_headers(s: Stream, r: var Request) =
          # However, the Content-Length header is mandatory and if we haven't
          # seen that we have to raise an error.
          if not seen_content_length:
-            raise new_request_value_error("The request is missing the " &
+            raise new_request_parse_error("The request is missing the " &
                                           "required header field " &
                                           "'Content-Length'.")
          else:
@@ -87,20 +101,20 @@ proc parse_headers(s: Stream, r: var Request) =
          try:
             r.length = parse_int(length)
          except ValueError:
-            raise new_request_value_error("Invalid content length: '$1'.", length)
+            raise new_request_parse_error("Invalid content length: '$1'.", length)
 
          seen_content_length = true
 
       elif starts_with(header, CONTENT_TYPE):
          let content_type = substr(header, len(CONTENT_TYPE))
          if content_type != CONTENT_TYPE_UTF8:
-            raise new_request_value_error(
+            raise new_request_parse_error(
                "Invalid content type '$1'. Expected '$2'.",
                content_type, CONTENT_TYPE_UTF8
             )
 
       else:
-         raise new_request_value_error("Invalid request header '$1'.", header)
+         raise new_request_parse_error("Invalid request header '$1'.", header)
 
 
 proc parse_content(s: Stream, r: var Request) =
@@ -109,20 +123,20 @@ proc parse_content(s: Stream, r: var Request) =
       try:
          parse_json(content)
       except JsonParsingError:
-         raise new_request_value_error("Parsing error when processing JSON content.")
+         raise new_request_parse_error("Parsing error when processing JSON content.")
 
    # Validate JSON object.
    if node.kind != JObject:
-      raise new_request_value_error("Content is not a JSON object.")
+      raise new_request_parse_error("Content is not a JSON object.")
 
    # Validate JSON RPC version.
    try:
       if get_str(node["jsonrpc"]) != "2.0":
-         raise new_request_value_error(
+         raise new_request_parse_error(
             "Expected JSON RPC version 2.0, got '$1'.", node["jsonrpc"]
          )
    except KeyError:
-      raise new_request_value_error("Expected key 'jsonrpc'.")
+      raise new_request_parse_error("Expected key 'jsonrpc'.")
 
    # Handle the request id.
    try:
@@ -132,21 +146,21 @@ proc parse_content(s: Stream, r: var Request) =
       of JString:
          r.id = parse_int(get_str(node["id"]))
       else:
-         raise new_request_value_error(
+         raise new_request_parse_error(
             "Unexpected type of 'id' field, expected an integer or a string.")
    except KeyError:
-      raise new_request_value_error("Expected key 'id'.")
+      raise new_request_parse_error("Expected key 'id'.")
    except ValueError:
-      raise new_request_value_error("Invalid id '$1'.", get_str(node["id"]))
+      raise new_request_parse_error("Invalid id '$1'.", get_str(node["id"]))
 
    # Handle the request method.
    try:
       if node["method"].kind != JString:
-         raise new_request_value_error("Unexpected type of 'method' field, " &
+         raise new_request_parse_error("Unexpected type of 'method' field, " &
                                        "expected a string.")
       r.m = get_str(node["method"])
    except KeyError:
-      raise new_request_value_error("Expected key 'method'.")
+      raise new_request_parse_error("Expected key 'method'.")
 
    # Handle the parameters.
    if has_key(node, "params"):
@@ -154,7 +168,7 @@ proc parse_content(s: Stream, r: var Request) =
       of JObject, JArray:
          r.parameters = node["params"]
       else:
-         raise new_request_value_error(
+         raise new_request_parse_error(
             "Request field 'params' has to be either an object or an array.")
 
 

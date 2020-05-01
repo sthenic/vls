@@ -21,7 +21,7 @@ template run_test(title, stimuli: string, reference: Request, expect_error = fal
          inc(nof_failed)
          echo response
          echo reference
-   except RequestValueError as e:
+   except RequestParseError as e:
       if expect_error:
          styledWriteLine(stdout, styleBright, fgGreen, "[✓] ",
                         fgWhite, "Test '",  title, "'")
