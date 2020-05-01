@@ -1,6 +1,7 @@
 import streams
 import terminal
 import strformat
+import strutils
 
 import ../src/protocol
 
@@ -32,23 +33,78 @@ template run_test(title, stimuli: string, reference: Request, expect_error = fal
          echo e.msg
 
 
+proc new_request(length, id: int, m: string, parameters: JsonNode): Request =
+   result = Request(length: length, id: id, m: m, parameters: parameters)
+
+
+proc prepare_stimuli(id, m, parameters: string): string =
+   var content = format("""
+{
+   "jsonrpc": "2.0",
+   "id": $1,
+   "method": "$2"""", id, m)
+
+   if len(parameters) > 0:
+      add(content, format(""",
+   "params": $1
+}""", parameters))
+   else:
+      add(content, "\n}")
+
+   result = format("""
+Content-Length: $1
+Content-Type: application/vscode-jsonrpc; charset=utf-8
+
+$2
+""", len(content), content)
+
+
+proc prepare_stimuli(id: int, m, parameters: string): string =
+   result = prepare_stimuli($id, m, parameters)
+
+#
+# Test cases
+#
 run_test("Missing Content-Length header", "\r\n", Request(), true)
 
 
 run_test("Invalid Content-Type", """
-Content-Length: 2
-Content-Type: foo
-
-{}
-""", Request(), true)
+Content-Length: 0
+Content-Type: foo""", Request(), true)
 
 
-run_test("Content-Type", """
-Content-Length: 2
-Content-Type: application/vscode-jsonrpc; charset=utf-8
+var reference = prepare_stimuli(0, "", "")
+run_test("No parameters", reference): new_request(
+   52, 0, "", nil
+)
 
-{}
-""", Request())
+
+reference = prepare_stimuli(0, "", "{}")
+run_test("Empty JSON object", reference): new_request(
+   69, 0, "", %*{}
+)
+
+
+reference = prepare_stimuli(0, "", "[]")
+run_test("Empty JSON array", reference): new_request(
+   69, 0, "", %*[]
+)
+
+
+reference = prepare_stimuli(0, "textDocument/didSave", "")
+run_test("Method", reference): new_request(
+   72, 0, "textDocument/didSave", nil
+)
+
+
+reference = prepare_stimuli("\"1\"", "", "")
+run_test("Id as a string", reference): new_request(
+   54, 1, "", nil
+)
+
+
+reference = prepare_stimuli("\"foo\"", "", "")
+run_test("Invalid id", reference, Request(), true)
 
 
 # Print summary
