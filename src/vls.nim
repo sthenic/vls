@@ -20,7 +20,7 @@ except IOError:
 while true:
    let req =
       try:
-         get_request(ifs)
+         recv_request(ifs)
       except RequestIoError as e:
          write_line(ofs, format("Error: $1", e.msg))
          quit(-ESTREAM)
