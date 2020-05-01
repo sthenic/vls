@@ -79,10 +79,15 @@ Content-Type: application/vscode-jsonrpc; charset=utf-8
 $2
 """, len(content), content)
 
+# Test suite title
+styledWriteLine(stdout, styleBright,
+"""
 
-#
+Test suite: receive
+-------------------""")
+
+
 # Test cases
-#
 run_test("Missing Content-Length header", "\r\n", LspMessage(), true)
 
 

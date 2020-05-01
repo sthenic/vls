@@ -40,9 +40,14 @@ template run_test(title: string, stimuli: LspMessage, reference: string, expect_
 proc prepare_header(length: int): string =
    result = format("Content-Length: $1\r\nContent-Type: application/vscode-jsonrpc; charset=utf-8\r\n\r\n", length)
 
-#
+# Test suite title
+styledWriteLine(stdout, styleBright,
+"""
+
+Test suite: send
+----------------""")
+
 # Test cases
-#
 var response = new_lsp_response(0, %*{
    "foo": "bar"
 })
