@@ -18,3 +18,4 @@ task test, "Run the test suite":
 task protocoltests, "Run the protocol test suite":
    with_dir("tests"):
       exec("nim c --hints:off -r trecv")
+      exec("nim c --hints:off -r tsend")

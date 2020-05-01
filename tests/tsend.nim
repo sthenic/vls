@@ -69,7 +69,7 @@ run_test("Test error (no data)", response, $parse_json("""
    "jsonrpc": "2.0",
    "id": 2,
    "error": {
-      "code":32768,
+      "code": 32768,
       "message": "Something went wrong."
    }
 }"""))
