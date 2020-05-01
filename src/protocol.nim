@@ -13,6 +13,22 @@ type
       m*: string
       parameters*: JsonNode
 
+   LspError* = object
+      code*: int
+      message*: string
+      data*: JsonNode
+
+   LspResponseKind* = enum
+      RkSuccess, RkError
+
+   LspResponse* = object
+      id*: int
+      case kind: LspResponseKind
+      of RkSuccess:
+         result*: JsonNode
+      of RkError:
+         error*: LspError
+
    RequestValueError* = object of ValueError
    RequestIoError* = object of IOError
 
@@ -25,6 +41,22 @@ proc new_request_io_error(msg: string, args: varargs[string, `$`]): ref RequestI
 proc new_request_value_error(msg: string, args: varargs[string, `$`]): ref RequestValueError =
    new result
    result.msg = format(msg, args)
+
+
+proc new_response(kind: LspResponseKind, id: int): LspResponse =
+   result = LspResponse(kind: kind, id: id)
+
+
+proc new_lsp_success_response*(id: int, res: JsonNode): LspResponse =
+   result = new_response(RkSuccess, id)
+   result.result = res
+
+
+proc new_lsp_error_response*(id, code: int, message: string, data: JsonNode): LspResponse =
+   result = new_response(RkError, id)
+   result.error.code = code
+   result.error.message = message
+   result.error.data = data
 
 
 proc parse_headers(s: Stream, r: var Request) =
@@ -133,3 +165,33 @@ proc recv_request*(s: Stream): Request =
 
    # Read the content part.
    parse_content(s, result)
+
+
+proc `%`(e: LspError): JsonNode =
+   result = %*{
+      "code": e.code,
+      "message": e.message
+   }
+   if e.data != nil:
+      result["data"] = e.data
+
+
+proc `%`(r: LspResponse): JsonNode =
+   # If there's an error object,
+   case r.kind
+   of RkSuccess:
+      result = %*{
+         "jsonrpc": "2.0",
+         "id": %r.id,
+         "result": r.result
+      }
+   of RkError:
+      result = %*{
+         "jsonrpc": "2.0",
+         "id": %r.id,
+         "error": %r.error
+      }
+
+
+proc send_response*(s: Stream, r: LspResponse) =
+   write(s, $(%r))
