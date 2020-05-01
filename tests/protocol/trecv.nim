@@ -3,7 +3,7 @@ import terminal
 import strformat
 import strutils
 
-import ../src/protocol
+import ../../src/protocol
 
 var nof_passed = 0
 var nof_failed = 0

@@ -2,7 +2,7 @@ import streams
 import terminal
 import strformat
 
-import ../src/protocol
+import ../../src/protocol
 
 var nof_passed = 0
 var nof_failed = 0
