@@ -10,7 +10,7 @@ var nof_failed = 0
 
 template run_test(title, stimuli: string, reference: Request, expect_error = false) =
    try:
-      let response = get_request(new_string_stream(stimuli))
+      let response = recv_request(new_string_stream(stimuli))
       if response == reference:
          styledWriteLine(stdout, styleBright, fgGreen, "[✓] ",
                         fgWhite, "Test '",  title, "'")

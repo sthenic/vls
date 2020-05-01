@@ -126,7 +126,7 @@ proc parse_content(s: Stream, r: var Request) =
             "Request field 'params' has to be either an object or an array.")
 
 
-proc get_request*(s: Stream): Request =
+proc recv_request*(s: Stream): Request =
    # Read the header part. Any parse error will raise an exception which should
    # propagate to the caller and generate an error response.
    parse_headers(s, result)
