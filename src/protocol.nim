@@ -8,9 +8,9 @@ export json
 
 type
    Request* = object
-      length: int
+      length*: int
       id*: int
-      md*: string
+      m*: string
       parameters*: JsonNode
 
    RequestValueError* = object of ValueError
@@ -112,9 +112,18 @@ proc parse_content(s: Stream, r: var Request) =
       if node["method"].kind != JString:
          raise new_request_value_error("Unexpected type of 'method' field, " &
                                        "expected a string.")
-      r.md = get_str(node["method"])
+      r.m = get_str(node["method"])
    except KeyError:
       raise new_request_value_error("Expected key 'method'.")
+
+   # Handle the parameters.
+   if has_key(node, "params"):
+      case node["params"].kind
+      of JObject, JArray:
+         r.parameters = node["params"]
+      else:
+         raise new_request_value_error(
+            "Request field 'params' has to be either an object or an array.")
 
 
 proc get_request*(s: Stream): Request =
