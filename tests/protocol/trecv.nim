@@ -58,6 +58,28 @@ $2
 proc prepare_stimuli(id: int, m, parameters: string): string =
    result = prepare_stimuli($id, m, parameters)
 
+
+proc prepare_stimuli(m, parameters: string): string =
+   var content = format("""
+{
+   "jsonrpc": "2.0",
+   "method": "$1"""", m)
+
+   if len(parameters) > 0:
+      add(content, format(""",
+   "params": $1
+}""", parameters))
+   else:
+      add(content, "\n}")
+
+   result = format("""
+Content-Length: $1
+Content-Type: application/vscode-jsonrpc; charset=utf-8
+
+$2
+""", len(content), content)
+
+
 #
 # Test cases
 #
@@ -70,37 +92,43 @@ Content-Type: foo""", LspMessage(), true)
 
 
 var reference = prepare_stimuli(0, "", "")
-run_test("No parameters", reference): new_lsp_request_message(
+run_test("No parameters", reference): new_lsp_request(
    52, 0, "", nil
 )
 
 
 reference = prepare_stimuli(0, "", "{}")
-run_test("Empty JSON object", reference): new_lsp_request_message(
+run_test("Empty JSON object", reference): new_lsp_request(
    69, 0, "", %*{}
 )
 
 
 reference = prepare_stimuli(0, "", "[]")
-run_test("Empty JSON array", reference): new_lsp_request_message(
+run_test("Empty JSON array", reference): new_lsp_request(
    69, 0, "", %*[]
 )
 
 
 reference = prepare_stimuli(0, "textDocument/didSave", "")
-run_test("Method", reference): new_lsp_request_message(
+run_test("Method", reference): new_lsp_request(
    72, 0, "textDocument/didSave", nil
 )
 
 
 reference = prepare_stimuli("\"1\"", "", "")
-run_test("Id as a string", reference): new_lsp_request_message(
+run_test("Id as a string", reference): new_lsp_request(
    54, 1, "", nil
 )
 
 
 reference = prepare_stimuli("\"foo\"", "", "")
 run_test("Invalid id", reference, LspMessage(), true)
+
+
+reference = prepare_stimuli("$/cancelRequest", "[]")
+run_test("Notification", reference): new_lsp_notification(
+   72, "$/cancelRequest", %*[]
+)
 
 
 # Print summary

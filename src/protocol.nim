@@ -88,11 +88,19 @@ proc init*(msg: var LspMessage) =
    init(msg.error)
 
 
-proc new_lsp_request_message*(length, id: int, m: string, parameters: JsonNode): LspMessage =
+proc new_lsp_request*(length, id: int, m: string, parameters: JsonNode): LspMessage =
    init(result)
    result.kind = MkRequest
    result.length = length
    result.id = id
+   result.m = m
+   result.parameters = parameters
+
+
+proc new_lsp_notification*(length: int, m: string, parameters: JsonNode): LspMessage =
+   init(result)
+   result.kind = MkNotification
+   result.length = length
    result.m = m
    result.parameters = parameters
 
@@ -200,10 +208,13 @@ proc parse_content(s: Stream, r: var LspMessage) =
       of JString:
          r.id = parse_int(get_str(node["id"]))
       else:
-         raise new_lsp_parse_error(
-            "Unexpected type of 'id' field, expected an integer or a string.")
+         raise new_lsp_parse_error("Unexpected type of 'id' field, expected an " &
+                                   "integer or a string.")
+      # If the 'id' field is present, this is a a request message.
+      r.kind = MkRequest
    except KeyError:
-      raise new_lsp_parse_error("Expected key 'id'.")
+      # If the 'id' field is missing, this is a notification message.
+      r.kind = MkNotification
    except ValueError:
       raise new_lsp_parse_error("Invalid id '$1'.", get_str(node["id"]))
 
@@ -211,7 +222,7 @@ proc parse_content(s: Stream, r: var LspMessage) =
    try:
       if node["method"].kind != JString:
          raise new_lsp_parse_error("Unexpected type of 'method' field, " &
-                                       "expected a string.")
+                                   "expected a string.")
       r.m = get_str(node["method"])
    except KeyError:
       raise new_lsp_parse_error("Expected key 'method'.")
@@ -228,7 +239,6 @@ proc parse_content(s: Stream, r: var LspMessage) =
 
 proc recv_request*(s: Stream): LspMessage =
    init(result)
-   result.kind = MkRequest
    # Read the header part. Any parse error will raise an exception which should
    # propagate to the caller and generate an error response.
    parse_headers(s, result)
@@ -260,6 +270,13 @@ proc `%`(r: LspMessage): JsonNode =
          "id": %r.id,
          "error": %r.error
       }
+   of MkNotification:
+      result = %*{
+         "jsonrpc": "2.0",
+         "method": r.m,
+      }
+      if r.parameters != nil:
+         result["params"] = r.parameters
    else:
       raise new_lsp_value_error("Unexpected LSP message kind '$1'.", r.kind)
 
