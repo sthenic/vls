@@ -8,7 +8,7 @@ import ../../src/protocol
 var nof_passed = 0
 var nof_failed = 0
 
-template run_test(title, stimuli: string, reference: Request, expect_error = false) =
+template run_test(title, stimuli: string, reference: LspRequest, expect_error = false) =
    try:
       let response = recv_request(new_string_stream(stimuli))
       if response == reference:
@@ -21,7 +21,7 @@ template run_test(title, stimuli: string, reference: Request, expect_error = fal
          inc(nof_failed)
          echo response
          echo reference
-   except RequestParseError as e:
+   except LspParseError as e:
       if expect_error:
          styledWriteLine(stdout, styleBright, fgGreen, "[✓] ",
                         fgWhite, "Test '",  title, "'")
@@ -33,8 +33,8 @@ template run_test(title, stimuli: string, reference: Request, expect_error = fal
          echo e.msg
 
 
-proc new_request(length, id: int, m: string, parameters: JsonNode): Request =
-   result = Request(length: length, id: id, m: m, parameters: parameters)
+proc new_request(length, id: int, m: string, parameters: JsonNode): LspRequest =
+   result = LspRequest(length: length, id: id, m: m, parameters: parameters)
 
 
 proc prepare_stimuli(id, m, parameters: string): string =
@@ -65,12 +65,12 @@ proc prepare_stimuli(id: int, m, parameters: string): string =
 #
 # Test cases
 #
-run_test("Missing Content-Length header", "\r\n", Request(), true)
+run_test("Missing Content-Length header", "\r\n", LspRequest(), true)
 
 
 run_test("Invalid Content-Type", """
 Content-Length: 0
-Content-Type: foo""", Request(), true)
+Content-Type: foo""", LspRequest(), true)
 
 
 var reference = prepare_stimuli(0, "", "")
@@ -104,7 +104,7 @@ run_test("Id as a string", reference): new_request(
 
 
 reference = prepare_stimuli("\"foo\"", "", "")
-run_test("Invalid id", reference, Request(), true)
+run_test("Invalid id", reference, LspRequest(), true)
 
 
 # Print summary

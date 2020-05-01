@@ -24,7 +24,7 @@ template run_test(title: string, stimuli: LspResponse, reference: string, expect
          inc(nof_failed)
          echo response
          echo reference
-   except RequestParseError as e:
+   except LspParseError as e:
       if expect_error:
          styledWriteLine(stdout, styleBright, fgGreen, "[✓] ",
                         fgWhite, "Test '",  title, "'")

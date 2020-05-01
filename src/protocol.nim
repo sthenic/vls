@@ -7,7 +7,7 @@ import strutils
 export json
 
 type
-   Request* = object
+   LspRequest* = object
       length*: int
       id*: int
       m*: string
@@ -29,8 +29,8 @@ type
       of RkError:
          error*: LspError
 
-   RequestParseError* = object of ValueError
-   RequestIoError* = object of IOError
+   LspParseError* = object of ValueError
+   LspIoError* = object of IOError
 
 
 const
@@ -47,12 +47,12 @@ const
    RPC_CONTENT_MODIFIED* = -32801
 
 
-proc new_request_io_error(msg: string, args: varargs[string, `$`]): ref RequestIoError =
+proc new_request_io_error(msg: string, args: varargs[string, `$`]): ref LspIoError =
    new result
    result.msg = format(msg, args)
 
 
-proc new_request_parse_error(msg: string, args: varargs[string, `$`]): ref RequestParseError =
+proc new_request_parse_error(msg: string, args: varargs[string, `$`]): ref LspParseError =
    new result
    result.msg = format(msg, args)
 
@@ -73,7 +73,7 @@ proc new_lsp_error_response*(id, code: int, message: string, data: JsonNode): Ls
    result.error.data = data
 
 
-proc parse_headers(s: Stream, r: var Request) =
+proc parse_headers(s: Stream, r: var LspRequest) =
    var seen_content_length = false
 
    const CONTENT_LENGTH = "Content-Length: "
@@ -117,7 +117,7 @@ proc parse_headers(s: Stream, r: var Request) =
          raise new_request_parse_error("Invalid request header '$1'.", header)
 
 
-proc parse_content(s: Stream, r: var Request) =
+proc parse_content(s: Stream, r: var LspRequest) =
    let content = read_str(s, r.length)
    let node =
       try:
@@ -169,10 +169,10 @@ proc parse_content(s: Stream, r: var Request) =
          r.parameters = node["params"]
       else:
          raise new_request_parse_error(
-            "Request field 'params' has to be either an object or an array.")
+            "LspRequest field 'params' has to be either an object or an array.")
 
 
-proc recv_request*(s: Stream): Request =
+proc recv_request*(s: Stream): LspRequest =
    # Read the header part. Any parse error will raise an exception which should
    # propagate to the caller and generate an error response.
    parse_headers(s, result)
