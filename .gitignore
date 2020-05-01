@@ -1,2 +1,4 @@
 vls
 *.code-workspace
+tests/protocol/trecv
+tests/protocol/tsend
