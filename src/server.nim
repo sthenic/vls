@@ -32,6 +32,14 @@ proc close*(s: var LspServer) =
    s.is_shut_down = false
 
 
+proc send(s: LspServer, msg: LspMessage) =
+   send(s.ofs, msg)
+
+
+proc recv(s: LspServer): LspMessage =
+   result = recv(s.ifs)
+
+
 proc initialize(s: var LspServer, msg: LspMessage) =
    try:
       s.root_uri = get_str(msg.parameters["rootUri"])
@@ -50,32 +58,32 @@ proc initialize(s: var LspServer, msg: LspMessage) =
             }
          }
       }
-      send_response(s.ofs, new_lsp_response(msg.id, result))
+      send(s, new_lsp_response(msg.id, result))
       log.debug("Server initialized.")
 
    except KeyError as e:
-      send_response(s.ofs, new_lsp_response(msg.id, RPC_PARSE_ERROR, e.msg, nil))
+      send(s, new_lsp_response(msg.id, RPC_PARSE_ERROR, e.msg, nil))
 
 
 proc shutdown(s: var LspServer, msg: LspMessage) =
    log.debug("Server shutting down.")
    s.is_shut_down = true
-   send_response(s.ofs, new_lsp_response(msg.id, new_jnull()))
+   send(s, new_lsp_response(msg.id, new_jnull()))
 
 
 proc handle_request(s: var LspServer, msg: LspMessage) =
    # If the server is shut down we respond to every request with an error.
-   # Otherwise, if the server not initialized, we only respond to the 'initialize'
-   # request.
+   # Otherwise, unless the server is initialized, we only respond to the
+   # 'initialize' request.
    log.debug("Handling a request.")
    if s.is_shut_down:
-      send_response(s.ofs, new_lsp_response(msg.id, RPC_INVALID_REQUEST, "", nil))
+      send(s, new_lsp_response(msg.id, RPC_INVALID_REQUEST, "", nil))
       return
    elif not s.is_initialized:
       if msg.m == "initialize":
          initialize(s, msg)
       else:
-         send_response(s.ofs, new_lsp_response(msg.id, RPC_SERVER_NOT_INITIALIZED, "", nil))
+         send(s, new_lsp_response(msg.id, RPC_SERVER_NOT_INITIALIZED, "", nil))
       return
 
    case msg.m
@@ -83,7 +91,7 @@ proc handle_request(s: var LspServer, msg: LspMessage) =
       shutdown(s, msg)
    else:
       let str = format("Unsupported method '$1'.", msg.m)
-      send_response(s.ofs, new_lsp_response(msg.id, RPC_INVALID_REQUEST, str, nil))
+      send(s, new_lsp_response(msg.id, RPC_INVALID_REQUEST, str, nil))
 
 
 proc handle_notification(s: var LspServer, msg: LspMessage) =
@@ -104,12 +112,12 @@ proc run*(s: var LspServer): int =
       # Receive a message from the input stream.
       let msg =
          try:
-            recv_request(s.ifs)
+            recv(s)
          except LspIoError as e:
-            send_response(s.ofs, new_lsp_response(0, RPC_INTERNAL_ERROR, e.msg, nil))
+            send(s, new_lsp_response(0, RPC_INTERNAL_ERROR, e.msg, nil))
             return -ESTREAM
          except LspParseError as e:
-            send_response(s.ofs, new_lsp_response(0, RPC_PARSE_ERROR, e.msg, nil))
+            send(s, new_lsp_response(0, RPC_PARSE_ERROR, e.msg, nil))
             continue
       log.debug("Received an LSP message, length $1.", msg.length)
 
@@ -120,7 +128,7 @@ proc run*(s: var LspServer): int =
       of MkNotification:
          handle_notification(s, msg)
       else:
-         send_response(s.ofs, new_lsp_response(msg.id, RPC_INVALID_REQUEST, "", nil))
+         send(s, new_lsp_response(msg.id, RPC_INVALID_REQUEST, "", nil))
 
       # Check if we have been instructed to shut down the server.
       if s.should_exit:

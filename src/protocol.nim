@@ -136,7 +136,7 @@ proc new_lsp_value_error(msg: string, args: varargs[string, `$`]): ref LspValueE
    result.msg = format(msg, args)
 
 
-proc parse_headers(s: Stream, r: var LspMessage) =
+proc parse_headers(s: Stream, msg: var LspMessage) =
    var seen_content_length = false
 
    const CONTENT_LENGTH = "Content-Length: "
@@ -161,7 +161,7 @@ proc parse_headers(s: Stream, r: var LspMessage) =
       if starts_with(header, CONTENT_LENGTH):
          let length = substr(header, len(CONTENT_LENGTH))
          try:
-            r.length = parse_int(length)
+            msg.length = parse_int(length)
          except ValueError:
             raise new_lsp_parse_error("Invalid content length: '$1'.", length)
 
@@ -179,8 +179,8 @@ proc parse_headers(s: Stream, r: var LspMessage) =
          raise new_lsp_parse_error("Invalid request header '$1'.", header)
 
 
-proc parse_content(s: Stream, r: var LspMessage) =
-   let content = read_str(s, r.length)
+proc parse_content(s: Stream, msg: var LspMessage) =
+   let content = read_str(s, msg.length)
    let node =
       try:
          parse_json(content)
@@ -204,17 +204,17 @@ proc parse_content(s: Stream, r: var LspMessage) =
    try:
       case node["id"].kind
       of JInt:
-         r.id = get_int(node["id"])
+         msg.id = get_int(node["id"])
       of JString:
-         r.id = parse_int(get_str(node["id"]))
+         msg.id = parse_int(get_str(node["id"]))
       else:
          raise new_lsp_parse_error("Unexpected type of 'id' field, expected an " &
                                    "integer or a string.")
       # If the 'id' field is present, this is a a request message.
-      r.kind = MkRequest
+      msg.kind = MkRequest
    except KeyError:
       # If the 'id' field is missing, this is a notification message.
-      r.kind = MkNotification
+      msg.kind = MkNotification
    except ValueError:
       raise new_lsp_parse_error("Invalid id '$1'.", get_str(node["id"]))
 
@@ -223,7 +223,7 @@ proc parse_content(s: Stream, r: var LspMessage) =
       if node["method"].kind != JString:
          raise new_lsp_parse_error("Unexpected type of 'method' field, " &
                                    "expected a string.")
-      r.m = get_str(node["method"])
+      msg.m = get_str(node["method"])
    except KeyError:
       raise new_lsp_parse_error("Expected key 'method'.")
 
@@ -231,13 +231,13 @@ proc parse_content(s: Stream, r: var LspMessage) =
    if has_key(node, "params"):
       case node["params"].kind
       of JObject, JArray:
-         r.parameters = node["params"]
+         msg.parameters = node["params"]
       else:
          raise new_lsp_parse_error(
             "LspRequest field 'params' has to be either an object or an array.")
 
 
-proc recv_request*(s: Stream): LspMessage =
+proc recv*(s: Stream): LspMessage =
    if s == nil:
       # FIXME: Exception?
       return
@@ -260,36 +260,36 @@ proc `%`(e: LspError): JsonNode =
       result["data"] = e.data
 
 
-proc `%`(r: LspMessage): JsonNode =
-   case r.kind
+proc `%`(msg: LspMessage): JsonNode =
+   case msg.kind
    of MkResponseSuccess:
       result = %*{
          "jsonrpc": "2.0",
-         "id": %r.id,
-         "result": r.result
+         "id": %msg.id,
+         "result": msg.result
       }
    of MkResponseError:
       result = %*{
          "jsonrpc": "2.0",
-         "id": %r.id,
-         "error": %r.error
+         "id": %msg.id,
+         "error": %msg.error
       }
    of MkNotification:
       result = %*{
          "jsonrpc": "2.0",
-         "method": r.m,
+         "method": msg.m,
       }
-      if r.parameters != nil:
-         result["params"] = r.parameters
+      if msg.parameters != nil:
+         result["params"] = msg.parameters
    else:
-      raise new_lsp_value_error("Unexpected LSP message kind '$1'.", r.kind)
+      raise new_lsp_value_error("Unexpected LSP message kind '$1'.", msg.kind)
 
 
-proc send_response*(s: Stream, r: LspMessage) =
+proc send*(s: Stream, msg: LspMessage) =
    if s == nil:
       return
 
-   let content = $(%r)
+   let content = $(%msg)
    var message = format("Content-Length: $1\r\nContent-Type: $2\r\n\r\n",
                         len(content), CONTENT_TYPE_UTF8) & content
    write(s, message)
