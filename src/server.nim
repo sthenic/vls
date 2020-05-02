@@ -1,6 +1,7 @@
 import streams
 import strutils
 import ./protocol
+import ./log
 
 const
    EOK = 0
@@ -44,6 +45,7 @@ proc initialize(s: var LspServer, msg: LspMessage) =
          }
       }
       send_response(s.ofs, new_lsp_response(msg.id, parameters))
+      log.debug("Initialized server.")
 
    except KeyError as e:
       send_response(s.ofs, new_lsp_response(msg.id, RPC_PARSE_ERROR, e.msg, nil))
@@ -52,6 +54,7 @@ proc initialize(s: var LspServer, msg: LspMessage) =
 proc handle_request(s: var LspServer, msg: LspMessage) =
    # If the server is not initialized, we only respond to the 'initialize'
    # request.
+   log.debug("Handling a request.")
    if not s.is_initialized:
       if msg.m == "initialize":
          initialize(s, msg)
@@ -66,6 +69,7 @@ proc handle_request(s: var LspServer, msg: LspMessage) =
 proc handle_notification(s: LspServer, msg: LspMessage) =
    # If the server is not initialized, all notifications should be dropped,
    # except for the exit notification.
+   log.debug("Handling a notification.")
    if not s.is_initialized:
       return
 
@@ -82,6 +86,7 @@ proc run*(s: var LspServer): int =
          except LspParseError as e:
             send_response(s.ofs, new_lsp_response(0, RPC_PARSE_ERROR, e.msg, nil))
             continue
+      log.debug("Received a LSP message, length $1.", msg.length)
 
       # Handle the message.
       case msg.kind
