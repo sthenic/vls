@@ -5,13 +5,16 @@ import ./log
 
 const
    EOK = 0
-   ESTREAM = 1
+   ENOSHUTDOWN = 1
+   ESTREAM = 2
 
 
 type
    LspServer* = object
       ifs, ofs: Stream
       is_initialized: bool
+      is_shut_down: bool
+      should_exit: bool
       root_uri: string
 
 
@@ -19,24 +22,27 @@ proc open*(s: var LspServer, ifs, ofs : Stream) =
    s.ifs = ifs
    s.ofs = ofs
    s.is_initialized = false
+   s.is_shut_down = false
+   set_len(s.root_uri, 0)
 
 
 proc close*(s: var LspServer) =
-   close(s.ifs)
-   close(s.ofs)
+   # The streams objects are the responsibility of the caller.
+   s.is_initialized = false
+   s.is_shut_down = false
 
 
 proc initialize(s: var LspServer, msg: LspMessage) =
    try:
       s.root_uri = get_str(msg.parameters["rootUri"])
 
-      var parameters = new_jobject()
-      parameters["serverInfo"] = %*{
+      var result = new_jobject()
+      result["serverInfo"] = %*{
          "name": "vls",
          # FIXME: Read this from a shared static location.
          "version": "0.1.0"
       }
-      parameters["capabilities"] = %*{
+      result["capabilities"] = %*{
          "textDocument": {
             "declaration": {
                "dynamicRegistration": false,
@@ -44,34 +50,53 @@ proc initialize(s: var LspServer, msg: LspMessage) =
             }
          }
       }
-      send_response(s.ofs, new_lsp_response(msg.id, parameters))
-      log.debug("Initialized server.")
+      send_response(s.ofs, new_lsp_response(msg.id, result))
+      log.debug("Server initialized.")
 
    except KeyError as e:
       send_response(s.ofs, new_lsp_response(msg.id, RPC_PARSE_ERROR, e.msg, nil))
 
 
+proc shutdown(s: var LspServer, msg: LspMessage) =
+   log.debug("Server shutting down.")
+   s.is_shut_down = true
+   send_response(s.ofs, new_lsp_response(msg.id, new_jnull()))
+
+
 proc handle_request(s: var LspServer, msg: LspMessage) =
-   # If the server is not initialized, we only respond to the 'initialize'
+   # If the server is shut down we respond to every request with an error.
+   # Otherwise, if the server not initialized, we only respond to the 'initialize'
    # request.
    log.debug("Handling a request.")
-   if not s.is_initialized:
+   if s.is_shut_down:
+      send_response(s.ofs, new_lsp_response(msg.id, RPC_INVALID_REQUEST, "", nil))
+      return
+   elif not s.is_initialized:
       if msg.m == "initialize":
          initialize(s, msg)
       else:
          send_response(s.ofs, new_lsp_response(msg.id, RPC_SERVER_NOT_INITIALIZED, "", nil))
       return
 
-   let str = format("Unsupported method '$1'.", msg.m)
-   send_response(s.ofs, new_lsp_response(msg.id, RPC_METHOD_NOT_FOUND, str, nil))
+   case msg.m
+   of "shutdown":
+      shutdown(s, msg)
+   else:
+      let str = format("Unsupported method '$1'.", msg.m)
+      send_response(s.ofs, new_lsp_response(msg.id, RPC_INVALID_REQUEST, str, nil))
 
 
-proc handle_notification(s: LspServer, msg: LspMessage) =
+proc handle_notification(s: var LspServer, msg: LspMessage) =
    # If the server is not initialized, all notifications should be dropped,
    # except for the exit notification.
    log.debug("Handling a notification.")
-   if not s.is_initialized:
+   if msg.m == "exit":
+      s.should_exit = true
       return
+   elif not s.is_initialized:
+      return
+
+   # FIXME: Handle notifications (case).
 
 
 proc run*(s: var LspServer): int =
@@ -86,7 +111,7 @@ proc run*(s: var LspServer): int =
          except LspParseError as e:
             send_response(s.ofs, new_lsp_response(0, RPC_PARSE_ERROR, e.msg, nil))
             continue
-      log.debug("Received a LSP message, length $1.", msg.length)
+      log.debug("Received an LSP message, length $1.", msg.length)
 
       # Handle the message.
       case msg.kind
@@ -97,4 +122,11 @@ proc run*(s: var LspServer): int =
       else:
          send_response(s.ofs, new_lsp_response(msg.id, RPC_INVALID_REQUEST, "", nil))
 
-   result = EOK
+      # Check if we have been instructed to shut down the server.
+      if s.should_exit:
+         if s.is_shut_down:
+            result = EOK
+         else:
+            result = ENOSHUTDOWN
+         log.debug("Server exiting, exit code $1.", result)
+         break

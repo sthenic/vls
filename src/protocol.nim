@@ -238,6 +238,10 @@ proc parse_content(s: Stream, r: var LspMessage) =
 
 
 proc recv_request*(s: Stream): LspMessage =
+   if s == nil:
+      # FIXME: Exception?
+      return
+
    init(result)
    # Read the header part. Any parse error will raise an exception which should
    # propagate to the caller and generate an error response.
@@ -282,6 +286,9 @@ proc `%`(r: LspMessage): JsonNode =
 
 
 proc send_response*(s: Stream, r: LspMessage) =
+   if s == nil:
+      return
+
    let content = $(%r)
    var message = format("Content-Length: $1\r\nContent-Type: $2\r\n\r\n",
                         len(content), CONTENT_TYPE_UTF8) & content
