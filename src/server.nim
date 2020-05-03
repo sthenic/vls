@@ -1,6 +1,9 @@
 import streams
 import strutils
 import json
+import uri
+import vparse
+
 import ./protocol
 import ./log
 
@@ -17,6 +20,8 @@ type
       is_shut_down: bool
       should_exit: bool
       root_uri: string
+      graph: Graph
+      cache: IdentifierCache
 
 
 proc open*(s: var LspServer, ifs, ofs : Stream) =
@@ -108,7 +113,29 @@ proc handle_notification(s: var LspServer, msg: LspMessage) =
    elif not s.is_initialized:
       return
 
-   # FIXME: Handle notifications (case).
+   # FIXME: Generalize to handle multiple files.
+   case msg.m
+   of "textDocument/didOpen":
+      s.cache = new_ident_cache()
+      let contents = get_str(msg.parameters["textDocument"]["text"])
+      let uri = parse_uri(get_str(msg.parameters["textDocument"]["uri"]))
+      let ss = new_string_stream(contents)
+      open_graph(s.graph, s.cache, ss, uri.path, [], [])
+      close(ss)
+      log.debug("Opened a graph for $1.", uri)
+   of "textDocument/didChange":
+      close_graph(s.graph)
+      # We can read all the changes at array index 0 since we only support the
+      # 'full' text synchronization.
+      let contents = get_str(msg.parameters["contentChanges"][0]["text"])
+      let uri = parse_uri(get_str(msg.parameters["textDocument"]["uri"]))
+      let ss = new_string_stream(contents)
+      open_graph(s.graph, s.cache, ss, uri.path, [], [])
+      close(ss)
+      log.debug("Refreshed graph for $1.", uri)
+   else:
+      # Simply drop all other request.
+      discard
 
 
 proc run*(s: var LspServer): int =
@@ -126,12 +153,20 @@ proc run*(s: var LspServer): int =
             continue
       log.debug("Received an LSP message, length $1.", msg.length)
 
-      # Handle the message.
+      # Handle the message. We protect against exceptions
       case msg.kind
       of MkRequest:
-         handle_request(s, msg)
+         try:
+            handle_request(s, msg)
+         except Exception as e:
+            let error_message = "Uncaught exception when handling request: " & e.msg
+            log.error(error_message)
+            send(s, new_lsp_response(msg.id, RPC_INTERNAL_ERROR, error_message, nil))
       of MkNotification:
-         handle_notification(s, msg)
+         try:
+            handle_notification(s, msg)
+         except Exception as e:
+            log.error("Uncaught exception when handling notification: " & e.msg)
       else:
          send(s, new_lsp_response(msg.id, RPC_INVALID_REQUEST, "", nil))
 
