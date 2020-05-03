@@ -11,6 +11,14 @@ requires "nim >= 1.2.0"
 requires "vparse >= 0.1.0"
 
 
+task dbuild, "install":
+   exec("nimble build -d:logdebug")
+
+
+task dinstall, "install":
+   exec("nimble install --passNim:-d:logdebug")
+
+
 task test, "Run the test suite":
    exec("nimble protocoltests")
 

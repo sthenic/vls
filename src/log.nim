@@ -1,6 +1,7 @@
 import strutils
 
-proc syslog(priority: cint, msg: cstring) {.importc, header: "<syslog.h>".}
+when not defined(windows):
+   proc syslog(priority: cint, msg: cstring) {.importc, header: "<syslog.h>".}
 
 const
    LOG_EMERG = cint(0)
@@ -27,10 +28,10 @@ const
 
 
 type LogTarget* = enum
-   STDOUT, SYSLOG
+   STDERR, SYSLOG
 
 
-var log_target: LogTarget = STDOUT
+var log_target: LogTarget = STDERR
 
 
 proc set_log_target*(target: LogTarget) =
@@ -43,9 +44,9 @@ template write(header, msg: string, args: varargs[string, `$`]) =
          syslog(LOG_INFO or LOG_DAEMON, line)
    else:
       let msg_split = split_lines(format(msg, args))
-      echo header & msg_split[0]
+      write(stderr, header & msg_split[0] & "\n")
       for i in 1..<len(msg_split):
-         echo "         " & msg_split[i]
+         write(stderr, "         " & msg_split[i] & "\n")
 
 
 template info*(msg: string, args: varargs[string, `$`]) =
@@ -65,7 +66,7 @@ template debug_always*(msg: string, args: varargs[string, `$`]) =
 
 
 template debug*(msg: string, args: varargs[string, `$`]) =
-   if not defined(release):
+   if defined(logdebug):
       debug_always(msg, args)
 
 

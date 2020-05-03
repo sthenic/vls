@@ -20,12 +20,17 @@ type
 
 
 proc open*(s: var LspServer, ifs, ofs : Stream) =
-   set_log_target(SYSLOG)
    s.ifs = ifs
    s.ofs = ofs
    s.is_initialized = false
    s.is_shut_down = false
    set_len(s.root_uri, 0)
+
+   # The syslog facilities are only available on Linux and macOS. If the server
+   # is compiled in release mode and we're not on Windows, we redirect the log
+   # messages to syslog. Otherwise, log messages are written to stderr.
+   if defined(release) and not defined(windows):
+      set_log_target(SYSLOG)
    log.debug("Opened server.")
 
 
