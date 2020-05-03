@@ -1,5 +1,6 @@
 import streams
 import strutils
+import json
 import ./protocol
 import ./log
 
@@ -19,11 +20,13 @@ type
 
 
 proc open*(s: var LspServer, ifs, ofs : Stream) =
+   set_log_target(STDOUT)
    s.ifs = ifs
    s.ofs = ofs
    s.is_initialized = false
    s.is_shut_down = false
    set_len(s.root_uri, 0)
+   log.debug("Opened server.")
 
 
 proc close*(s: var LspServer) =
@@ -110,6 +113,7 @@ proc handle_notification(s: var LspServer, msg: LspMessage) =
 proc run*(s: var LspServer): int =
    while true:
       # Receive a message from the input stream.
+      log.debug("Waiting for an LSP message.")
       let msg =
          try:
             recv(s)
