@@ -2,6 +2,7 @@ import streams
 import terminal
 import strformat
 import strutils
+import json
 
 import ../../src/protocol
 
@@ -10,7 +11,7 @@ var nof_failed = 0
 
 template run_test(title, stimuli: string, reference: LspMessage, expect_error = false) =
    try:
-      let response = recv_request(new_string_stream(stimuli))
+      let response = recv(new_string_stream(stimuli))
       if response == reference:
          styledWriteLine(stdout, styleBright, fgGreen, "[✓] ",
                         fgWhite, "Test '",  title, "'")

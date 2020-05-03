@@ -2,6 +2,7 @@ import streams
 import terminal
 import strformat
 import strutils
+import json
 
 import ../../src/protocol
 
@@ -11,7 +12,7 @@ var nof_failed = 0
 template run_test(title: string, stimuli: LspMessage, reference: string, expect_error = false) =
    try:
       var ss = new_string_stream()
-      send_response(ss, stimuli)
+      send(ss, stimuli)
       set_position(ss, 0)
       var response = read_all(ss)
 
