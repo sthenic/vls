@@ -20,7 +20,7 @@ type
 
 
 proc open*(s: var LspServer, ifs, ofs : Stream) =
-   set_log_target(STDOUT)
+   set_log_target(SYSLOG)
    s.ifs = ifs
    s.ofs = ofs
    s.is_initialized = false
@@ -54,14 +54,10 @@ proc initialize(s: var LspServer, msg: LspMessage) =
          "version": "0.1.0"
       }
       result["capabilities"] = %*{
-         "textDocument": {
-            "declaration": {
-               "dynamicRegistration": false,
-               "linkSupport": false
-            }
-         }
+         "textDocumentSync": 1
       }
       send(s, new_lsp_response(msg.id, result))
+      s.is_initialized = true
       log.debug("Server initialized.")
 
    except KeyError as e:
