@@ -5,7 +5,9 @@ import uri
 import vparse
 
 import ./protocol
+import ./analyze
 import ./log
+
 
 const
    EOK = 0
@@ -14,14 +16,23 @@ const
 
 
 type
+   LspClientCapabilities = object
+      diagnostics: bool
+
    LspServer* = object
       ifs, ofs: Stream
       is_initialized: bool
       is_shut_down: bool
       should_exit: bool
       root_uri: string
+      graph_uri: string
       graph: Graph
       cache: IdentifierCache
+      client_capabilities: LspClientCapabilities
+
+
+proc init(cc: var LspClientCapabilities) =
+   cc.diagnostics = false
 
 
 proc open*(s: var LspServer, ifs, ofs : Stream) =
@@ -30,6 +41,8 @@ proc open*(s: var LspServer, ifs, ofs : Stream) =
    s.is_initialized = false
    s.is_shut_down = false
    set_len(s.root_uri, 0)
+   set_len(s.graph_uri, 0)
+   init(s.client_capabilities)
 
    # The syslog facilities are only available on Linux and macOS. If the server
    # is compiled in release mode and we're not on Windows, we redirect the log
@@ -56,6 +69,9 @@ proc recv(s: LspServer): LspMessage =
 proc initialize(s: var LspServer, msg: LspMessage) =
    try:
       s.root_uri = get_str(msg.parameters["rootUri"])
+      # FIXME: textDocument is optional. We need some Alasso-style descend object thing.
+      s.client_capabilities.diagnostics =
+         has_key(msg.parameters["capabilities"]["textDocument"], "publishDiagnostics")
 
       var result = new_jobject()
       result["serverInfo"] = %*{
@@ -69,6 +85,7 @@ proc initialize(s: var LspServer, msg: LspMessage) =
       send(s, new_lsp_response(msg.id, result))
       s.is_initialized = true
       log.debug("Server initialized.")
+      log.debug("Client capabilities: $1.", s.client_capabilities)
 
    except KeyError as e:
       send(s, new_lsp_response(msg.id, RPC_PARSE_ERROR, e.msg, nil))
@@ -114,25 +131,32 @@ proc handle_notification(s: var LspServer, msg: LspMessage) =
       return
 
    # FIXME: Generalize to handle multiple files.
+   # FIXME: Generalize into proc.
    case msg.m
    of "textDocument/didOpen":
       s.cache = new_ident_cache()
+      s.graph_uri = get_str(msg.parameters["textDocument"]["uri"])
       let contents = get_str(msg.parameters["textDocument"]["text"])
-      let uri = parse_uri(get_str(msg.parameters["textDocument"]["uri"]))
       let ss = new_string_stream(contents)
-      open_graph(s.graph, s.cache, ss, uri.path, [], [])
+      log.debug("Opening a graph for $1.", s.graph_uri)
+      open_graph(s.graph, s.cache, ss, parse_uri(s.graph_uri).path, [], [])
       close(ss)
-      log.debug("Opened a graph for $1.", uri)
+      log.debug("Analyzing the AST.")
+      let has_errors = check_syntax(s.graph.root_node)
+      log.debug("The AST $1", if has_errors: "has errors." else: "is ok.")
    of "textDocument/didChange":
       close_graph(s.graph)
       # We can read all the changes at array index 0 since we only support the
       # 'full' text synchronization.
+      s.graph_uri = get_str(msg.parameters["textDocument"]["uri"])
       let contents = get_str(msg.parameters["contentChanges"][0]["text"])
-      let uri = parse_uri(get_str(msg.parameters["textDocument"]["uri"]))
       let ss = new_string_stream(contents)
-      open_graph(s.graph, s.cache, ss, uri.path, [], [])
+      log.debug("Refreshing graph for $1.", s.graph_uri)
+      open_graph(s.graph, s.cache, ss, parse_uri(s.graph_uri).path, [], [])
       close(ss)
-      log.debug("Refreshed graph for $1.", uri)
+      log.debug("Analyzing the AST.")
+      let has_errors = check_syntax(s.graph.root_node)
+      log.debug("The AST $1", if has_errors: "has errors." else: "is ok.")
    else:
       # Simply drop all other request.
       discard
