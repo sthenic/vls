@@ -4,9 +4,10 @@ import json
 import uri
 import vparse
 
+import ./log
 import ./protocol
 import ./analyze
-import ./log
+import ./diagnostic
 
 
 const
@@ -64,6 +65,28 @@ proc send(s: LspServer, msg: LspMessage) =
 
 proc recv(s: LspServer): LspMessage =
    result = recv(s.ifs)
+
+
+proc publish_diagnostics(s: LspServer) =
+   let diagnostics = check_syntax(s.graph.root_node)
+   let parameters = %*{
+      "uri": s.graph_uri,
+      "diagnostics": diagnostics
+   }
+   log.debug("Publishing diagnostics: $1", parameters)
+   send(s, new_lsp_notification("textDocument/publishDiagnostics", parameters))
+
+
+proc process_text(s: var LspServer, text: string) =
+   ## Process the ``text``.
+   log.debug("Processing text from $1.", s.graph_uri)
+   let ss = new_string_stream(text)
+   # FIXME: Include paths, defines etc.
+   open_graph(s.graph, s.cache, ss, parse_uri(s.graph_uri).path, [], [])
+   close(ss)
+
+   if s.client_capabilities.diagnostics:
+      publish_diagnostics(s)
 
 
 proc initialize(s: var LspServer, msg: LspMessage) =
@@ -131,32 +154,17 @@ proc handle_notification(s: var LspServer, msg: LspMessage) =
       return
 
    # FIXME: Generalize to handle multiple files.
-   # FIXME: Generalize into proc.
    case msg.m
    of "textDocument/didOpen":
       s.cache = new_ident_cache()
       s.graph_uri = get_str(msg.parameters["textDocument"]["uri"])
-      let contents = get_str(msg.parameters["textDocument"]["text"])
-      let ss = new_string_stream(contents)
-      log.debug("Opening a graph for $1.", s.graph_uri)
-      open_graph(s.graph, s.cache, ss, parse_uri(s.graph_uri).path, [], [])
-      close(ss)
-      log.debug("Analyzing the AST.")
-      let has_errors = check_syntax(s.graph.root_node)
-      log.debug("The AST $1", if has_errors: "has errors." else: "is ok.")
+      process_text(s, get_str(msg.parameters["textDocument"]["text"]))
    of "textDocument/didChange":
-      close_graph(s.graph)
       # We can read all the changes at array index 0 since we only support the
       # 'full' text synchronization.
+      close_graph(s.graph)
       s.graph_uri = get_str(msg.parameters["textDocument"]["uri"])
-      let contents = get_str(msg.parameters["contentChanges"][0]["text"])
-      let ss = new_string_stream(contents)
-      log.debug("Refreshing graph for $1.", s.graph_uri)
-      open_graph(s.graph, s.cache, ss, parse_uri(s.graph_uri).path, [], [])
-      close(ss)
-      log.debug("Analyzing the AST.")
-      let has_errors = check_syntax(s.graph.root_node)
-      log.debug("The AST $1", if has_errors: "has errors." else: "is ok.")
+      process_text(s, get_str(msg.parameters["contentChanges"][0]["text"]))
    else:
       # Simply drop all other request.
       discard
