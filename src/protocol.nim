@@ -293,3 +293,4 @@ proc send*(s: Stream, msg: LspMessage) =
    var message = format("Content-Length: $1\r\nContent-Type: $2\r\n\r\n",
                         len(content), CONTENT_TYPE_UTF8) & content
    write(s, message)
+   flush(s)
