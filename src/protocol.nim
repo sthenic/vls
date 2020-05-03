@@ -88,6 +88,7 @@ proc init*(msg: var LspMessage) =
 
 
 proc new_lsp_request*(length, id: int, m: string, parameters: JsonNode): LspMessage =
+   # Used by the test framework.
    init(result)
    result.kind = MkRequest
    result.length = length
@@ -97,9 +98,17 @@ proc new_lsp_request*(length, id: int, m: string, parameters: JsonNode): LspMess
 
 
 proc new_lsp_notification*(length: int, m: string, parameters: JsonNode): LspMessage =
+   # Used by the test framework.
    init(result)
    result.kind = MkNotification
    result.length = length
+   result.m = m
+   result.parameters = parameters
+
+
+proc new_lsp_notification*(m: string, parameters: JsonNode): LspMessage =
+   init(result)
+   result.kind = MkNotification
    result.m = m
    result.parameters = parameters
 
