@@ -48,6 +48,6 @@ proc `%`*(r: Range): JsonNode =
 proc `%`*(d: Diagnostic): JsonNode =
    result = %*{
       "range": d.rng,
-      "severity": d.severity,
+      "severity": int(d.severity),
       "message": d.message
    }
