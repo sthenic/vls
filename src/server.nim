@@ -11,9 +11,10 @@ import ./diagnostic
 
 
 const
-   EOK = 0
-   ENOSHUTDOWN = 1
-   ESTREAM = 2
+   EOK* = 0
+   ENOSHUTDOWN* = 1
+   ESTREAM* = 2
+   EINVAL* = 3
 
 
 type
@@ -30,6 +31,9 @@ type
       graph: Graph
       cache: IdentifierCache
       client_capabilities: LspClientCapabilities
+      # TODO: This should really not be an option if Neovims language client
+      #       correctly reported diagnostic capabilities.
+      force_diagnostics*: bool
 
 
 proc init(cc: var LspClientCapabilities) =
@@ -85,7 +89,7 @@ proc process_text(s: var LspServer, text: string) =
    open_graph(s.graph, s.cache, ss, parse_uri(s.graph_uri).path, [], [])
    close(ss)
 
-   if s.client_capabilities.diagnostics:
+   if s.client_capabilities.diagnostics or s.force_diagnostics:
       publish_diagnostics(s)
 
 

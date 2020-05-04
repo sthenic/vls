@@ -1,0 +1,11 @@
+usage:
+  vls [OPTIONS]
+
+
+options:
+  -h, --help            Print this help message and exit.
+  -v, --version         Print the version information and exit.
+
+  --force-diagnostics   Publish diagnostics using the
+                        "textDocument/publishDiagnostics" method regardless of
+                        the client's reported capabilities.
