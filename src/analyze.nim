@@ -9,7 +9,10 @@ proc check_syntax*(n: PNode): seq[Diagnostic] =
       # Create a diagnostic message representing the error node.
       let start = new_position(int(n.loc.line - 1), int(n.loc.col))
       let stop = start
-      result = @[new_diagnostic(start, stop, ERROR, n.msg)]
+      var message = n.msg
+      if len(n.eraw) > 0:
+         add(message, " " & n.eraw)
+      result = @[new_diagnostic(start, stop, ERROR, message)]
    of PrimitiveTypes - ErrorTypes:
       result = @[]
    else:
