@@ -72,7 +72,7 @@ proc recv(s: LspServer): LspMessage =
 
 
 proc publish_diagnostics(s: LspServer) =
-   let diagnostics = check_syntax(s.graph.root_node)
+   let diagnostics = check_syntax(s.graph.root_node, s.graph.locations)
    let parameters = %*{
       "uri": s.graph_uri,
       "diagnostics": diagnostics
