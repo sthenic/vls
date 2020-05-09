@@ -20,6 +20,7 @@ const
 type
    LspClientCapabilities = object
       diagnostics: bool
+      configuration: bool
 
    LspServer* = object
       ifs, ofs: Stream
@@ -38,6 +39,7 @@ type
 
 proc init(cc: var LspClientCapabilities) =
    cc.diagnostics = false
+   cc.configuration = false
 
 
 proc open*(s: var LspServer, ifs, ofs : Stream) =
@@ -99,6 +101,8 @@ proc initialize(s: var LspServer, msg: LspMessage) =
       # FIXME: textDocument is optional. We need some Alasso-style descend object thing.
       s.client_capabilities.diagnostics =
          has_key(msg.parameters["capabilities"]["textDocument"], "publishDiagnostics")
+      s.client_capabilities.configuration =
+         has_key(msg.parameters["capabilities"]["workspace"], "didChangeConfiguration")
 
       var result = new_jobject()
       result["serverInfo"] = %*{
@@ -147,6 +151,20 @@ proc handle_request(s: var LspServer, msg: LspMessage) =
       send(s, new_lsp_response(msg.id, RPC_INVALID_REQUEST, str, nil))
 
 
+proc initialied(s: LspServer) =
+   # Handles the 'initialized' notification sent from the language client. We
+   # use this to register for dynamic events.
+   if s.client_capabilities.configuration:
+      send(s, new_lsp_request(0, "client/registerCapability", %*{
+         "registrations": [
+            {
+               "id": "workspace/didChangeConfiguration",
+               "method": "workspace/didChangeConfiguration"
+            }
+         ]
+      }))
+
+
 proc handle_notification(s: var LspServer, msg: LspMessage) =
    # If the server is not initialized, all notifications should be dropped,
    # except for the exit notification.
@@ -159,6 +177,8 @@ proc handle_notification(s: var LspServer, msg: LspMessage) =
 
    # FIXME: Generalize to handle multiple files.
    case msg.m
+   of "initialized":
+      initialied(s)
    of "textDocument/didOpen":
       s.cache = new_ident_cache()
       s.graph_uri = get_str(msg.parameters["textDocument"]["uri"])
@@ -203,6 +223,9 @@ proc run*(s: var LspServer): int =
             handle_notification(s, msg)
          except Exception as e:
             log.error("Uncaught exception when handling notification: " & e.msg)
+      of MkResponseSuccess, MkResponseError:
+         # FIXME: Check if we're expecintg a response to come through.
+         log.debug("Received a response $1", msg)
       else:
          send(s, new_lsp_response(msg.id, RPC_INVALID_REQUEST, "", nil))
 
