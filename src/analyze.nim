@@ -22,12 +22,32 @@ proc check_syntax*(n: PNode, locs: PLocations): seq[Diagnostic] =
          # That means that the error node has a virtual location that cannot be
          # marked in the file so we put the diagnostic message at the expansion
          # location.
-         # TODO: There is enough information to fully trace any errors through
-         #       the full macro stack, i.e. we could improve the message.
-         let macro_map = locs.macro_maps[abs(n.loc.file + 1)]
-         start = new_position(int(macro_map.expansion_loc.line - 1),
-                              int(macro_map.expansion_loc.col))
-         message = format("In expansion of `$1: ", macro_map.name)
+         # TODO: Improve error messages.
+         var map = locs.macro_maps[abs(n.loc.file + 1)]
+         var token_idx = n.loc.line
+         var inverted_macro_trace: seq[string]
+         while true:
+            if map.expansion_loc.file > 0:
+               # We've fould the physical location, the search is complete.
+               add(inverted_macro_trace, format("In expansion of `$1\n", map.name))
+               start = new_position(int(map.expansion_loc.line - 1),
+                                    int(map.expansion_loc.col))
+               break
+            elif map.expansion_loc.file == 0:
+               # A zero-valued file index is invalid (and unexpected).
+               return
+            else:
+               let token_loc_pair = map.locations[token_idx]
+               add(inverted_macro_trace, format("In expansion of `$1 at $2:$3\n",
+                                                map.name, token_loc_pair.y.line,
+                                                token_loc_pair.y.col + 1))
+               map = locs.macro_maps[abs(map.expansion_loc.file + 1)]
+
+         # The macro trace is inverted since we begin with the error node and
+         # search 'outwards'.
+         for i in countdown(high(inverted_macro_trace), 0):
+            add(message, inverted_macro_trace[i])
+
       elif n.loc.file > 1:
          # The error node originates from an external file. We have to use the
          # file map to discern where to put the diagnostic message in the
