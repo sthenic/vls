@@ -132,7 +132,7 @@ proc handle_request(s: var LspServer, msg: LspMessage) =
    # If the server is shut down we respond to every request with an error.
    # Otherwise, unless the server is initialized, we only respond to the
    # 'initialize' request.
-   log.debug("Handling a request.")
+   log.debug("Handling a request: '$1'.", msg.m)
    if s.is_shut_down:
       send(s, new_lsp_response(msg.id, RPC_INVALID_REQUEST, "", nil))
       return
@@ -165,10 +165,23 @@ proc initialied(s: LspServer) =
       }))
 
 
+proc workspace_changed_configuration(s: var LspServer) =
+   # Request the 'vls' section from the client configuration.
+   log.debug("Requesting workspace configuration.")
+   send(s, new_lsp_request(0, "workspace/configuration", %*{
+      "items": [
+         {"section": "vls"}
+      ]
+   }))
+   let response = recv(s)
+   # FIXME: Use the settings.
+   log.debug("Got configuration $1", response)
+
+
 proc handle_notification(s: var LspServer, msg: LspMessage) =
    # If the server is not initialized, all notifications should be dropped,
    # except for the exit notification.
-   log.debug("Handling a notification.")
+   log.debug("Handling a notification: '$1'.", msg.m)
    if msg.m == "exit":
       s.should_exit = true
       return
@@ -179,6 +192,8 @@ proc handle_notification(s: var LspServer, msg: LspMessage) =
    case msg.m
    of "initialized":
       initialied(s)
+   of "workspace/didChangeConfiguration":
+      workspace_changed_configuration(s)
    of "textDocument/didOpen":
       s.cache = new_ident_cache()
       s.graph_uri = get_str(msg.parameters["textDocument"]["uri"])
