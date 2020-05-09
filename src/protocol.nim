@@ -67,8 +67,69 @@ const
    ]
 
 
+proc new_lsp_io_error(msg: string, args: varargs[string, `$`]): ref LspIoError =
+   new result
+   result.msg = format(msg, args)
+
+
+proc new_lsp_parse_error(msg: string, args: varargs[string, `$`]): ref LspParseError =
+   new result
+   result.msg = format(msg, args)
+
+
+proc new_lsp_value_error(msg: string, args: varargs[string, `$`]): ref LspValueError =
+   new result
+   result.msg = format(msg, args)
+
+
 proc `$`(kind: LspMessageKind): string =
    result = LspMessageKindToStr[kind]
+
+
+proc `%`(e: LspError): JsonNode =
+   result = %*{
+      "code": int(e.code),
+      "message": e.message
+   }
+   if e.data != nil:
+      result["data"] = e.data
+
+
+proc `%`(msg: LspMessage): JsonNode =
+   case msg.kind
+   of MkRequest:
+      result = %*{
+         "jsonrpc": "2.0",
+         "id": msg.id,
+         "method": msg.m,
+      }
+      if msg.parameters != nil:
+         result["params"] = msg.parameters
+   of MkResponseSuccess:
+      result = %*{
+         "jsonrpc": "2.0",
+         "id": msg.id,
+         "result": msg.result
+      }
+   of MkResponseError:
+      result = %*{
+         "jsonrpc": "2.0",
+         "id": msg.id,
+         "error": %msg.error
+      }
+   of MkNotification:
+      result = %*{
+         "jsonrpc": "2.0",
+         "method": msg.m,
+      }
+      if msg.parameters != nil:
+         result["params"] = msg.parameters
+   else:
+      raise new_lsp_value_error("Unexpected LSP message kind '$1'.", msg.kind)
+
+
+proc len(msg: LspMessage): int =
+   result = len($(%msg))
 
 
 proc init(e: var LspError) =
@@ -87,23 +148,19 @@ proc init*(msg: var LspMessage) =
    init(msg.error)
 
 
-proc new_lsp_request*(length, id: int, m: string, parameters: JsonNode): LspMessage =
-   # Used by the test framework.
+proc new_lsp_request*(id: int, m: string, parameters: JsonNode): LspMessage =
    init(result)
    result.kind = MkRequest
-   result.length = length
    result.id = id
    result.m = m
    result.parameters = parameters
+   result.length = len(result)
 
 
-proc new_lsp_notification*(length: int, m: string, parameters: JsonNode): LspMessage =
+proc new_lsp_request*(length, id: int, m: string, parameters: JsonNode): LspMessage =
    # Used by the test framework.
-   init(result)
-   result.kind = MkNotification
+   result = new_lsp_request(id, m, parameters)
    result.length = length
-   result.m = m
-   result.parameters = parameters
 
 
 proc new_lsp_notification*(m: string, parameters: JsonNode): LspMessage =
@@ -113,11 +170,23 @@ proc new_lsp_notification*(m: string, parameters: JsonNode): LspMessage =
    result.parameters = parameters
 
 
+proc new_lsp_notification*(length: int, m: string, parameters: JsonNode): LspMessage =
+   # Used by the test framework.
+   result = new_lsp_notification(m, parameters)
+   result.length = length
+
+
 proc new_lsp_response*(id: int, res: JsonNode): LspMessage =
    init(result)
    result.kind = MkResponseSuccess
    result.id = id
    result.result = res
+
+
+proc new_lsp_response*(length, id: int, res: JsonNode): LspMessage =
+   # Used by the test framework.
+   result = new_lsp_response(id, res)
+   result.length = length
 
 
 proc new_lsp_response*(id: int, code: LspErrorCode, message: string, data: JsonNode): LspMessage =
@@ -129,19 +198,10 @@ proc new_lsp_response*(id: int, code: LspErrorCode, message: string, data: JsonN
    result.error.data = data
 
 
-proc new_lsp_io_error(msg: string, args: varargs[string, `$`]): ref LspIoError =
-   new result
-   result.msg = format(msg, args)
-
-
-proc new_lsp_parse_error(msg: string, args: varargs[string, `$`]): ref LspParseError =
-   new result
-   result.msg = format(msg, args)
-
-
-proc new_lsp_value_error(msg: string, args: varargs[string, `$`]): ref LspValueError =
-   new result
-   result.msg = format(msg, args)
+proc new_lsp_response*(length, id: int, code: LspErrorCode, message: string, data: JsonNode): LspMessage =
+   # Used by the test framework.
+   result = new_lsp_response(id, code, message, data)
+   result.length = length
 
 
 proc parse_headers(s: Stream, msg: var LspMessage) =
@@ -187,6 +247,87 @@ proc parse_headers(s: Stream, msg: var LspMessage) =
          raise new_lsp_parse_error("Invalid request header '$1'.", header)
 
 
+proc parse_method(content: JsonNode, msg: var LspMessage) =
+   # It's an error if the 'method' field is not present.
+   try:
+      if content["method"].kind != JString:
+         raise new_lsp_parse_error("Unexpected type of 'method' field, expected a string.")
+      msg.m = get_str(content["method"])
+   except KeyError:
+      raise new_lsp_parse_error("Expected key 'method'.")
+
+
+proc parse_parameters(content: JsonNode, msg: var LspMessage) =
+   # The 'params' field is optional but has to be an array if present.
+   if has_key(content, "params"):
+      case content["params"].kind
+      of JObject, JArray:
+         msg.parameters = content["params"]
+      else:
+         raise new_lsp_parse_error("LSP message field 'params' has to be either an object or an array.")
+
+
+proc parse_error(content: JsonNode, msg: var LspMessage) =
+   if content["error"].kind != JObject:
+      raise new_lsp_parse_error("LSP message field 'error' has to be an object.")
+
+   try:
+      if content["error"]["code"].kind != JInt:
+         raise new_lsp_parse_error("LSP message field 'error.code' has to be an integer.")
+      msg.error.code = LspErrorCode(get_int(content["error"]["code"]))
+   except KeyError:
+      raise new_lsp_parse_error("Expected key 'code'.")
+
+   try:
+      if content["error"]["message"].kind != JString:
+         raise new_lsp_parse_error("LSP message field 'error.message' has to be a string.")
+      msg.error.message = get_str(content["error"]["message"])
+   except KeyError:
+      raise new_lsp_parse_error("Expected key 'message'.")
+
+   if has_key(content["error"], "data"):
+      msg.error.data = content["error"]["data"]
+
+
+proc parse_request_or_response(content: JsonNode, msg: var LspMessage) =
+   case content["id"].kind
+   of JInt:
+      msg.id = get_int(content["id"])
+   of JString:
+      try:
+         msg.id = parse_int(get_str(content["id"]))
+      except ValueError:
+         raise new_lsp_parse_error("Invalid id '$1'.", get_str(content["id"]))
+   else:
+      raise new_lsp_parse_error("Unexpected type of 'id' field, expected an integer or a string.")
+
+   # The 'method' field is required for requests. If it's not present, we assume
+   # that we're parsing an LSP response.
+   if has_key(content, "method"):
+      parse_method(content, msg)
+      parse_parameters(content, msg)
+      msg.kind = MkRequest
+   else:
+      let has_result = has_key(content, "result")
+      let has_error = has_key(content, "error")
+      if has_result and has_error:
+         raise new_lsp_parse_error("Exactly one of the fields 'result' or 'error' is expected for an LSP response but both are present.")
+      elif has_result:
+         msg.result = content["result"]
+         msg.kind = MkResponseSuccess
+      elif has_error:
+         parse_error(content, msg)
+         msg.kind = MkResponseError
+      else:
+         raise new_lsp_parse_error("Exactly one of the fields 'result' or 'error' is expected for an LSP response but both are missing.")
+
+
+proc parse_notification(content: JsonNode, msg: var LspMessage) =
+   parse_method(content, msg)
+   parse_parameters(content, msg)
+   msg.kind = MkNotification
+
+
 proc parse_content(s: Stream, msg: var LspMessage) =
    let content = read_str(s, msg.length)
    let node =
@@ -208,41 +349,12 @@ proc parse_content(s: Stream, msg: var LspMessage) =
    except KeyError:
       raise new_lsp_parse_error("Expected key 'jsonrpc'.")
 
-   # Handle the request id.
-   try:
-      case node["id"].kind
-      of JInt:
-         msg.id = get_int(node["id"])
-      of JString:
-         msg.id = parse_int(get_str(node["id"]))
-      else:
-         raise new_lsp_parse_error("Unexpected type of 'id' field, expected an " &
-                                   "integer or a string.")
-      # If the 'id' field is present, this is a a request message.
-      msg.kind = MkRequest
-   except KeyError:
-      # If the 'id' field is missing, this is a notification message.
-      msg.kind = MkNotification
-   except ValueError:
-      raise new_lsp_parse_error("Invalid id '$1'.", get_str(node["id"]))
-
-   # Handle the request method.
-   try:
-      if node["method"].kind != JString:
-         raise new_lsp_parse_error("Unexpected type of 'method' field, " &
-                                   "expected a string.")
-      msg.m = get_str(node["method"])
-   except KeyError:
-      raise new_lsp_parse_error("Expected key 'method'.")
-
-   # Handle the parameters.
-   if has_key(node, "params"):
-      case node["params"].kind
-      of JObject, JArray:
-         msg.parameters = node["params"]
-      else:
-         raise new_lsp_parse_error(
-            "LspRequest field 'params' has to be either an object or an array.")
+   # Handle the request id. If the 'id' field is present, this is a a request or
+   # a response message. Otherwise, it's a notification message.
+   if has_key(node, "id"):
+      parse_request_or_response(node, msg)
+   else:
+      parse_notification(node, msg)
 
 
 proc recv*(s: Stream): LspMessage =
@@ -257,40 +369,6 @@ proc recv*(s: Stream): LspMessage =
 
    # Read the content part.
    parse_content(s, result)
-
-
-proc `%`(e: LspError): JsonNode =
-   result = %*{
-      "code": int(e.code),
-      "message": e.message
-   }
-   if e.data != nil:
-      result["data"] = e.data
-
-
-proc `%`(msg: LspMessage): JsonNode =
-   case msg.kind
-   of MkResponseSuccess:
-      result = %*{
-         "jsonrpc": "2.0",
-         "id": %msg.id,
-         "result": msg.result
-      }
-   of MkResponseError:
-      result = %*{
-         "jsonrpc": "2.0",
-         "id": %msg.id,
-         "error": %msg.error
-      }
-   of MkNotification:
-      result = %*{
-         "jsonrpc": "2.0",
-         "method": msg.m,
-      }
-      if msg.parameters != nil:
-         result["params"] = msg.parameters
-   else:
-      raise new_lsp_value_error("Unexpected LSP message kind '$1'.", msg.kind)
 
 
 proc send*(s: Stream, msg: LspMessage) =

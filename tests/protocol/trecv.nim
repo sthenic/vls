@@ -34,51 +34,9 @@ template run_test(title, stimuli: string, reference: LspMessage, expect_error = 
          echo e.msg
 
 
-proc prepare_stimuli(id, m, parameters: string): string =
-   var content = format("""
-{
-   "jsonrpc": "2.0",
-   "id": $1,
-   "method": "$2"""", id, m)
+proc add_headers(content: string): string =
+   result = format("Content-Length: $1\r\nContent-Type: application/vscode-jsonrpc; charset=utf-8\r\n\r\n$2", len(content), content)
 
-   if len(parameters) > 0:
-      add(content, format(""",
-   "params": $1
-}""", parameters))
-   else:
-      add(content, "\n}")
-
-   result = format("""
-Content-Length: $1
-Content-Type: application/vscode-jsonrpc; charset=utf-8
-
-$2
-""", len(content), content)
-
-
-proc prepare_stimuli(id: int, m, parameters: string): string =
-   result = prepare_stimuli($id, m, parameters)
-
-
-proc prepare_stimuli(m, parameters: string): string =
-   var content = format("""
-{
-   "jsonrpc": "2.0",
-   "method": "$1"""", m)
-
-   if len(parameters) > 0:
-      add(content, format(""",
-   "params": $1
-}""", parameters))
-   else:
-      add(content, "\n}")
-
-   result = format("""
-Content-Length: $1
-Content-Type: application/vscode-jsonrpc; charset=utf-8
-
-$2
-""", len(content), content)
 
 # Test suite title
 styledWriteLine(stdout, styleBright,
@@ -97,43 +55,183 @@ Content-Length: 0
 Content-Type: foo""", LspMessage(), true)
 
 
-var reference = prepare_stimuli(0, "", "")
-run_test("No parameters", reference): new_lsp_request(
+var reference = add_headers("""{
+   "jsonrpc": "2.0",
+   "id": 0,
+   "method": ""
+}""")
+run_test("Request: no parameters", reference): new_lsp_request(
    52, 0, "", nil
 )
 
 
-reference = prepare_stimuli(0, "", "{}")
-run_test("Empty JSON object", reference): new_lsp_request(
+reference = add_headers("""{
+   "jsonrpc": "2.0",
+   "id": 0,
+   "method": "",
+   "params": {}
+}""")
+run_test("Request: empty JSON object", reference): new_lsp_request(
    69, 0, "", %*{}
 )
 
 
-reference = prepare_stimuli(0, "", "[]")
-run_test("Empty JSON array", reference): new_lsp_request(
+reference = add_headers("""{
+   "jsonrpc": "2.0",
+   "id": 0,
+   "method": "",
+   "params": []
+}""")
+run_test("Request: empty JSON array", reference): new_lsp_request(
    69, 0, "", %*[]
 )
 
 
-reference = prepare_stimuli(0, "textDocument/didSave", "")
-run_test("Method", reference): new_lsp_request(
+reference = add_headers("""{
+   "jsonrpc": "2.0",
+   "id": 0,
+   "method": "",
+   "params": 89
+}""")
+run_test("Request: invalid type for 'params'", reference, LspMessage(), true)
+
+
+reference = add_headers("""{
+   "jsonrpc": "2.0",
+   "id": 0,
+   "method": 2
+}""")
+run_test("Request: invalid type for 'method'", reference, LspMessage(), true)
+
+
+reference = add_headers("""{
+   "jsonrpc": "2.0",
+   "id": 0,
+   "method": "textDocument/didSave"
+}""")
+run_test("Request: method", reference): new_lsp_request(
    72, 0, "textDocument/didSave", nil
 )
 
 
-reference = prepare_stimuli("\"1\"", "", "")
+reference = add_headers("""{
+   "jsonrpc": "2.0",
+   "id": 0,
+   "result": {}
+}""")
+run_test("Response success: empty result", reference): new_lsp_response(
+   52, 0, %*{}
+)
+
+
+reference = add_headers("""{
+   "jsonrpc": "2.0",
+   "id": 0,
+   "result": [1, 2, 3]
+}""")
+run_test("Response success: array result", reference): new_lsp_response(
+   59, 0, %*[1, 2, 3]
+)
+
+
+reference = add_headers("""{
+   "jsonrpc": "2.0",
+   "id": 0,
+   "result": [1, 2, 3],
+   "error": {}
+}""")
+run_test("Response error & result present -> error", reference, LspMessage(), true)
+
+
+reference = add_headers("""{
+   "jsonrpc": "2.0",
+   "id": 0
+}""")
+run_test("Response error & result missing -> error", reference, LspMessage(), true)
+
+
+reference = add_headers("""{
+   "jsonrpc": "2.0",
+   "id": 0,
+   "error": {
+   }
+}""")
+run_test("Response error: missing code", reference, LspMessage(), true)
+
+
+reference = add_headers("""{
+   "jsonrpc": "2.0",
+   "id": 0,
+   "error": {
+      "code": -32700
+   }
+}""")
+run_test("Response error: missing message", reference, LspMessage(), true)
+
+
+reference = add_headers("""{
+   "jsonrpc": "2.0",
+   "id": 0,
+   "error": {
+      "code": -32700,
+      "message": "An error!"
+   }
+}""")
+run_test("Response error: w/o data", reference): new_lsp_response(
+   106, 0, LspErrorCode(-32700), "An error!", nil
+)
+
+
+reference = add_headers("""{
+   "jsonrpc": "2.0",
+   "id": 0,
+   "error": {
+      "code": -32700,
+      "message": "An error!",
+      "data": [
+         "foo", "bar", "baz"
+      ]
+   }
+}""")
+run_test("Response error: w/ data", reference): new_lsp_response(
+   160, 0, LspErrorCode(-32700), "An error!", %*["foo", "bar", "baz"]
+)
+
+
+reference = add_headers("""{
+   "jsonrpc": "2.0",
+   "id": "1",
+   "method": ""
+}""")
 run_test("Id as a string", reference): new_lsp_request(
    54, 1, "", nil
 )
 
 
-reference = prepare_stimuli("\"foo\"", "", "")
+reference = add_headers("""{
+   "jsonrpc": "2.0",
+   "id": "foo",
+   "method": ""
+}""")
 run_test("Invalid id", reference, LspMessage(), true)
 
 
-reference = prepare_stimuli("$/cancelRequest", "[]")
-run_test("Notification", reference): new_lsp_notification(
-   72, "$/cancelRequest", %*[]
+reference = add_headers("""{
+   "jsonrpc": "2.0",
+   "method": "$/cancelRequest"
+}""")
+run_test("Notification w/o parameters", reference): new_lsp_notification(
+   55, "$/cancelRequest", nil
+)
+
+
+reference = add_headers("""{
+   "jsonrpc": "2.0",
+   "method": "$/cancelRequest",
+   "params": [1, 2, 3]
+}""")
+run_test("Notification w/ parameters", reference): new_lsp_notification(
+   79, "$/cancelRequest", %*[1, 2, 3]
 )
 
 
