@@ -15,6 +15,7 @@ proc check_syntax*(n: PNode, locs: PLocations): seq[Diagnostic] =
       elif n.loc.file == 1:
          # The error node originates in the current file. Put the diagnostic
          # message at the location in the buffer.
+         add(message, format("$1:$2: ", n.loc.line, n.loc.col + 1))
          start = new_position(int(n.loc.line - 1), int(n.loc.col))
       elif n.loc.file < 0:
          # The error node has been created as a result of a macro expansion.
@@ -39,6 +40,7 @@ proc check_syntax*(n: PNode, locs: PLocations): seq[Diagnostic] =
                # The search is complete, we've found a location in the current
                # file. Set the start location to the location reported by the map.
                add(inverted_file_trace, format("In file $1\n", map.filename))
+               add(message, format("$1:$2: ", n.loc.line, n.loc.col + 1))
                start = new_position(int(map.loc.line - 1), int(map.loc.col))
                break
             elif map.loc.file == 0:
