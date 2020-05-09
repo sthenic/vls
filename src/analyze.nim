@@ -5,10 +5,6 @@ import ./diagnostic
 
 proc check_syntax*(n: PNode, locs: PLocations): seq[Diagnostic] =
    case n.kind
-   of NkTokenErrorSync:
-      # Don't generate a diagnostic message for synchronization events.
-      discard
-
    of {NkTokenError, NkCritical}:
       # Create a diagnostic message representing the error node.
       var start: Position
@@ -66,8 +62,10 @@ proc check_syntax*(n: PNode, locs: PLocations): seq[Diagnostic] =
 
       result = @[new_diagnostic(start, stop, ERROR, message)]
 
-   of PrimitiveTypes - ErrorTypes:
-      result = @[]
+   of PrimitiveTypes - {NkTokenError, NkCritical}:
+      # Don't generate a diagnostic message for other primitive types
+      # (synchronization events included).
+      discard
 
    else:
       for s in n.sons:
