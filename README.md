@@ -9,11 +9,13 @@ This tool is a Verilog IEEE 1364-2005 [language server](https://microsoft.github
 ### Workspace
 - [ ] workspace/executeCommand
 - [ ] workspace/symbol
+- [x] workspace/configuration
+- [x] workspace/didChangeConfiguration
 
 ### Text synchronization
-- [ ] textDocument/didChange
+- [x] textDocument/didChange
 - [ ] textDocument/didClose
-- [ ] textDocument/didOpen
+- [x] textDocument/didOpen
 - [ ] textDocument/didSave
 
 ### Language Features
@@ -39,6 +41,62 @@ This tool is a Verilog IEEE 1364-2005 [language server](https://microsoft.github
 - [ ] textDocument/prepareRename
 - [ ] ~~textDocument/foldingRange~~
 - [ ] ~~textDocument/selectionRange~~
+
+## Configuration
+
+Configuration is handled through the LSP [workspace configuration](https://microsoft.github.io/language-server-protocol/specifications/specification-current/#workspace_configuration) interface. The client is responsible of notifying `vls` about any changes to the configuration by sending a `workspace/didChangeConfiguration` notification. Upon receiving this notification the server will make a `workspace/configuration` request, fetching the `vls` section from the client.
+
+The `vls` section is a JSON object with the following structure:
+```json
+{
+    "env": {
+        "myDefines": [
+            "FOO",
+            "WIDTH=8",
+            "ONES(x) = {(x){1'b1}}"
+        ],
+    },
+    "configurations": [
+        {
+            "name": "win",
+            "includePaths": [
+                "C:\path\to\some\directory",
+                "C:\path\to\some\other\directory",
+            ],
+            "defines": [
+                "${myDefines}",
+                "WINDOWS_DEFINE"
+            ]
+        },
+        {
+            "name": "linux",
+            "includePaths": [
+                "/path/to/some/directory",
+                "/path/to/some/other/directory"
+            ],
+            "defines": [
+                "${myDefines}",
+                "LINUX_DEFINE"
+            ]
+        },
+        {
+            "name": "mac",
+            ...
+        }
+    ]
+}
+```
+
+### Top-level properties
+
+- `env` An array of user-defined variables that will be available for substitution in the configuration objects. Strings and arrays of strings are supported.
+- `configuration` An array of configuration objects, see the section below.
+
+### Configuration properties
+
+- `name` The name of the configuration (case-insensitive). The names `win`, `mac` and `linux` are reserved for the respective platforms and automatically chosen by a server running on one of these platforms. Running `vls` in WSL chooses the `linux` configuration by default.
+- `includePaths` An array of strings expressing the include paths where `vls` should look for externally defined modules and files targeted by `` `include`` directives.
+- `defines` An array of strings expressing the defines that should be passed to `vls`. The rules follow that of the `-D` option for [vparse](https://github.com/sthenic/vparse). It's possible to specify a macro by using the character `=` to separate the macro name from its body.
 
 ## Documentation
 Coming soon.
