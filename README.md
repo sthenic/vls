@@ -18,7 +18,7 @@ This tool is a Verilog IEEE 1364-2005 [language server](https://microsoft.github
 - [x] textDocument/didOpen
 - [ ] textDocument/didSave
 
-### Language Features
+### Language features
 - [ ] textDocument/completion
 - [ ] textDocument/hover
 - [ ] textDocument/signatureHelp
