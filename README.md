@@ -60,8 +60,8 @@ The `vls` section is a JSON object with the following structure:
         {
             "name": "win",
             "includePaths": [
-                "C:\path\to\some\directory",
-                "C:\path\to\some\other\directory",
+                "C:\\path\\to\\some\\directory",
+                "C:\\path\\to\\some\\other\\directory",
             ],
             "defines": [
                 "${myDefines}",
@@ -78,10 +78,6 @@ The `vls` section is a JSON object with the following structure:
                 "${myDefines}",
                 "LINUX_DEFINE"
             ]
-        },
-        {
-            "name": "mac",
-            ...
         }
     ]
 }
