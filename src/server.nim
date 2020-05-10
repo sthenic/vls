@@ -16,6 +16,8 @@ const
    ESTREAM* = 2
    EINVAL* = 3
 
+   VERSION = strip(static_read("./VERSION"))
+
 
 type
    LspClientCapabilities = object
@@ -108,7 +110,7 @@ proc initialize(s: var LspServer, msg: LspMessage) =
       result["serverInfo"] = %*{
          "name": "vls",
          # FIXME: Read this from a shared static location.
-         "version": "0.1.0"
+         "version": VERSION
       }
       result["capabilities"] = %*{
          "textDocumentSync": 1
