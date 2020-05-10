@@ -217,12 +217,10 @@ proc parse_headers(s: Stream, msg: var LspMessage) =
 
       if len(header) == 0:
          # We're done with parsing headers. The message is expected next.
-         # However, the Content-Length header is mandatory and if we haven't
+         # However, the Content-Length header is mandatory so if we haven't
          # seen that we have to raise an error.
          if not seen_content_length:
-            raise new_lsp_parse_error("The request is missing the " &
-                                          "required header field " &
-                                          "'Content-Length'.")
+            raise new_lsp_parse_error("The request is missing the required header field 'Content-Length'.")
          else:
             break
 
