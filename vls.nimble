@@ -8,6 +8,7 @@ bin = @["vls"]
 
 # Dependencies
 requires "nim >= 1.2.0"
+requires "parsetoml >= 0.5.0"
 requires "vparse >= 0.1.0"
 
 
@@ -21,9 +22,15 @@ task dinstall, "install":
 
 task test, "Run the test suite":
    exec("nimble protocoltests")
+   exec("nimble configurationtests")
 
 
 task protocoltests, "Run the protocol test suite":
    with_dir("tests/protocol"):
       exec("nim c --hints:off -r trecv")
       exec("nim c --hints:off -r tsend")
+
+
+task configurationtests, "Run the TOML configuration test suite":
+   with_dir("tests/configuration"):
+      exec("nim c --hints:off -r tconfiguration")
