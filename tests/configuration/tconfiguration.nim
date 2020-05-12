@@ -1,6 +1,6 @@
 import terminal
 import strformat
-import json
+import os
 
 import ../../src/configuration
 
@@ -31,6 +31,33 @@ template run_test(title, stimuli: string, reference: Configuration, expect_error
          inc(nof_failed)
          echo e.msg
 
+
+template run_test_file(title, filename: string, reference: Configuration) =
+   let response = parse_file(filename)
+   if response == reference:
+      styledWriteLine(stdout, styleBright, fgGreen, "[✓] ",
+                     fgWhite, "Test '",  title, "'")
+      inc(nof_passed)
+   else:
+      styledWriteLine(stdout, styleBright, fgRed, "[✗] ",
+                     fgWhite, "Test '",  title, "'")
+      inc(nof_failed)
+      echo response
+      echo reference
+
+
+template run_test_find_file(title, stimuli, reference: string) =
+   let response = find_configuration_file(stimuli)
+   if response == expand_filename(reference):
+      styledWriteLine(stdout, styleBright, fgGreen, "[✓] ",
+                     fgWhite, "Test '",  title, "'")
+      inc(nof_passed)
+   else:
+      styledWriteLine(stdout, styleBright, fgRed, "[✗] ",
+                     fgWhite, "Test '",  title, "'")
+      inc(nof_failed)
+      echo response
+      echo reference
 
 
 proc new_configuration(include_paths, defines: seq[string]): Configuration =
@@ -92,6 +119,21 @@ run_test("Parse error: 'verilog.defines' is not an array of strings", """
 [verilog]
 defines = [true, false]
 """, Configuration(), true)
+
+
+run_test_file("Parse from a file", "cfg.toml",
+   new_configuration(@[
+      "/path/to/some/directory",
+      "/path/to/another/directory",
+      "../a/relative/path"
+   ], @[
+      "FOO",
+      "WIDTH=8",
+      "ONES(x) = {(x){1'b1}}"
+   ])
+)
+
+run_test_find_file("Find '.vls.toml'.", "./", "./.vls/vls.toml")
 
 
 # Print summary

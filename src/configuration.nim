@@ -1,5 +1,6 @@
 import parsetoml
 import strutils
+import os
 
 type
    Configuration* = object
@@ -15,7 +16,15 @@ proc new_configuration_parse_error(msg: string, args: varargs[string, `$`]): ref
 
 
 proc find_configuration_file*(path: string): string =
-   discard
+   const FILENAMES = [".vls.toml", "vls.toml", ".vls/.vls.toml", ".vls/vls.toml",
+                      "vls/.vls.toml", "vls/vls.toml"]
+   # Walk from the provided path up to the root directory, searching for a
+   # configuration file.
+   for p in parent_dirs(expand_filename(path), false, true):
+      for filename in FILENAMES:
+         let tmp = p / filename
+         if file_exists(tmp):
+            return tmp
 
 
 template ensure_array(t: TomlValueRef, scope: string) =
