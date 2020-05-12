@@ -8,6 +8,7 @@ import ./log
 import ./protocol
 import ./analyze
 import ./diagnostic
+import ./configuration
 
 
 const
@@ -34,6 +35,8 @@ type
       graph: Graph
       cache: IdentifierCache
       client_capabilities: LspClientCapabilities
+      configuration: Configuration
+      configuration_filename: string
       # TODO: This should really not be an option if Neovims language client
       #       correctly reported diagnostic capabilities.
       force_diagnostics*: bool
@@ -51,6 +54,7 @@ proc open*(s: var LspServer, ifs, ofs : Stream) =
    s.is_shut_down = false
    set_len(s.root_uri, 0)
    set_len(s.graph_uri, 0)
+   set_len(s.configuration_filename, 0)
    init(s.client_capabilities)
 
    # The syslog facilities are only available on Linux and macOS. If the server
@@ -90,11 +94,30 @@ proc process_text(s: var LspServer, text: string) =
    log.debug("Processing text from $1.", s.graph_uri)
    let ss = new_string_stream(text)
    # FIXME: Include paths, defines etc.
-   open_graph(s.graph, s.cache, ss, parse_uri(s.graph_uri).path, [], [])
+   open_graph(s.graph, s.cache, ss, parse_uri(s.graph_uri).path,
+              s.configuration.include_paths, s.configuration.defines)
    close(ss)
 
    if s.client_capabilities.diagnostics or s.force_diagnostics:
       publish_diagnostics(s)
+
+
+proc update_configuration(s: var LspServer) =
+   # Search for a configuration file starting at the file uri and walking up to
+   # the root directory. We only parse the contents if it's a new file.
+   # TODO: Create a file watcher.
+   log.debug("Searching for a configuration file.")
+   let filename = find_configuration_file(parse_uri(s.graph_uri).path)
+   try:
+      s.configuration = configuration.parse_file(filename)
+      s.configuration_filename = filename
+      log.debug("Parsed configuration file '$1'.", filename)
+      if len(s.configuration.include_paths) > 0:
+         log.debug("Include paths:")
+         for i, path in s.configuration.include_paths:
+            log.debug("Path $1: $2", i, path)
+   except ConfigurationParseError as e:
+      log.error("Failed to parse configuration file: $1", e.msg)
 
 
 proc initialize(s: var LspServer, msg: LspMessage) =
@@ -200,6 +223,7 @@ proc handle_notification(s: var LspServer, msg: LspMessage) =
    of "textDocument/didOpen":
       s.cache = new_ident_cache()
       s.graph_uri = get_str(msg.parameters["textDocument"]["uri"])
+      update_configuration(s)
       process_text(s, get_str(msg.parameters["textDocument"]["text"]))
    of "textDocument/didChange":
       # We can read all the changes at array index 0 since we only support the
