@@ -44,7 +44,7 @@ proc parse(t: TomlValueRef): Configuration =
          ensure_array(include_paths, "verilog.include_paths")
          for val in get_elems(include_paths):
             ensure_string(val, "verilog.include_paths")
-            add(result.include_paths, get_str(val))
+            add(result.include_paths, strip(get_str(val)))
       else:
          set_len(result.include_paths, 0)
 
@@ -68,9 +68,18 @@ proc parse_string*(s: string): Configuration =
 
 
 proc parse_file*(filename: string): Configuration =
+   if not exists_file(filename):
+      raise new_configuration_parse_error("The file '$1' does not exist.", filename)
+
+   let lfilename = expand_filename(filename)
    try:
-      result = parse(parsetoml.parse_file(filename))
+      result = parse(parsetoml.parse_file(lfilename))
+      # When we're parsing a file, any
+      let parent_dir = parent_dir(lfilename)
+      for path in mitems(result.include_paths):
+         if not is_absolute(path):
+            path = join_path(parent_dir, path)
    except TomlError:
       raise new_configuration_parse_error(
-         "Error while parsing configuration file '$1'.", filename)
+         "Error while parsing configuration file '$1'.", lfilename)
 

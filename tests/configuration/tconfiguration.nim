@@ -32,18 +32,29 @@ template run_test(title, stimuli: string, reference: Configuration, expect_error
          echo e.msg
 
 
-template run_test_file(title, filename: string, reference: Configuration) =
-   let response = parse_file(filename)
-   if response == reference:
-      styledWriteLine(stdout, styleBright, fgGreen, "[✓] ",
-                     fgWhite, "Test '",  title, "'")
-      inc(nof_passed)
-   else:
-      styledWriteLine(stdout, styleBright, fgRed, "[✗] ",
-                     fgWhite, "Test '",  title, "'")
-      inc(nof_failed)
-      echo response
-      echo reference
+template run_test_file(title, filename: string, reference: Configuration, expect_error = false) =
+   try:
+      let response = parse_file(filename)
+      if response == reference:
+         styledWriteLine(stdout, styleBright, fgGreen, "[✓] ",
+                        fgWhite, "Test '",  title, "'")
+         inc(nof_passed)
+      else:
+         styledWriteLine(stdout, styleBright, fgRed, "[✗] ",
+                        fgWhite, "Test '",  title, "'")
+         inc(nof_failed)
+         echo response
+         echo reference
+   except ConfigurationParseError as e:
+      if expect_error:
+         styledWriteLine(stdout, styleBright, fgGreen, "[✓] ",
+                        fgWhite, "Test '",  title, "'")
+         inc(nof_passed)
+      else:
+         styledWriteLine(stdout, styleBright, fgRed, "[✗] ",
+                        fgWhite, "Test '",  title, "'")
+         inc(nof_failed)
+         echo e.msg
 
 
 template run_test_find_file(title, stimuli, reference: string) =
@@ -121,17 +132,21 @@ defines = [true, false]
 """, Configuration(), true)
 
 
-run_test_file("Parse from a file", "cfg.toml",
+run_test_file("Parse from a file (trim whitespace)", "cfg.toml",
    new_configuration(@[
       "/path/to/some/directory",
       "/path/to/another/directory",
-      "../a/relative/path"
+      join_path(expand_filename("."), "../a/relative/path")
    ], @[
       "FOO",
       "WIDTH=8",
       "ONES(x) = {(x){1'b1}}"
    ])
 )
+
+
+run_test_file("Parse error: the file does not exist", "foo.toml", Configuration(), true)
+
 
 run_test_find_file("Find '.vls.toml'.", "./", "./.vls/vls.toml")
 
