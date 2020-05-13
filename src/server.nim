@@ -222,14 +222,14 @@ proc handle_notification(s: var LspServer, msg: LspMessage) =
       workspace_changed_configuration(s)
    of "textDocument/didOpen":
       s.cache = new_ident_cache()
-      s.graph_uri = get_str(msg.parameters["textDocument"]["uri"])
+      s.graph_uri = decode_url(get_str(msg.parameters["textDocument"]["uri"]))
       update_configuration(s)
       process_text(s, get_str(msg.parameters["textDocument"]["text"]))
    of "textDocument/didChange":
       # We can read all the changes at array index 0 since we only support the
       # 'full' text synchronization.
       close_graph(s.graph)
-      s.graph_uri = get_str(msg.parameters["textDocument"]["uri"])
+      s.graph_uri = decode_url(get_str(msg.parameters["textDocument"]["uri"]))
       process_text(s, get_str(msg.parameters["contentChanges"][0]["text"]))
    else:
       # Simply drop all other request.
