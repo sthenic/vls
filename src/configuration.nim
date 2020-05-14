@@ -30,7 +30,7 @@ proc `$`*(cfg: Configuration): string =
 
    add(result, "Maximum number of diagnostic messages: ")
    if cfg.max_nof_diagnostics < 0:
-      add(result, "infinite")
+      add(result, "unlimited")
    else:
       add(result, $cfg.max_nof_diagnostics)
 

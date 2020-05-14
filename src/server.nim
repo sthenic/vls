@@ -80,7 +80,14 @@ proc recv(s: LspServer): LspMessage =
 
 
 proc publish_diagnostics(s: LspServer) =
-   let diagnostics = check_syntax(s.graph.root_node, s.graph.locations)
+   var diagnostics = check_syntax(s.graph.root_node, s.graph.locations)
+   # Limit the maximum number of diagnostic messages if required. Negative
+   # values signifies an unlimited number of
+   let limit = s.configuration.max_nof_diagnostics
+   log.debug("Max nof diagnostics is $1", limit)
+   if limit > 0 and len(diagnostics) > limit:
+      log.debug("Limiting the number of diagnostic messages to $1", limit)
+      set_len(diagnostics, limit)
    let parameters = %*{
       "uri": s.graph_uri,
       "diagnostics": diagnostics
