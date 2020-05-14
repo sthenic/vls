@@ -104,8 +104,8 @@ proc process_text(s: var LspServer, text: string) =
 
 proc update_configuration(s: var LspServer) =
    # Search for a configuration file starting at the file uri and walking up to
-   # the root directory. We only parse the contents if it's a new file.
-   # TODO: Create a file watcher.
+   # the root directory. If we find a file but fail to parse it, we fall back to
+   # default values.
    log.debug("Searching for a configuration file.")
    let filename = find_configuration_file(parse_uri(s.graph_uri).path)
    try:
@@ -115,6 +115,7 @@ proc update_configuration(s: var LspServer) =
       log.debug($s.configuration)
    except ConfigurationParseError as e:
       log.error("Failed to parse configuration file: $1", e.msg)
+      init(s.configuration)
 
 
 proc initialize(s: var LspServer, msg: LspMessage) =

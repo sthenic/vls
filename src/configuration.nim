@@ -35,7 +35,7 @@ proc `$`*(cfg: Configuration): string =
       add(result, $cfg.max_nof_diagnostics)
 
 
-proc init(cfg: var Configuration) =
+proc init*(cfg: var Configuration) =
    set_len(cfg.include_paths, 0)
    set_len(cfg.defines, 0)
    cfg.max_nof_diagnostics = -1
