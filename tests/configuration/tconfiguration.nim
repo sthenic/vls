@@ -71,9 +71,10 @@ template run_test_find_file(title, stimuli, reference: string) =
       echo reference
 
 
-proc new_configuration(include_paths, defines: seq[string]): Configuration =
+proc new_configuration(max_nof_diagnostics: int, include_paths, defines: seq[string]): Configuration =
    result.include_paths = include_paths
    result.defines = defines
+   result.max_nof_diagnostics = max_nof_diagnostics
 
 
 run_test("verilog.include_paths", """
@@ -83,7 +84,7 @@ include_paths = [
     "/path/to/another/directory",
     "../a/relative/path"
 ]
-""", new_configuration(@[
+""", new_configuration(-1, @[
     "/path/to/some/directory",
     "/path/to/another/directory",
     "../a/relative/path"
@@ -95,7 +96,7 @@ defines = [
     "FOO",
     "WIDTH=8",
     "ONES(x) = {(x){1'b1}}"
-]""", new_configuration(@[], @[
+]""", new_configuration(-1, @[], @[
     "FOO",
     "WIDTH=8",
     "ONES(x) = {(x){1'b1}}"
@@ -133,7 +134,7 @@ defines = [true, false]
 
 
 run_test_file("Parse from a file (trim whitespace)", "cfg.toml",
-   new_configuration(@[
+   new_configuration(-1, @[
       "/path/to/some/directory",
       "/path/to/another/directory",
       join_path(expand_filename("."), "../a/relative/path")
@@ -149,6 +150,18 @@ run_test_file("Parse error: the file does not exist", "foo.toml", Configuration(
 
 
 run_test_find_file("Find '.vls.toml'.", "./", "./.vls/vls.toml")
+
+
+run_test("vls.max_nof_diagnostics", """
+[vls]
+max_nof_diagnostics = 10
+""", new_configuration(10, @[], @[]))
+
+
+run_test("Parse error: 'vls.max_nof_diagnostics' is not an integer", """
+[vls]
+max_nof_diagnostics = "foo"
+""", Configuration(), true)
 
 
 # Print summary

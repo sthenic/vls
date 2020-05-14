@@ -6,6 +6,7 @@ type
    Configuration* = object
       include_paths*: seq[string]
       defines*: seq[string]
+      max_nof_diagnostics*: int
 
    ConfigurationParseError* = object of ValueError
 
@@ -13,6 +14,31 @@ type
 proc new_configuration_parse_error(msg: string, args: varargs[string, `$`]): ref ConfigurationParseError =
    new result
    result.msg = format(msg, args)
+
+
+proc `$`*(cfg: Configuration): string =
+   const INDENT = 2
+   if len(cfg.include_paths) > 0:
+      add(result, "Include paths:\n")
+   for i, path in cfg.include_paths:
+      add(result, indent(format("$1: $2", i, path), INDENT) & "\n")
+
+   if len(cfg.defines) > 0:
+      add(result, "Defines:\n")
+   for i, define in cfg.defines:
+      add(result, indent(format("$1: $2", i, define), INDENT) & "\n")
+
+   add(result, "Maximum number of diagnostic messages: ")
+   if cfg.max_nof_diagnostics < 0:
+      add(result, "infinite")
+   else:
+      add(result, $cfg.max_nof_diagnostics)
+
+
+proc init(cfg: var Configuration) =
+   set_len(cfg.include_paths, 0)
+   set_len(cfg.defines, 0)
+   cfg.max_nof_diagnostics = -1
 
 
 proc find_configuration_file*(path: string): string =
@@ -37,25 +63,41 @@ template ensure_string(t: TomlValueRef, scope: string) =
       raise new_configuration_parse_error("Expected a string when parsing '$1'.", scope)
 
 
-proc parse(t: TomlValueRef): Configuration =
-   if has_key(t, "verilog"):
-      if has_key(t["verilog"], "include_paths"):
-         let include_paths = t["verilog"]["include_paths"]
-         ensure_array(include_paths, "verilog.include_paths")
-         for val in get_elems(include_paths):
-            ensure_string(val, "verilog.include_paths")
-            add(result.include_paths, strip(get_str(val)))
-      else:
-         set_len(result.include_paths, 0)
+template ensure_int(t: TomlValueRef, scope: string) =
+   if t.kind != TomlValueKind.Int:
+      raise new_configuration_parse_error("Expected an integer when parsing '$1'.", scope)
 
-      if has_key(t["verilog"], "defines"):
-         let defines = t["verilog"]["defines"]
-         ensure_array(defines, "verilog.defines")
-         for val in get_elems(defines):
-            ensure_string(val, "verilog.defines")
-            add(result.defines, get_str(val))
-      else:
-         set_len(result.defines, 0)
+
+proc parse_verilog_table(t: TomlValueRef, cfg: var Configuration) =
+   if has_key(t, "include_paths"):
+      let include_paths = t["include_paths"]
+      ensure_array(include_paths, "verilog.include_paths")
+      for val in get_elems(include_paths):
+         ensure_string(val, "verilog.include_paths")
+         add(cfg.include_paths, strip(get_str(val)))
+
+   if has_key(t, "defines"):
+      let defines = t["defines"]
+      ensure_array(defines, "verilog.defines")
+      for val in get_elems(defines):
+         ensure_string(val, "verilog.defines")
+         add(cfg.defines, get_str(val))
+
+
+proc parse_vls_table(t: TomlValueRef, cfg: var Configuration) =
+   if has_key(t, "max_nof_diagnostics"):
+      let val = t["max_nof_diagnostics"]
+      ensure_int(val, "vls.max_nof_diagnostics")
+      cfg.max_nof_diagnostics = get_int(val)
+
+
+proc parse(t: TomlValueRef): Configuration =
+   init(result)
+   if has_key(t, "verilog"):
+      parse_verilog_table(t["verilog"], result)
+
+   if has_key(t, "vls"):
+      parse_vls_table(t["vls"], result)
 
 
 proc parse_string*(s: string): Configuration =
