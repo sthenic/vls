@@ -31,7 +31,7 @@ This tool is a Verilog IEEE 1364-2005 [language server](https://microsoft.github
 
 ## Configuration
 
-The language server is configured by using a [TOML](https://github.com/toml-lang/toml) file. When a text document is opened and passed to the language server with the `textDocument/didOpen` request, the server looks for a configuration file. The search walks from the directory of the input text file up to the root directory looking for one of the following files (listed in the order of precedence):
+The language server is configured with a [TOML](https://github.com/toml-lang/toml) file. When a text document is opened and passed to the language server with the `textDocument/didOpen` request, before parsing its contents, the server looks for a configuration file. The search process walks from the directory of the input  file up to the root directory looking for one of the following files (listed in the order of precedence):
 
 1. `.vls.toml`
 2. `vls.toml`
@@ -96,4 +96,4 @@ This tool is free software released under the [MIT license](https://opensource.o
 * [vparse](https://github.com/sthenic/vparse)
 
 ## Author
-vls is maintained by [Marcus Eriksson](mailto:marcus.jr.eriksson@gmail.com).
+`vls` is maintained by [Marcus Eriksson](mailto:marcus.jr.eriksson@gmail.com).
