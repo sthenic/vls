@@ -1,0 +1,12 @@
+[verilog]
+include_paths = [
+    "/path/to/some/directory",
+    "    /path/to/another/directory",
+    "../a/relative/path"
+]
+
+defines = [
+    "FOO",
+    "WIDTH=8",
+    "ONES(x) = {(x){1'b1}}"
+]
