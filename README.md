@@ -24,23 +24,10 @@ This tool is a Verilog IEEE 1364-2005 [language server](https://microsoft.github
 - [ ] textDocument/signatureHelp
 - [ ] textDocument/declaration
 - [ ] textDocument/definition
-- [ ] ~~textDocument/typeDefinition~~
-- [ ] ~~textDocument/implementation~~
 - [ ] textDocument/references
 - [ ] textDocument/documentHighlight
-- [ ] ~~textDocument/documentSymbol~~
-- [ ] ~~textDocument/codeAction~~
-- [ ] ~~textDocument/codeLens~~
-- [ ] ~~textDocument/documentLink~~
-- [ ] ~~textDocument/documentColor~~
-- [ ] ~~textDocument/colorPresentation~~
-- [ ] ~~textDocument/formatting~~
-- [ ] ~~textDocument/rangeFormatting~~
-- [ ] ~~textDocument/onTypeFormatting~~
 - [ ] textDocument/rename
 - [ ] textDocument/prepareRename
-- [ ] ~~textDocument/foldingRange~~
-- [ ] ~~textDocument/selectionRange~~
 
 ## Configuration
 
