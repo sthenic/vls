@@ -112,10 +112,7 @@ proc update_configuration(s: var LspServer) =
       s.configuration = configuration.parse_file(filename)
       s.configuration_filename = filename
       log.debug("Parsed configuration file '$1'.", filename)
-      if len(s.configuration.include_paths) > 0:
-         log.debug("Include paths:")
-         for i, path in s.configuration.include_paths:
-            log.debug("Path $1: $2", i, path)
+      log.debug($s.configuration)
    except ConfigurationParseError as e:
       log.error("Failed to parse configuration file: $1", e.msg)
 
