@@ -4,7 +4,7 @@
 # vls
 This tool is a Verilog IEEE 1364-2005 [language server](https://microsoft.github.io/language-server-protocol/) written in [Nim](https://nim-lang.org). The parsing is handled by [vparse](https://github.com/sthenic/vparse).
 
-## Supported Protocol Features
+## Supported protocol features
 
 ### Workspace
 - [ ] workspace/executeCommand
@@ -72,7 +72,7 @@ max_nof_diagnostics = 10
 - `include_paths` is an array of strings expressing the include paths where `vls` should look for externally defined modules and files targeted by `` `include`` directives.
 - `defines` is an array of strings expressing the defines that should be passed to `vls`. The rules follow that of the `-D` option for [vparse](https://github.com/sthenic/vparse). It's possible to specify a macro by using the character `=` to separate the macro name from its body.
 
-## `vls` table
+### `vls` table
 
 - `max_nof_diagnostics` specifies the maximum number of diagnostic messages passed in a `textDocument/publishDiagnostics` notification.
 
