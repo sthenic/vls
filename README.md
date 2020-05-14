@@ -44,55 +44,52 @@ This tool is a Verilog IEEE 1364-2005 [language server](https://microsoft.github
 
 ## Configuration
 
-Configuration is handled through the LSP [workspace configuration](https://microsoft.github.io/language-server-protocol/specifications/specification-current/#workspace_configuration) interface. The client is responsible of notifying `vls` about any changes to the configuration by sending a `workspace/didChangeConfiguration` notification. Upon receiving this notification the server will make a `workspace/configuration` request, fetching the `vls` section from the client.
+The language server is configured by using a [TOML](https://github.com/toml-lang/toml) file. When a text document is opened and passed to the language server with the `textDocument/didOpen` request, the server looks for a configuration file. The search walks from the directory of the input text file up to the root directory looking for one of the following files (listed in the order of precedence):
 
-The `vls` section is a JSON object with the following structure:
-```json
-{
-    "env": {
-        "myDefines": [
-            "FOO",
-            "WIDTH=8",
-            "ONES(x) = {(x){1'b1}}"
-        ],
-    },
-    "configurations": [
-        {
-            "name": "win",
-            "includePaths": [
-                "C:\\path\\to\\some\\directory",
-                "C:\\path\\to\\some\\other\\directory",
-            ],
-            "defines": [
-                "${myDefines}",
-                "WINDOWS_DEFINE"
-            ]
-        },
-        {
-            "name": "linux",
-            "includePaths": [
-                "/path/to/some/directory",
-                "/path/to/some/other/directory"
-            ],
-            "defines": [
-                "${myDefines}",
-                "LINUX_DEFINE"
-            ]
-        }
-    ]
-}
+1. `.vls.toml`
+2. `vls.toml`
+3. `.vls/.vls.toml`
+4. `.vls/vls.toml`
+5. `vls/.vls.toml`
+6. `vls/vls.toml`
+
+In short, the configuration file can have two different names: `.vls.toml` or `vls.toml` and can reside immediately on the ascended path, or inside a directory named: `.vls/` or `vls/`.
+
+### Example
+
+```toml
+[verilog]
+include_paths = [
+    "/path/to/some/directory",
+    "/path/to/another/directory",
+    "../a/relative/path"
+]
+
+defines = [
+    "FOO",
+    "WIDTH=8",
+    "ONES(x) = {(x){1'b1}}"
+]
+
+[vls]
+max_nof_diagnostics = 10
 ```
 
-### Top-level properties
+### Top-level tables
 
-- `env` An array of user-defined variables that will be available for substitution in the configuration objects. Strings and arrays of strings are supported.
-- `configuration` An array of configuration objects, see the section below.
+- The `verilog` table collects language-specific settings.
+- The `vls` table collects settings specific to the language server.
 
-### Configuration properties
+### `verilog` table
 
-- `name` The name of the configuration (case-insensitive). The names `win`, `mac` and `linux` are reserved for the respective platforms and automatically chosen by a server running on one of these platforms. Running `vls` in WSL chooses the `linux` configuration by default.
-- `includePaths` An array of strings expressing the include paths where `vls` should look for externally defined modules and files targeted by `` `include`` directives.
-- `defines` An array of strings expressing the defines that should be passed to `vls`. The rules follow that of the `-D` option for [vparse](https://github.com/sthenic/vparse). It's possible to specify a macro by using the character `=` to separate the macro name from its body.
+- `include_paths` is an array of strings expressing the include paths where `vls` should look for externally defined modules and files targeted by `` `include`` directives.
+- `defines` is an array of strings expressing the defines that should be passed to `vls`. The rules follow that of the `-D` option for [vparse](https://github.com/sthenic/vparse). It's possible to specify a macro by using the character `=` to separate the macro name from its body.
+
+## `vls` table
+
+- `max_nof_diagnostics` specifies the maximum number of diagnostic messages passed in a `textDocument/publishDiagnostics` notification.
+
+In the future, configuration may also be handled through the LSP [workspace configuration](https://microsoft.github.io/language-server-protocol/specifications/specification-current/#workspace_configuration) interface.
 
 ## Documentation
 Coming soon.
