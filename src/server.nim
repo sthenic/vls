@@ -132,6 +132,7 @@ proc initialize(s: var LspServer, msg: LspMessage) =
       s.client_capabilities.diagnostics =
          has_key(msg.parameters["capabilities"]["textDocument"], "publishDiagnostics")
       s.client_capabilities.configuration =
+         has_key(msg.parameters["capabilities"], "workspace") and
          has_key(msg.parameters["capabilities"]["workspace"], "configuration") and
          get_bool(msg.parameters["capabilities"]["workspace"]["configuration"])
 
