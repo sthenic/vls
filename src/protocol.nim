@@ -60,6 +60,7 @@ type
 
 
 const
+   INDENT = 2
    CONTENT_TYPE_UTF8 = "application/vscode-jsonrpc; charset=utf-8"
 
    LspMessageKindToStr: array[LspMessageKind, string] = [
@@ -82,11 +83,11 @@ proc new_lsp_value_error(msg: string, args: varargs[string, `$`]): ref LspValueE
    result.msg = format(msg, args)
 
 
-proc `$`(kind: LspMessageKind): string =
+proc `$`*(kind: LspMessageKind): string =
    result = LspMessageKindToStr[kind]
 
 
-proc `%`(e: LspError): JsonNode =
+proc `%`*(e: LspError): JsonNode =
    result = %*{
       "code": int(e.code),
       "message": e.message
@@ -95,7 +96,7 @@ proc `%`(e: LspError): JsonNode =
       result["data"] = e.data
 
 
-proc `%`(msg: LspMessage): JsonNode =
+proc `%`*(msg: LspMessage): JsonNode =
    case msg.kind
    of MkRequest:
       result = %*{
@@ -126,6 +127,86 @@ proc `%`(msg: LspMessage): JsonNode =
          result["params"] = msg.parameters
    else:
       raise new_lsp_value_error("Unexpected LSP message kind '$1'.", msg.kind)
+
+
+proc detailed_compare(x, y: JsonNode, label: string, indent: int = 0) =
+   # Helper proc to compare two JSON nodes from an LSP message.
+   if x.kind != y.kind:
+      echo format("JSON node $1:", label)
+      echo indent(format("Kind differs for JSON node '$1': $2 != $3.", label, x.kind, y.kind), indent)
+
+   case x.kind
+   of JObject:
+      # Go through the objects, recursively calling detailed_compare for each value.
+      for k, v in pairs(x):
+         if not has_key(y, k):
+            echo indent(format("Expected key '$1' in object '$2'.", k, label), indent)
+         elif y[k].kind != v.kind:
+            echo indent(format("Kind differs for JSON node $1: $2 != $3.", label, x.kind, y.kind), indent)
+         else:
+            detailed_compare(v, y[k], label & "." & k, indent + INDENT)
+   of JArray:
+      # Go through the array, recursively calling detailed_compare for each value.
+      if len(x) != len(y):
+         echo indent(format("Array length mismatch for JSON node '$1': $2 != $3.", label, len(x), len(y)), indent)
+      for i in 0..<len(x):
+         detailed_compare(x[i], y[i], label & "[" & $i & "]", indent + INDENT)
+   else:
+      # Compare the values.
+      if x != y:
+         echo indent(format("Value differs for node $1:", label, x, y), indent)
+         echo indent(format("Got: $1", x), indent + INDENT)
+         echo indent(format("Exp: $1", y), indent + INDENT)
+
+
+proc detailed_compare(x, y: LspError) =
+   if x.code != y.code:
+      echo format("Error code differs: $1 != $2.", x.code, y.code)
+
+   if x.message != y.message:
+      echo format("Message differs: $1 != $2.", x.message, y.message)
+
+   if x.data != nil:
+      if y.data != nil:
+         detailed_compare(x.data, y.data, "error.data", INDENT)
+      else:
+         echo "Expected a 'data' field for LSP error."
+
+
+proc detailed_compare*(x, y: LspMessage) =
+   # Used by the test framework.
+   if x.kind != y.kind:
+      echo format("Kind differs: $1 != $2", x.kind, y.kind)
+      return
+
+   if x.length != y.length:
+      echo format("Length differs: $1 != $2", x.length, y.length)
+      return
+
+   case x.kind
+   of MkRequest:
+      if x.m != y.m:
+         echo format("Method differs: $1 != $2", x.m, y.m)
+      if x.parameters != nil and y.parameters != nil:
+         detailed_compare(x.parameters, y.parameters, "parameters")
+
+   of MkResponseSuccess:
+      if x.result != nil and y.result != nil:
+         detailed_compare(x.result, y.result, "result")
+      else:
+         echo "Expected a 'result' field."
+
+   of MkResponseError:
+      detailed_compare(x.error, y.error)
+
+   of MkNotification:
+      if x.m != y.m:
+         echo format("Method differs: $1 != $2", x.m, y.m)
+      if x.parameters != nil and y.parameters != nil:
+         detailed_compare(x.parameters, y.parameters, "parameters")
+
+   of MkInvalid:
+      discard
 
 
 proc len(msg: LspMessage): int =

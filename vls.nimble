@@ -23,12 +23,18 @@ task dinstall, "install":
 task test, "Run the test suite":
    exec("nimble protocoltests")
    exec("nimble configurationtests")
+   exec("nimble featuretests")
 
 
 task protocoltests, "Run the protocol test suite":
    with_dir("tests/protocol"):
       exec("nim c --hints:off -r trecv")
       exec("nim c --hints:off -r tsend")
+
+
+task featuretests, "Run the language feature test suite":
+   with_dir("tests/features"):
+      exec("nim c --hints:off -r tsyntax")
 
 
 task configurationtests, "Run the TOML configuration test suite":

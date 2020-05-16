@@ -1,0 +1,4 @@
+module foo();
+   reg
+
+endmodule
