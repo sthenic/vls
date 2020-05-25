@@ -44,9 +44,15 @@ proc init*(cfg: var Configuration) =
 proc find_configuration_file*(path: string): string =
    const FILENAMES = [".vls.toml", "vls.toml", ".vls/.vls.toml", ".vls/vls.toml",
                       "vls/.vls.toml", "vls/vls.toml"]
+   let expanded_path =
+      try:
+         expand_filename(path)
+      except OSError:
+         return ""
+
    # Walk from the provided path up to the root directory, searching for a
    # configuration file.
-   for p in parent_dirs(expand_filename(path), false, true):
+   for p in parent_dirs(expanded_path, false, true):
       for filename in FILENAMES:
          let tmp = p / filename
          if file_exists(tmp):
