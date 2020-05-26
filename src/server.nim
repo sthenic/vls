@@ -42,6 +42,16 @@ type
       force_diagnostics*: bool
 
 
+template get_path_from_uri(uri: string): string =
+   # On Windows, the uri will look like "file:///c:/path/to/some/file" and the
+   # path part is "/c:/path/to/some/file". The leading '/' needs to be removed
+   # in order for the path to be valid.
+   when defined(windows):
+      strip(parse_uri(uri).path, leading = true, trailing = false, {'/'})
+   else:
+      parse_uri(uri).path
+
+
 proc init(cc: var LspClientCapabilities) =
    cc.diagnostics = false
    cc.configuration = false
@@ -100,8 +110,7 @@ proc process_text(s: var LspServer, text: string) =
    ## Process the ``text``.
    log.debug("Processing text from $1.", s.graph_uri)
    let ss = new_string_stream(text)
-   # FIXME: Include paths, defines etc.
-   open_graph(s.graph, s.cache, ss, parse_uri(s.graph_uri).path,
+   open_graph(s.graph, s.cache, ss, get_path_from_uri(s.graph_uri),
               s.configuration.include_paths, s.configuration.defines)
    close(ss)
 
@@ -114,7 +123,7 @@ proc update_configuration(s: var LspServer) =
    # the root directory. If we find a file but fail to parse it, we fall back to
    # default values.
    log.debug("Searching for a configuration file.")
-   let filename = find_configuration_file(parse_uri(s.graph_uri).path)
+   let filename = find_configuration_file(get_path_from_uri(s.graph_uri))
    try:
       s.configuration = configuration.parse_file(filename)
       s.configuration_filename = filename
