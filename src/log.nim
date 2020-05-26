@@ -1,4 +1,6 @@
 import strutils
+import streams
+import os
 
 when not defined(windows):
    proc syslog(priority: cint, msg: cstring) {.importc, header: "<syslog.h>".}
@@ -13,14 +15,11 @@ const
 
 
 type LogTarget* = enum
-   STDERR, SYSLOG
+   STDERR, SYSLOG, HOMEDIR
 
 
 var log_target: LogTarget = STDERR
-
-
-proc set_log_target*(target: LogTarget) =
-   log_target = target
+var log_stream: FileStream
 
 
 template write_stderr(header, msg: string, args: varargs[string, `$`]) =
@@ -28,6 +27,29 @@ template write_stderr(header, msg: string, args: varargs[string, `$`]) =
    write(stderr, header & msg_split[0] & "\n")
    for i in 1..<len(msg_split):
       write(stderr, "         " & msg_split[i] & "\n")
+
+proc set_log_target*(target: LogTarget) =
+   log_target = target
+   if target == HOMEDIR:
+      let path = get_home_dir() / ".vls"
+      try:
+         create_dir(path)
+         let filename = path / "vls.log"
+         log_stream = new_file_stream(filename, fmWrite)
+         if log_stream == nil:
+            write_stderr("Failed to open file '$1'. Log messages will be written to stderr.", path)
+            log_target = STDERR
+      except OSError:
+         write_stderr("Failed to create path '$1'. Log messages will be written to stderr.", path)
+         log_target = STDERR
+
+
+template write_homedir(header, msg: string, args: varargs[string, `$`]) =
+   let msg_split = split_lines(format(msg, args))
+   write(log_stream, header & msg_split[0] & "\n")
+   for i in 1..<len(msg_split):
+      write(log_stream, "         " & msg_split[i] & "\n")
+   flush(log_stream)
 
 
 template write_syslog(level: cint, msg: string, args: varargs[string, `$`]) =
@@ -37,12 +59,19 @@ template write_syslog(level: cint, msg: string, args: varargs[string, `$`]) =
 
 template write(level: cint, header, msg: string, args: varargs[string, `$`]) =
    when defined(windows):
-      write_stderr(header, msg, args)
-   else:
-      if log_target == SYSLOG:
-         write_syslog(level, msg, args)
-      else:
+      case log_target
+      of STDERR, SYSLOG:
          write_stderr(header, msg, args)
+      of HOMEDIR:
+         write_homedir(header, msg, args)
+   else:
+      case log_target
+      of STDERR:
+         write_stderr(header, msg, args)
+      of SYSLOG:
+         write_syslog(level, msg, args)
+      of HOMEDIR:
+         write_homedir(header, msg, args)
 
 
 template info*(msg: string, args: varargs[string, `$`]) =
