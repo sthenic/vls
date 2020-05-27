@@ -78,6 +78,44 @@ max_nof_diagnostics = 10
 
 In the future, configuration may also be handled through the LSP [workspace configuration](https://microsoft.github.io/language-server-protocol/specifications/specification-current/#workspace_configuration) interface.
 
+
+## Editor integration
+
+### vscode
+
+Install the extension [vls-vscode](https://github.com/sthenic/vls-vscode).
+
+### vim-lsp
+
+https://github.com/prabirshrestha/vim-lsp
+
+    augroup vim_lsp_vls
+      autocmd!
+      autocmd User lsp_setup call lsp#register_server(
+            \ {
+            \ 'name': 'vls',
+            \ 'cmd': {server_info->['vls', '--force-diagnostics']},
+            \ 'whitelist': ['verilog'],
+            \ })
+    augroup END
+
+### vim-lsc
+
+https://github.com/natebosch/vim-lsc
+
+    let g:lsc_server_commands['verilog'] = 'vls --force-diagnostics'
+
+
+### nvim-lsp
+
+https://github.com/hekwall/nvim-lsp
+
+    lua <<EOF
+      local nvim_lsp = require 'nvim_lsp'
+      local util = require 'nvim_lsp/util'
+      nvim_lsp.vls.setup {}
+    EOF
+
 ## Documentation
 Coming soon.
 
