@@ -2,8 +2,10 @@ import strutils
 import streams
 import os
 
+
 when not defined(windows):
    proc syslog(priority: cint, msg: cstring) {.importc, header: "<syslog.h>".}
+
 
 const
    LOG_ERR = cint(3)
@@ -27,6 +29,7 @@ template write_stderr(header, msg: string, args: varargs[string, `$`]) =
    write(stderr, header & msg_split[0] & "\n")
    for i in 1..<len(msg_split):
       write(stderr, "         " & msg_split[i] & "\n")
+
 
 proc set_log_target*(target: LogTarget) =
    log_target = target

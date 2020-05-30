@@ -46,7 +46,7 @@ run_test("textDocument/didOpen: src0.v",
    new_lsp_notification(282, "textDocument/publishDiagnostics", %*{
       "uri": expand_filename(src0_path),
       "diagnostics": [
-         new_diagnostic(new_position(0, 0), new_position(0, 0), ERROR,
+         new_lsp_diagnostic(new_lsp_position(0, 0), new_lsp_position(0, 0), ERROR,
             "1:1: Unexpected token 'mod'."
          )
       ]
@@ -68,16 +68,16 @@ run_test("textDocument/didOpen: src1.v",
    new_lsp_notification(726, "textDocument/publishDiagnostics", %*{
       "uri": expand_filename(src1_path),
       "diagnostics": [
-         new_diagnostic(new_position(3, 0), new_position(3, 0), ERROR,
+         new_lsp_diagnostic(new_lsp_position(3, 0), new_lsp_position(3, 0), ERROR,
             "4:1: Expected token Symbol, got 'endmodule'."
          ),
-         new_diagnostic(new_position(4, 0), new_position(4, 0), ERROR,
+         new_lsp_diagnostic(new_lsp_position(4, 0), new_lsp_position(4, 0), ERROR,
             "5:1: Expected token Symbol, got '[EOF]'."
          ),
-         new_diagnostic(new_position(4, 0), new_position(4, 0), ERROR,
+         new_lsp_diagnostic(new_lsp_position(4, 0), new_lsp_position(4, 0), ERROR,
             "5:1: Expected token ';', got '[EOF]'."
          ),
-         new_diagnostic(new_position(4, 0), new_position(4, 0), ERROR,
+         new_lsp_diagnostic(new_lsp_position(4, 0), new_lsp_position(4, 0), ERROR,
             "5:1: Expected token 'endmodule', got '[EOF]'."
          )
       ]

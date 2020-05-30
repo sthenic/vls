@@ -3,11 +3,11 @@ import strutils
 import vparse
 import ./diagnostic
 
-proc check_syntax*(n: PNode, locs: PLocations): seq[Diagnostic] =
+proc check_syntax*(n: PNode, locs: PLocations): seq[LspDiagnostic] =
    case n.kind
    of {NkTokenError, NkCritical}:
       # Create a diagnostic message representing the error node.
-      var start: Position
+      var start: LspPosition
       var message = ""
       if n.loc.file == 0:
          # A zero-valued file index is invalid (and unexpected).
@@ -16,7 +16,7 @@ proc check_syntax*(n: PNode, locs: PLocations): seq[Diagnostic] =
          # The error node originates in the current file. Put the diagnostic
          # message at the location in the buffer.
          add(message, format("$1:$2: ", n.loc.line, n.loc.col + 1))
-         start = new_position(int(n.loc.line - 1), int(n.loc.col))
+         start = new_lsp_position(int(n.loc.line - 1), int(n.loc.col))
       elif n.loc.file < 0:
          # The error node has been created as a result of a macro expansion.
          # That means that the error node has a virtual location that cannot be
@@ -30,8 +30,8 @@ proc check_syntax*(n: PNode, locs: PLocations): seq[Diagnostic] =
             if map.expansion_loc.file > 0:
                # We've fould the physical location, the search is complete.
                add(inverted_macro_trace, format("In expansion of `$1\n", map.name))
-               start = new_position(int(map.expansion_loc.line - 1),
-                                    int(map.expansion_loc.col))
+               start = new_lsp_position(int(map.expansion_loc.line - 1),
+                                        int(map.expansion_loc.col))
                break
             elif map.expansion_loc.file == 0:
                # A zero-valued file index is invalid (and unexpected).
@@ -61,7 +61,7 @@ proc check_syntax*(n: PNode, locs: PLocations): seq[Diagnostic] =
                # file. Set the start location to the location reported by the map.
                add(inverted_file_trace, format("In file $1\n", map.filename))
                add(message, format("$1:$2: ", n.loc.line, n.loc.col + 1))
-               start = new_position(int(map.loc.line - 1), int(map.loc.col))
+               start = new_lsp_position(int(map.loc.line - 1), int(map.loc.col))
                break
             elif map.loc.file == 0:
                # A zero-valued file index is invalid (and unexpected).
@@ -82,7 +82,7 @@ proc check_syntax*(n: PNode, locs: PLocations): seq[Diagnostic] =
       if len(n.eraw) > 0:
          add(message, " " & n.eraw)
 
-      result = @[new_diagnostic(start, stop, ERROR, message)]
+      result = @[new_lsp_diagnostic(start, stop, ERROR, message)]
 
    of PrimitiveTypes - {NkTokenError, NkCritical}:
       # Don't generate a diagnostic message for other primitive types
@@ -92,3 +92,7 @@ proc check_syntax*(n: PNode, locs: PLocations): seq[Diagnostic] =
    else:
       for s in n.sons:
          add(result, check_syntax(s, locs))
+
+
+proc find_declaration*(n: PNode, locs: PLocations): seq[LspLocation] =
+   discard

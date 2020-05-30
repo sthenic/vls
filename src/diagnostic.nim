@@ -1,51 +1,56 @@
 import json
 
 type
-   Position* = object
+   LspPosition* = object
       # Lines and columns are zero-based.
       line*, col*: int
 
-   Range* = object
-      start*, stop*: Position
+   LspRange* = object
+      start*, stop*: LspPosition
 
-   Severity* = enum
+   LspLocation* = object
+      uri*: string
+      rng*: LspRange
+
+   LspSeverity* = enum
       ERROR = 1
       WARNING = 2
       INFO = 3
       HINT = 4
 
-   Diagnostic* = object
-      rng*: Range
-      severity*: Severity
+   LspDiagnostic* = object
+      rng*: LspRange
+      severity*: LspSeverity
       message*: string
 
 
-proc new_position*(line, col: int): Position =
+proc new_lsp_position*(line, col: int): LspPosition =
    result.line = line
    result.col = col
 
 
-proc new_diagnostic*(start, stop: Position, severity: Severity, message: string): Diagnostic =
-   result.rng = Range(start: start, stop: stop)
+proc new_lsp_diagnostic*(start, stop: LspPosition, severity: LspSeverity,
+                         message: string): LspDiagnostic =
+   result.rng = LspRange(start: start, stop: stop)
    result.severity = severity
    result.message = message
 
 
-proc `%`*(p: Position): JsonNode =
+proc `%`*(p: LspPosition): JsonNode =
    result = %*{
       "line": p.line,
       "character": p.col
    }
 
 
-proc `%`*(r: Range): JsonNode =
+proc `%`*(r: LspRange): JsonNode =
    result = %*{
       "start": r.start,
       "end": r.stop
    }
 
 
-proc `%`*(d: Diagnostic): JsonNode =
+proc `%`*(d: LspDiagnostic): JsonNode =
    result = %*{
       "range": d.rng,
       "severity": int(d.severity),
