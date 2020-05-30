@@ -2,6 +2,7 @@ import strutils
 
 import vparse
 import ./diagnostic
+import ./log
 
 proc check_syntax*(n: PNode, locs: PLocations): seq[LspDiagnostic] =
    case n.kind
@@ -94,5 +95,44 @@ proc check_syntax*(n: PNode, locs: PLocations): seq[LspDiagnostic] =
          add(result, check_syntax(s, locs))
 
 
-proc find_declaration*(n: PNode, locs: PLocations): seq[LspLocation] =
+proc find_identifier_at(n: PNode, loc: Location): PNode =
+   case n.kind
+   of IdentifierTypes:
+      # If the node is an identifier type, check if the location is pointing to
+      # anywhere within the identifier. Otherwise, we skip it.
+      if loc.line == n.loc.line and loc.col >= n.loc.col and
+         loc.col <= (n.loc.col + len(n.identifier.s) - 1):
+         result = n
+      else:
+         result = nil
+   of PrimitiveTypes - IdentifierTypes:
+      result = nil
+   else:
+      # FIXME: Perhaps we can improve the search here? Skipping entire subtrees
+      #        depending on the location of the first node within?
+      for i, s in n.sons:
+         result = find_identifier_at(s, loc)
+         if not is_nil(result):
+            break
+
+
+proc find_declaration_of(n: PNode, identifier: PNode): PNode =
+   ## Find the AST node declaring ``identifier`` (which is assumed to be in the
+   ## set IdentifierTypes).
+   # FIXME: Implement
    discard
+
+
+proc find_declaration*(n: PNode, locs: PLocations, line, col: int): seq[LspLocation] =
+   ## Find where the identifier at ``pos`` is declared. This proc returns a
+   ## sequence of LSP locations (which may be empty or just include one element).
+
+   # We begin by finding the identifier at the input position, keeping in mind
+   # that the position doesn't have point to the start of the token. The return
+   # value is nil if there's no identifier at the target location.
+   let identifier = find_identifier_at(n, new_location(1, line, col))
+   if is_nil(identifier):
+      return
+
+   # Now that we've found the identifier, we look for the matching declaration.
+   log.info("Found identifier $1", pretty(identifier))
