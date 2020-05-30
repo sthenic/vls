@@ -35,6 +35,7 @@ task protocoltests, "Run the protocol test suite":
 task featuretests, "Run the language feature test suite":
    with_dir("tests/features"):
       exec("nim c --hints:off -r tsyntax")
+      exec("nim c --hints:off -r tdeclaration")
 
 
 task configurationtests, "Run the TOML configuration test suite":

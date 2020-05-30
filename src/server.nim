@@ -70,8 +70,8 @@ proc open*(s: var LspServer, ifs, ofs : Stream) =
    # The syslog facilities are only available on Linux and macOS. If the server
    # is compiled in release mode and we're not on Windows, we redirect the log
    # messages to syslog. Otherwise, log messages are written to stderr.
-   if defined(release):
-      set_log_target(HOMEDIR)
+   # if defined(release):
+   set_log_target(HOMEDIR)
    log.debug("Opened server.")
 
 
@@ -152,7 +152,8 @@ proc initialize(s: var LspServer, msg: LspMessage) =
          "version": VERSION
       }
       result["capabilities"] = %*{
-         "textDocumentSync": 1
+         "textDocumentSync": 1,
+         "declarationProvider": true
       }
       send(s, new_lsp_response(msg.id, result))
       s.is_initialized = true
@@ -187,6 +188,14 @@ proc handle_request(s: var LspServer, msg: LspMessage) =
    case msg.m
    of "shutdown":
       shutdown(s, msg)
+   of "textDocument/declaration":
+      let line = get_int(msg.parameters["position"]["line"])
+      let col = get_int(msg.parameters["position"]["character"])
+      let locations = find_declaration(s.graph, line + 1, col)
+      if len(locations) > 0:
+         send(s, new_lsp_response(msg.id, %locations))
+      else:
+         send(s, new_lsp_response(msg.id, new_jnull()))
    else:
       let str = format("Unsupported method '$1'.", msg.m)
       send(s, new_lsp_response(msg.id, RPC_INVALID_REQUEST, str, nil))

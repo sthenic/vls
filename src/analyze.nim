@@ -110,29 +110,52 @@ proc find_identifier_at(n: PNode, loc: Location): PNode =
    else:
       # FIXME: Perhaps we can improve the search here? Skipping entire subtrees
       #        depending on the location of the first node within?
-      for i, s in n.sons:
+      for s in n.sons:
          result = find_identifier_at(s, loc)
          if not is_nil(result):
             break
 
 
-proc find_declaration_of(n: PNode, identifier: PNode): PNode =
+proc find_declaration_of(n: PNode, identifier: PIdentifier): PNode =
    ## Find the AST node declaring ``identifier`` (which is assumed to be in the
    ## set IdentifierTypes).
-   # FIXME: Implement
-   discard
+   # FIXME: Implement remaining declaration node types.
+   result = nil
+   case n.kind
+   of NkPortDecl:
+      for s in n.sons:
+         if s.kind == NkPortIdentifier and s.identifier.s == identifier.s:
+            result = s
+            # FIXME: Maybe don't break here to find all declarations?
+            break
+   of PrimitiveTypes:
+      discard
+   else:
+      for s in n.sons:
+         result = find_declaration_of(s, identifier)
+         if not is_nil(result):
+            break
 
 
-proc find_declaration*(n: PNode, locs: PLocations, line, col: int): seq[LspLocation] =
+proc find_declaration*(g: Graph, line, col: int): seq[LspLocation] =
    ## Find where the identifier at ``pos`` is declared. This proc returns a
    ## sequence of LSP locations (which may be empty or just include one element).
 
    # We begin by finding the identifier at the input position, keeping in mind
    # that the position doesn't have point to the start of the token. The return
    # value is nil if there's no identifier at the target location.
-   let identifier = find_identifier_at(n, new_location(1, line, col))
+   let identifier = find_identifier_at(g.root_node, new_location(1, line, col))
    if is_nil(identifier):
       return
 
    # Now that we've found the identifier, we look for the matching declaration.
-   log.info("Found identifier $1", pretty(identifier))
+   let declaration = find_declaration_of(g.root_node, identifier.identifier)
+   if is_nil(declaration):
+      return
+
+   let declaration_uri = g.locations.file_maps[declaration.loc.file - 1].filename
+   let declaration_line = declaration.loc.line - 1
+   let declaration_col = declaration.loc.col
+   add(result, new_lsp_location(declaration_uri, int(declaration_line), int(declaration_col)))
+   log.info($result)
+

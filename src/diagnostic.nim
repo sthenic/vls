@@ -29,6 +29,12 @@ proc new_lsp_position*(line, col: int): LspPosition =
    result.col = col
 
 
+proc new_lsp_location*(uri: string, line, col: int): LspLocation =
+   let pos = new_lsp_position(line, col)
+   result.uri = uri
+   result.rng = LspRange(start: pos, stop: pos)
+
+
 proc new_lsp_diagnostic*(start, stop: LspPosition, severity: LspSeverity,
                          message: string): LspDiagnostic =
    result.rng = LspRange(start: start, stop: stop)
@@ -55,4 +61,11 @@ proc `%`*(d: LspDiagnostic): JsonNode =
       "range": d.rng,
       "severity": int(d.severity),
       "message": d.message
+   }
+
+
+proc `%`*(l: LspLocation): JsonNode =
+   result = %*{
+      "uri": l.uri,
+      "range": l.rng
    }

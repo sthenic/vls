@@ -5,7 +5,6 @@ import osproc
 import json
 
 import ../../src/protocol
-import ../../src/diagnostic
 import ./bootstrap
 
 var nof_passed = 0
@@ -46,24 +45,23 @@ template run_test(title: string, stimuli, reference: LspMessage) =
       detailed_compare(response, reference)
 
 
-run_test("textDocument/declaration: src2.v",
+run_test("textDocument/declaration: src2.v, port declaration",
    new_lsp_request(0, "textDocument/declaration", %*{
       "textDocument": {
          "uri": expand_filename(src2_path),
       },
       "position": {
-         "line": 22,
-         "character": 21
+         "line": 21,
+         "character": 22
       }
    }),
-   new_lsp_response(0, 282, %*{
+   new_lsp_response(178, 0, %*[{
       "uri": expand_filename(src2_path),
-      "diagnostics": [
-         new_lsp_diagnostic(new_lsp_position(0, 0), new_lsp_position(0, 0), ERROR,
-            "1:1: Unexpected token 'mod'."
-         )
-      ]
-   })
+      "range": {
+         "start": {"line": 7, "character": 15},
+         "end" : {"line": 7, "character": 15}
+      }
+   }])
 )
 
 # Shut down the server.
