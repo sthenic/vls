@@ -4,3 +4,4 @@ tests/protocol/trecv
 tests/protocol/tsend
 tests/configuration/tconfiguration
 tests/features/tsyntax
+tests/features/tdeclaration
