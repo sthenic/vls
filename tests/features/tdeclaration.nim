@@ -141,6 +141,25 @@ run_test("textDocument/declaration: integer",
    }])
 )
 
+run_test("textDocument/declaration: net (wire)",
+   new_lsp_request(3, "textDocument/declaration", %*{
+      "textDocument": {
+         "uri": expand_filename(src2_path),
+      },
+      "position": {
+         "line": 33,
+         "character": 16
+      }
+   }),
+   new_lsp_response(178, 3, %*[{
+      "uri": expand_filename(src2_path),
+      "range": {
+         "start": {"line": 14, "character": 9},
+         "end" : {"line": 14, "character": 9}
+      }
+   }])
+)
+
 # Shut down the server.
 shutdown(ifs, ofs)
 

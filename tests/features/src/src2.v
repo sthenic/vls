@@ -12,7 +12,7 @@ module mymodule #(
     if (WIDTH == 0)
         ERROR_WIDTH_IS_BAD_VALUE();
 
-    wire mytemp;
+    wire my_wire;
     reg reg_default = 1'b0;
     reg reg_no_default;
     reg reg_packed[7:0];
@@ -31,10 +31,12 @@ module mymodule #(
         end
     end
 
-   initial begin
-       an_empty_task();
-   end
+    assign my_wire = reg_default;
 
-   reg thing = 1'b0;
+    initial begin
+        an_empty_task();
+    end
+
+    reg thing = 1'b0;
 
 endmodule

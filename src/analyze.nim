@@ -128,7 +128,7 @@ proc find_declaration_of(n: PNode, identifier: PIdentifier): PNode =
             result = s
             # FIXME: Maybe don't break here to find all declarations?
             break
-   of NkRegDecl, NkIntegerDecl, NkRealDecl, NkRealtimeDecl, NkTimeDecl:
+   of NkRegDecl, NkIntegerDecl, NkRealDecl, NkRealtimeDecl, NkTimeDecl, NkNetDecl:
       for s in n.sons:
          case s.kind
          of NkArrayIdentifer, NkAssignment:
@@ -141,9 +141,7 @@ proc find_declaration_of(n: PNode, identifier: PIdentifier): PNode =
                result = s
                break
          else:
-            # Unexpected
             discard
-
    of PrimitiveTypes:
       discard
    else:
@@ -173,4 +171,3 @@ proc find_declaration*(g: Graph, line, col: int): seq[LspLocation] =
    let declaration_line = declaration.loc.line - 1
    let declaration_col = declaration.loc.col
    add(result, new_lsp_location(declaration_uri, int(declaration_line), int(declaration_col)))
-
