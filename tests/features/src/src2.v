@@ -53,7 +53,10 @@ module mymodule #(
 
     genvar k;
 
-    reg reg_individual_bits = 3'b000;
+    localparam integer foo = 2, bar = 90;
+    parameter [2:0] ABC = 3'd7;
+
+    reg [2:0] reg_individual_bits = ABC;
     generate
     for (k = 0; k < 3; k = k + 1) begin
         always @(posedge clk_i) begin

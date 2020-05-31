@@ -204,7 +204,7 @@ run_test("textDocument/declaration: genvar",
          "uri": expand_filename(src2_path),
       },
       "position": {
-         "line": 57,
+         "line": 60,
          "character": 27
       }
    }),
@@ -213,6 +213,63 @@ run_test("textDocument/declaration: genvar",
       "range": {
          "start": {"line": 53, "character": 11},
          "end" : {"line": 53, "character": 11}
+      }
+   }])
+)
+
+run_test("textDocument/declaration: localparam (1)",
+   new_lsp_request(9, "textDocument/declaration", %*{
+      "textDocument": {
+         "uri": expand_filename(src2_path),
+      },
+      "position": {
+         "line": 55,
+         "character": 24
+      }
+   }),
+   new_lsp_response(180, 9, %*[{
+      "uri": expand_filename(src2_path),
+      "range": {
+         "start": {"line": 55, "character": 23},
+         "end" : {"line": 55, "character": 23}
+      }
+   }])
+)
+
+run_test("textDocument/declaration: localparam (2)",
+   new_lsp_request(9, "textDocument/declaration", %*{
+      "textDocument": {
+         "uri": expand_filename(src2_path),
+      },
+      "position": {
+         "line": 55,
+         "character": 34
+      }
+   }),
+   new_lsp_response(180, 9, %*[{
+      "uri": expand_filename(src2_path),
+      "range": {
+         "start": {"line": 55, "character": 32},
+         "end" : {"line": 55, "character": 32}
+      }
+   }])
+)
+
+run_test("textDocument/declaration: parameter",
+   new_lsp_request(9, "textDocument/declaration", %*{
+      "textDocument": {
+         "uri": expand_filename(src2_path),
+      },
+      "position": {
+         "line": 58,
+         "character": 36
+      }
+   }),
+   new_lsp_response(180, 9, %*[{
+      "uri": expand_filename(src2_path),
+      "range": {
+         "start": {"line": 56, "character": 20},
+         "end" : {"line": 56, "character": 20}
       }
    }])
 )
