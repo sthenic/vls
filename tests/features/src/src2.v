@@ -69,4 +69,6 @@ module mymodule #(
     end
     endgenerate
 
+    defparam ABC = 6;
+
 endmodule

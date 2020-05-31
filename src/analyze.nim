@@ -128,6 +128,7 @@ proc find_declaration_of(n: PNode, identifier: PIdentifier): PNode =
             result = s
             # FIXME: Maybe don't break here to find all declarations?
             break
+
    of NkRegDecl, NkIntegerDecl, NkRealDecl, NkRealtimeDecl, NkTimeDecl, NkNetDecl:
       for s in n.sons:
          case s.kind
@@ -142,6 +143,7 @@ proc find_declaration_of(n: PNode, identifier: PIdentifier): PNode =
                break
          else:
             discard
+
    of NkTaskDecl, NkFunctionDecl, NkGenvarDecl:
       for s in n.sons:
          case s.kind
@@ -151,6 +153,7 @@ proc find_declaration_of(n: PNode, identifier: PIdentifier): PNode =
                break
          else:
             discard
+
    of NkParameterDecl, NkLocalparamDecl:
       for s in n.sons:
          # The first son is expected to be the identifier when we encounter an
@@ -163,8 +166,15 @@ proc find_declaration_of(n: PNode, identifier: PIdentifier): PNode =
             result = s
             break
 
+   of NkDefparamDecl:
+      # Defparam declarations specifically targets an existing parameter and
+      # changes its value. Looking up a declaration should never lead to this
+      # node.
+      discard
+
    of PrimitiveTypes:
       discard
+
    else:
       for s in n.sons:
          result = find_declaration_of(s, identifier)
