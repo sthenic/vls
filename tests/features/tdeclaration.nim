@@ -45,7 +45,7 @@ template run_test(title: string, stimuli, reference: LspMessage) =
       detailed_compare(response, reference)
 
 
-run_test("textDocument/declaration: src2.v, port declaration",
+run_test("textDocument/declaration: port declaration",
    new_lsp_request(0, "textDocument/declaration", %*{
       "textDocument": {
          "uri": expand_filename(src2_path),

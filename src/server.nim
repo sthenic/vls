@@ -170,6 +170,16 @@ proc shutdown(s: var LspServer, msg: LspMessage) =
    send(s, new_lsp_response(msg.id, new_jnull()))
 
 
+proc declaration(s: LspServer, msg: LspMessage) =
+   let line = get_int(msg.parameters["position"]["line"])
+   let col = get_int(msg.parameters["position"]["character"])
+   let locations = find_declaration(s.graph, line + 1, col)
+   if len(locations) > 0:
+      send(s, new_lsp_response(msg.id, %locations))
+   else:
+      send(s, new_lsp_response(msg.id, new_jnull()))
+
+
 proc handle_request(s: var LspServer, msg: LspMessage) =
    # If the server is shut down we respond to every request with an error.
    # Otherwise, unless the server is initialized, we only respond to the
@@ -189,13 +199,7 @@ proc handle_request(s: var LspServer, msg: LspMessage) =
    of "shutdown":
       shutdown(s, msg)
    of "textDocument/declaration":
-      let line = get_int(msg.parameters["position"]["line"])
-      let col = get_int(msg.parameters["position"]["character"])
-      let locations = find_declaration(s.graph, line + 1, col)
-      if len(locations) > 0:
-         send(s, new_lsp_response(msg.id, %locations))
-      else:
-         send(s, new_lsp_response(msg.id, new_jnull()))
+      declaration(s, msg)
    else:
       let str = format("Unsupported method '$1'.", msg.m)
       send(s, new_lsp_response(msg.id, RPC_INVALID_REQUEST, str, nil))
