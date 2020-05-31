@@ -79,3 +79,14 @@ module mymodule #(
     end
 
 endmodule
+
+module tb_mymodule();
+    mymodule #(
+        .WIDTH (2)
+    ) dut (
+        .clk_i(),
+        .rst_i(),
+        .data_i(),
+        .data_o()
+    );
+endmodule

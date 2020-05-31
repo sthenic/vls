@@ -350,6 +350,25 @@ run_test("textDocument/declaration: event (array)",
    }])
 )
 
+run_test("textDocument/declaration: module",
+   new_lsp_request(15, "textDocument/declaration", %*{
+      "textDocument": {
+         "uri": expand_filename(src2_path),
+      },
+      "position": {
+         "line": 83,
+         "character": 9
+      }
+   }),
+   new_lsp_response(177, 15, %*[{
+      "uri": expand_filename(src2_path),
+      "range": {
+         "start": {"line": 0, "character": 7},
+         "end" : {"line": 0, "character": 7}
+      }
+   }])
+)
+
 # Shut down the server.
 shutdown(ifs, ofs)
 

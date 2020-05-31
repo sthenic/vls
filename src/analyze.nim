@@ -119,7 +119,9 @@ proc find_identifier_at(n: PNode, loc: Location): PNode =
 proc find_declaration_of(n: PNode, identifier: PIdentifier): PNode =
    ## Find the AST node declaring ``identifier`` (which is assumed to be in the
    ## set IdentifierTypes).
-   # FIXME: Implement remaining declaration node types.
+   # TODO: Should we just look for any IdentifierTypes within Declaration types
+   #       instead? Assuming nothing about the syntax and making the code below
+   #       more compact?
    result = nil
    case n.kind
    of NkPortDecl:
@@ -183,6 +185,18 @@ proc find_declaration_of(n: PNode, identifier: PIdentifier): PNode =
          else:
             discard
 
+   of NkModuleDecl:
+      # Module declarations are special, we have to continue searching the
+      # subtree like the else branch.
+      # FIXME: Search through the include paths as well.
+      for s in n.sons:
+         if s.kind == NkModuleIdentifier and s.identifier.s == identifier.s:
+            result = s
+            break
+         else:
+            result = find_declaration_of(s, identifier)
+            if not is_nil(result):
+               break
 
    of NkDefparamDecl:
       # Defparam declarations specifically targets an existing parameter and
