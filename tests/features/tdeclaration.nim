@@ -45,21 +45,98 @@ template run_test(title: string, stimuli, reference: LspMessage) =
       detailed_compare(response, reference)
 
 
-run_test("textDocument/declaration: port declaration",
+run_test("textDocument/declaration: port",
    new_lsp_request(0, "textDocument/declaration", %*{
       "textDocument": {
          "uri": expand_filename(src2_path),
       },
       "position": {
-         "line": 21,
+         "line": 20,
          "character": 22
       }
    }),
    new_lsp_response(178, 0, %*[{
       "uri": expand_filename(src2_path),
       "range": {
-         "start": {"line": 7, "character": 15},
-         "end" : {"line": 7, "character": 15}
+         "start": {"line": 4, "character": 15},
+         "end" : {"line": 4, "character": 15}
+      }
+   }])
+)
+
+
+run_test("textDocument/declaration: reg",
+   new_lsp_request(1, "textDocument/declaration", %*{
+      "textDocument": {
+         "uri": expand_filename(src2_path),
+      },
+      "position": {
+         "line": 28,
+         "character": 17
+      }
+   }),
+   new_lsp_response(178, 1, %*[{
+      "uri": expand_filename(src2_path),
+      "range": {
+         "start": {"line": 16, "character": 8},
+         "end" : {"line": 16, "character": 8}
+      }
+   }])
+)
+
+run_test("textDocument/declaration: reg (assignment)",
+   new_lsp_request(2, "textDocument/declaration", %*{
+      "textDocument": {
+         "uri": expand_filename(src2_path),
+      },
+      "position": {
+         "line": 22,
+         "character": 22
+      }
+   }),
+   new_lsp_response(178, 2, %*[{
+      "uri": expand_filename(src2_path),
+      "range": {
+         "start": {"line": 15, "character": 8},
+         "end" : {"line": 15, "character": 8}
+      }
+   }])
+)
+
+run_test("textDocument/declaration: reg (array)",
+   new_lsp_request(3, "textDocument/declaration", %*{
+      "textDocument": {
+         "uri": expand_filename(src2_path),
+      },
+      "position": {
+         "line": 25,
+         "character": 19
+      }
+   }),
+   new_lsp_response(178, 3, %*[{
+      "uri": expand_filename(src2_path),
+      "range": {
+         "start": {"line": 17, "character": 8},
+         "end" : {"line": 17, "character": 8}
+      }
+   }])
+)
+
+run_test("textDocument/declaration: integer",
+   new_lsp_request(3, "textDocument/declaration", %*{
+      "textDocument": {
+         "uri": expand_filename(src2_path),
+      },
+      "position": {
+         "line": 25,
+         "character": 26
+      }
+   }),
+   new_lsp_response(180, 3, %*[{
+      "uri": expand_filename(src2_path),
+      "range": {
+         "start": {"line": 18, "character": 12},
+         "end" : {"line": 18, "character": 12}
       }
    }])
 )

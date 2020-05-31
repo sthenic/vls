@@ -1,6 +1,3 @@
-`define FOO(x) 7 + x
-`define MYMACRO(x) 2 * 2 + `FOO(x)
-
 module mymodule #(
     parameter integer WIDTH = 0,
     parameter integer SOMETHING = 0
@@ -12,33 +9,32 @@ module mymodule #(
     output wire [WIDTH-1:0] data_o
 );
 
-   if (WIDTH == 0)
-      ERROR_WIDTH_IS_BAD_VALUE();
+    if (WIDTH == 0)
+        ERROR_WIDTH_IS_BAD_VALUE();
 
-   wire mytemp;
-   reg tmp = 1'b0;
-   `include "test2.vh"
+    wire mytemp;
+    reg reg_default = 1'b0;
+    reg reg_no_default;
+    reg reg_packed[7:0];
+    integer i;
 
     always @(posedge clk_i) begin
         if (rst_i) begin
-        `ifdef FOO
-            tmp <= 1'b1;
-        `else
-            tmp <= 1'b1;
-         `endif
+            reg_default <= 1'b1;
+            reg_no_default <= 1'b0;
+            for (i = 0; i < 8; i = i + 1)
+               reg_packed[i] <= 1'b0;
         end else begin
-            tmp <= `MYMACRO(2);
+            reg_default <= `MYMACRO(2);
+            reg_no_default <= 1'b1;
+            reg_packed[4] <= 1'b1;
         end
     end
 
-`ifdef BAR
-   something
-`endif
+   initial begin
+       an_empty_task();
+   end
 
-    initial begin
-      an_empty_task();
-    end
-
-    reg thing = 1'b0;
+   reg thing = 1'b0;
 
 endmodule
