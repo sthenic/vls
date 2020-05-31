@@ -180,7 +180,7 @@ run_test("textDocument/declaration: task",
 )
 
 run_test("textDocument/declaration: function",
-   new_lsp_request(6, "textDocument/declaration", %*{
+   new_lsp_request(7, "textDocument/declaration", %*{
       "textDocument": {
          "uri": expand_filename(src2_path),
       },
@@ -189,11 +189,30 @@ run_test("textDocument/declaration: function",
          "character": 28
       }
    }),
-   new_lsp_response(180, 6, %*[{
+   new_lsp_response(180, 7, %*[{
       "uri": expand_filename(src2_path),
       "range": {
          "start": {"line": 39, "character": 13},
          "end" : {"line": 39, "character": 13}
+      }
+   }])
+)
+
+run_test("textDocument/declaration: genvar",
+   new_lsp_request(8, "textDocument/declaration", %*{
+      "textDocument": {
+         "uri": expand_filename(src2_path),
+      },
+      "position": {
+         "line": 57,
+         "character": 27
+      }
+   }),
+   new_lsp_response(180, 8, %*[{
+      "uri": expand_filename(src2_path),
+      "range": {
+         "start": {"line": 53, "character": 11},
+         "end" : {"line": 53, "character": 11}
       }
    }])
 )

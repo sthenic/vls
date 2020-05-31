@@ -51,4 +51,19 @@ module mymodule #(
         my_counter <= add_one(my_counter);
     end
 
+    genvar k;
+
+    reg reg_individual_bits = 3'b000;
+    generate
+    for (k = 0; k < 3; k = k + 1) begin
+        always @(posedge clk_i) begin
+            if (rst_i) begin
+                reg_individual_bits[k] <= 1'b0;
+            end else begin
+                reg_individual_bits[k] <= 1'b1;
+            end
+        end
+    end
+    endgenerate
+
 endmodule
