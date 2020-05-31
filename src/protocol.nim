@@ -185,18 +185,25 @@ proc detailed_compare*(x, y: LspMessage) =
 
    case x.kind
    of MkRequest:
+      if x.id != y.id:
+         echo format("Id differs: $1 != $2", x.id, y.id)
       if x.m != y.m:
          echo format("Method differs: $1 != $2", x.m, y.m)
       if x.parameters != nil and y.parameters != nil:
          detailed_compare(x.parameters, y.parameters, "parameters")
 
    of MkResponseSuccess:
+      if x.id != y.id:
+         echo format("Id differs: $1 != $2", x.id, y.id)
+
       if x.result != nil and y.result != nil:
          detailed_compare(x.result, y.result, "result")
       else:
          echo "Expected a 'result' field."
 
    of MkResponseError:
+      if x.id != y.id:
+         echo format("Id differs: $1 != $2", x.id, y.id)
       detailed_compare(x.error, y.error)
 
    of MkNotification:
