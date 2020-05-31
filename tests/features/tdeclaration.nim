@@ -312,6 +312,44 @@ run_test("textDocument/declaration: specparam",
    }])
 )
 
+run_test("textDocument/declaration: event",
+   new_lsp_request(13, "textDocument/declaration", %*{
+      "textDocument": {
+         "uri": expand_filename(src2_path),
+      },
+      "position": {
+         "line": 76,
+         "character": 16
+      }
+   }),
+   new_lsp_response(181, 13, %*[{
+      "uri": expand_filename(src2_path),
+      "range": {
+         "start": {"line": 75, "character": 10},
+         "end" : {"line": 75, "character": 10}
+      }
+   }])
+)
+
+run_test("textDocument/declaration: event (array)",
+   new_lsp_request(14, "textDocument/declaration", %*{
+      "textDocument": {
+         "uri": expand_filename(src2_path),
+      },
+      "position": {
+         "line": 76,
+         "character": 41
+      }
+   }),
+   new_lsp_response(181, 14, %*[{
+      "uri": expand_filename(src2_path),
+      "range": {
+         "start": {"line": 75, "character": 24},
+         "end" : {"line": 75, "character": 24}
+      }
+   }])
+)
+
 # Shut down the server.
 shutdown(ifs, ofs)
 

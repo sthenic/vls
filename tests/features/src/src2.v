@@ -73,4 +73,9 @@ module mymodule #(
 
     specparam T0 = 1, T1 = 0;
 
+    event rising_event, falling_event[3:0];
+    always @(rising_event or falling_event[0]) begin
+        tmp <= tmp + 1;
+    end
+
 endmodule

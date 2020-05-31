@@ -168,6 +168,22 @@ proc find_declaration_of(n: PNode, identifier: PIdentifier): PNode =
             result = s
             break
 
+   of NkEventDecl:
+      for s in n.sons:
+         case s.kind
+         of NkArrayIdentifer:
+            # The first son is expected to be the identifier.
+            if s.sons[0].kind == NkIdentifier and s.sons[0].identifier.s == identifier.s:
+               result = s.sons[0]
+               break
+         of NkIdentifier:
+            if s.identifier.s == identifier.s:
+               result = s
+               break
+         else:
+            discard
+
+
    of NkDefparamDecl:
       # Defparam declarations specifically targets an existing parameter and
       # changes its value. Looking up a declaration should never lead to this
