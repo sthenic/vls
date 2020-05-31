@@ -293,6 +293,25 @@ run_test("textDocument/declaration: defparam",
    }])
 )
 
+run_test("textDocument/declaration: specparam",
+   new_lsp_request(12, "textDocument/declaration", %*{
+      "textDocument": {
+         "uri": expand_filename(src2_path),
+      },
+      "position": {
+         "line": 73,
+         "character": 15
+      }
+   }),
+   new_lsp_response(181, 12, %*[{
+      "uri": expand_filename(src2_path),
+      "range": {
+         "start": {"line": 73, "character": 14},
+         "end" : {"line": 73, "character": 14}
+      }
+   }])
+)
+
 # Shut down the server.
 shutdown(ifs, ofs)
 

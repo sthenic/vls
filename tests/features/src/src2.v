@@ -71,4 +71,6 @@ module mymodule #(
 
     defparam ABC = 6;
 
+    specparam T0 = 1, T1 = 0;
+
 endmodule

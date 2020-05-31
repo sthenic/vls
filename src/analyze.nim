@@ -158,11 +158,13 @@ proc find_declaration_of(n: PNode, identifier: PIdentifier): PNode =
       for s in n.sons:
          # The first son is expected to be the identifier when we encounter an
          # NkParamAssignment node.
-         if (
-            s.kind == NkParamAssignment and
-            s.sons[0].kind == NkParameterIdentifier and
-            s.sons[0].identifier.s == identifier.s
-         ):
+         if s.kind == NkParamAssignment and s.sons[0].kind == NkParameterIdentifier and s.sons[0].identifier.s == identifier.s:
+            result = s
+            break
+
+   of NkSpecparamDecl:
+      for s in n.sons:
+         if s.kind == NkAssignment and s.sons[0].kind == NkIdentifier and s.sons[0].identifier.s == identifier.s:
             result = s
             break
 
