@@ -142,6 +142,15 @@ proc find_declaration_of(n: PNode, identifier: PIdentifier): PNode =
                break
          else:
             discard
+   of NkTaskDecl, NkFunctionDecl:
+      for s in n.sons:
+         case s.kind
+         of NkIdentifier:
+            if s.identifier.s == identifier.s:
+               result = s
+               break
+         else:
+            discard
    of PrimitiveTypes:
       discard
    else:

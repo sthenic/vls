@@ -33,10 +33,22 @@ module mymodule #(
 
     assign my_wire = reg_default;
 
+    task an_empty_task;
+        reg_no_default <= 1'b0;
+    endtask
+
+    function add_one(input a);
+        add_one = a + 1;
+    endfunction
+
     initial begin
         an_empty_task();
     end
 
-    reg thing = 1'b0;
+    reg my_counter = 8'd0;
+
+    always @(posedge clk_i) begin
+        my_counter <= add_one(my_counter);
+    end
 
 endmodule

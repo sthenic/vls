@@ -123,7 +123,7 @@ run_test("textDocument/declaration: reg (array)",
 )
 
 run_test("textDocument/declaration: integer",
-   new_lsp_request(3, "textDocument/declaration", %*{
+   new_lsp_request(4, "textDocument/declaration", %*{
       "textDocument": {
          "uri": expand_filename(src2_path),
       },
@@ -132,7 +132,7 @@ run_test("textDocument/declaration: integer",
          "character": 26
       }
    }),
-   new_lsp_response(180, 3, %*[{
+   new_lsp_response(180, 4, %*[{
       "uri": expand_filename(src2_path),
       "range": {
          "start": {"line": 18, "character": 12},
@@ -142,7 +142,7 @@ run_test("textDocument/declaration: integer",
 )
 
 run_test("textDocument/declaration: net (wire)",
-   new_lsp_request(3, "textDocument/declaration", %*{
+   new_lsp_request(5, "textDocument/declaration", %*{
       "textDocument": {
          "uri": expand_filename(src2_path),
       },
@@ -151,11 +151,49 @@ run_test("textDocument/declaration: net (wire)",
          "character": 16
       }
    }),
-   new_lsp_response(178, 3, %*[{
+   new_lsp_response(178, 5, %*[{
       "uri": expand_filename(src2_path),
       "range": {
          "start": {"line": 14, "character": 9},
          "end" : {"line": 14, "character": 9}
+      }
+   }])
+)
+
+run_test("textDocument/declaration: task",
+   new_lsp_request(6, "textDocument/declaration", %*{
+      "textDocument": {
+         "uri": expand_filename(src2_path),
+      },
+      "position": {
+         "line": 44,
+         "character": 15
+      }
+   }),
+   new_lsp_response(178, 6, %*[{
+      "uri": expand_filename(src2_path),
+      "range": {
+         "start": {"line": 35, "character": 9},
+         "end" : {"line": 35, "character": 9}
+      }
+   }])
+)
+
+run_test("textDocument/declaration: function",
+   new_lsp_request(6, "textDocument/declaration", %*{
+      "textDocument": {
+         "uri": expand_filename(src2_path),
+      },
+      "position": {
+         "line": 50,
+         "character": 28
+      }
+   }),
+   new_lsp_response(180, 6, %*[{
+      "uri": expand_filename(src2_path),
+      "range": {
+         "start": {"line": 39, "character": 13},
+         "end" : {"line": 39, "character": 13}
       }
    }])
 )
