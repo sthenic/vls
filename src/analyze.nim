@@ -96,11 +96,12 @@ proc check_syntax*(n: PNode, locs: PLocations): seq[LspDiagnostic] =
 
 
 proc find_identifier_at(n: PNode, loc: Location): PNode =
+   # FIXME: Support identifiers inserted by macro expansion.
    case n.kind
    of IdentifierTypes:
       # If the node is an identifier type, check if the location is pointing to
       # anywhere within the identifier. Otherwise, we skip it.
-      if loc.line == n.loc.line and loc.col >= n.loc.col and
+      if loc.file == n.loc.file and loc.line == n.loc.line and loc.col >= n.loc.col and
          loc.col <= (n.loc.col + len(n.identifier.s) - 1):
          result = n
       else:
