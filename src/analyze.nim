@@ -119,94 +119,20 @@ proc find_identifier_at(n: PNode, loc: Location): PNode =
 proc find_declaration_of(n: PNode, identifier: PIdentifier): PNode =
    ## Find the AST node declaring ``identifier`` (which is assumed to be in the
    ## set IdentifierTypes).
-   # TODO: Should we just look for any IdentifierTypes within Declaration types
-   #       instead? Assuming nothing about the syntax and making the code below
-   #       more compact?
-   result = nil
+   # If we find an identifier node, we check if it's a match. If we encountered
+   # any other primitive node, we skip it. Otherwise, we recursively call this
+   # function for each node in the subtree, breaking if we find a match.
    case n.kind
-   of NkPortDecl:
-      for s in n.sons:
-         if s.kind == NkPortIdentifier and s.identifier.s == identifier.s:
-            result = s
-            # FIXME: Maybe don't break here to find all declarations?
-            break
-
-   of NkRegDecl, NkIntegerDecl, NkRealDecl, NkRealtimeDecl, NkTimeDecl, NkNetDecl:
-      for s in n.sons:
-         case s.kind
-         of NkArrayIdentifer, NkAssignment:
-            # The first son is expected to be the identifier.
-            if s.sons[0].kind == NkIdentifier and s.sons[0].identifier.s == identifier.s:
-               result = s.sons[0]
-               break
-         of NkIdentifier:
-            if s.identifier.s == identifier.s:
-               result = s
-               break
-         else:
-            discard
-
-   of NkTaskDecl, NkFunctionDecl, NkGenvarDecl:
-      for s in n.sons:
-         case s.kind
-         of NkIdentifier:
-            if s.identifier.s == identifier.s:
-               result = s
-               break
-         else:
-            discard
-
-   of NkParameterDecl, NkLocalparamDecl:
-      for s in n.sons:
-         # The first son is expected to be the identifier when we encounter an
-         # NkParamAssignment node.
-         if s.kind == NkParamAssignment and s.sons[0].kind == NkParameterIdentifier and s.sons[0].identifier.s == identifier.s:
-            result = s
-            break
-
-   of NkSpecparamDecl:
-      for s in n.sons:
-         if s.kind == NkAssignment and s.sons[0].kind == NkIdentifier and s.sons[0].identifier.s == identifier.s:
-            result = s
-            break
-
-   of NkEventDecl:
-      for s in n.sons:
-         case s.kind
-         of NkArrayIdentifer:
-            # The first son is expected to be the identifier.
-            if s.sons[0].kind == NkIdentifier and s.sons[0].identifier.s == identifier.s:
-               result = s.sons[0]
-               break
-         of NkIdentifier:
-            if s.identifier.s == identifier.s:
-               result = s
-               break
-         else:
-            discard
-
-   of NkModuleDecl:
-      # Module declarations are special, we have to continue searching the
-      # subtree like the else branch.
-      # FIXME: Search through the include paths as well.
-      for s in n.sons:
-         if s.kind == NkModuleIdentifier and s.identifier.s == identifier.s:
-            result = s
-            break
-         else:
-            result = find_declaration_of(s, identifier)
-            if not is_nil(result):
-               break
-
-   of NkDefparamDecl:
+   of IdentifierTypes:
+      if n.identifier.s == identifier.s:
+         result = n
+      else:
+         result = nil
+   of PrimitiveTypes - IdentifierTypes + {NkDefparamDecl}:
       # Defparam declarations specifically targets an existing parameter and
       # changes its value. Looking up a declaration should never lead to this
       # node.
-      discard
-
-   of PrimitiveTypes:
-      discard
-
+      result = nil
    else:
       for s in n.sons:
          result = find_declaration_of(s, identifier)
