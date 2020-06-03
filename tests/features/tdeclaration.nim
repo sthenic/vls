@@ -369,6 +369,39 @@ run_test("textDocument/declaration: module",
    }])
 )
 
+# Open the file "./src/src3.v", expecting no parsing errors.
+const src3_path = "./src/src3.v"
+const src3_header_path = "./src/src3.vh"
+const src3_text = static_read(src3_path)
+send(ifs, new_lsp_notification("textDocument/didOpen", %*{
+   "textDocument": {
+      "uri": expand_filename(src3_path),
+      "languageId": "verilog",
+      "version": 0,
+      "text": src3_text
+   }
+}))
+assert len(recv(ofs).parameters["diagnostics"]) == 0
+
+run_test("textDocument/declaration: localparam from include file (overlapping)",
+   new_lsp_request(15, "textDocument/declaration", %*{
+      "textDocument": {
+         "uri": expand_filename(src3_path),
+      },
+      "position": {
+         "line": 15,
+         "character": 12
+      }
+   }),
+   new_lsp_response(180, 15, %*[{
+      "uri": expand_filename(src3_header_path),
+      "range": {
+         "start": {"line": 4, "character": 11},
+         "end" : {"line": 4, "character": 11}
+      }
+   }])
+)
+
 # Shut down the server.
 shutdown(ifs, ofs)
 
