@@ -2,6 +2,7 @@ import streams
 import strutils
 import json
 import uri
+import tables
 import vparse
 
 import ./log
@@ -21,6 +22,12 @@ const
 
 
 type
+   CompileUnit = object
+      uri: string
+      cache: IdentifierCache
+      graph: Graph
+      configuration: Configuration
+
    LspClientCapabilities = object
       diagnostics: bool
       configuration: bool
@@ -31,12 +38,9 @@ type
       is_shut_down: bool
       should_exit: bool
       root_uri: string
-      graph_uri: string
-      graph: Graph
+      compile_units: Table[string, CompileUnit]
       cache: IdentifierCache
       client_capabilities: LspClientCapabilities
-      configuration: Configuration
-      configuration_filename: string
       # TODO: This should really not be an option if Neovims language client
       #       correctly reported diagnostic capabilities.
       force_diagnostics*: bool
@@ -52,6 +56,10 @@ template get_path_from_uri(uri: string): string =
       parse_uri(uri).path
 
 
+proc close(unit: var CompileUnit) =
+   close_graph(unit.graph)
+
+
 proc init(cc: var LspClientCapabilities) =
    cc.diagnostics = false
    cc.configuration = false
@@ -63,8 +71,7 @@ proc open*(s: var LspServer, ifs, ofs : Stream) =
    s.is_initialized = false
    s.is_shut_down = false
    set_len(s.root_uri, 0)
-   set_len(s.graph_uri, 0)
-   set_len(s.configuration_filename, 0)
+   s.compile_units = init_table[string, CompileUnit](64)
    init(s.client_capabilities)
 
    # The syslog facilities are only available on Linux and macOS. If the server
@@ -89,49 +96,66 @@ proc recv(s: LspServer): LspMessage =
    result = recv(s.ifs)
 
 
-proc publish_diagnostics(s: LspServer) =
-   var diagnostics = check_syntax(s.graph.root_node, s.graph.locations)
+proc publish_diagnostics(s: LspServer, unit: CompileUnit) =
+   ## Publish diagnostics for the compile unit ``unit``.
+   var diagnostics = check_syntax(unit.graph.root_node, unit.graph.locations)
    # Limit the maximum number of diagnostic messages if required. Negative
    # values signifies an unlimited number of
-   let limit = s.configuration.max_nof_diagnostics
+   let limit = unit.configuration.max_nof_diagnostics
    log.debug("Max nof diagnostics is $1", limit)
    if limit > 0 and len(diagnostics) > limit:
       log.debug("Limiting the number of diagnostic messages to $1", limit)
       set_len(diagnostics, limit)
    let parameters = %*{
-      "uri": s.graph_uri,
+      "uri": unit.uri,
       "diagnostics": diagnostics
    }
    log.debug("Publishing diagnostics: $1", parameters)
    send(s, new_lsp_notification("textDocument/publishDiagnostics", parameters))
 
 
-proc process_text(s: var LspServer, text: string) =
-   ## Process the ``text``.
-   log.debug("Processing text from $1.", s.graph_uri)
-   let ss = new_string_stream(text)
-   open_graph(s.graph, s.cache, ss, get_path_from_uri(s.graph_uri),
-              s.configuration.include_paths, s.configuration.defines)
-   close(ss)
-
-   if s.client_capabilities.diagnostics or s.force_diagnostics:
-      publish_diagnostics(s)
-
-
-proc update_configuration(s: var LspServer) =
+proc get_configuration(uri: string): Configuration =
    # Search for a configuration file starting at the file uri and walking up to
    # the root directory. If we find a file but fail to parse it, we fall back to
    # default values.
    log.debug("Searching for a configuration file.")
-   let filename = find_configuration_file(get_path_from_uri(s.graph_uri))
+   let filename = find_configuration_file(get_path_from_uri(uri))
    try:
-      s.configuration = configuration.parse_file(filename)
-      s.configuration_filename = filename
+      result = configuration.parse_file(filename)
       log.debug("Parsed configuration file '$1'.", filename)
-      log.debug($s.configuration)
+      log.debug($result)
    except ConfigurationParseError as e:
       log.error("Failed to parse configuration file: $1", e.msg)
-      init(s.configuration)
+      init(result)
+
+
+proc process_text(s: var LspServer, uri, text: string) =
+   ## Create a new compile unit from the input ``text``. The environment
+   ## (include paths etc.) is initialized from the ``uri``. The resulting
+   ## compile unit will be indexed with the ``uri`` as key.
+   log.debug("Processing text from '$1'.", uri)
+
+   let ss = new_string_stream(text)
+   let configuration = get_configuration(uri)
+   let cache = new_ident_cache()
+   var graph: Graph
+   open_graph(graph, cache, ss, get_path_from_uri(uri),
+              configuration.include_paths, configuration.defines)
+   close(ss)
+
+   # Index the compile unit to be able to analyze the graph when the client
+   # makes subsequent request. If an element already exists in the table, we
+   # call the close proc before discarding the old compile unit in favor of
+   # the new.
+   if has_key(s.compile_units, uri):
+      log.debug("Closing compile unit for file '$1'.", uri)
+      close(s.compile_units[uri])
+   log.debug("Adding a new compile unit for the file '$1' to the index.", uri)
+   s.compile_units[uri] = CompileUnit(uri: uri, cache: cache, graph: graph,
+                                      configuration: configuration)
+
+   if s.client_capabilities.diagnostics or s.force_diagnostics:
+      publish_diagnostics(s, s.compile_units[uri])
 
 
 proc initialize(s: var LspServer, msg: LspMessage) =
@@ -173,11 +197,15 @@ proc shutdown(s: var LspServer, msg: LspMessage) =
 proc declaration(s: LspServer, msg: LspMessage) =
    let line = get_int(msg.parameters["position"]["line"])
    let col = get_int(msg.parameters["position"]["character"])
-   let locations = find_declaration(s.graph, line + 1, col)
-   if len(locations) > 0:
-      send(s, new_lsp_response(msg.id, %locations))
+   let uri = get_str(msg.parameters["textDocument"]["uri"])
+   if has_key(s.compile_units, uri):
+      let locations = find_declaration(s.compile_units[uri].graph, line + 1, col)
+      if len(locations) > 0:
+         send(s, new_lsp_response(msg.id, %locations))
+      else:
+         send(s, new_lsp_response(msg.id, new_jnull()))
    else:
-      send(s, new_lsp_response(msg.id, new_jnull()))
+      send(s, new_lsp_response(msg.id, RPC_INTERNAL_ERROR, format("File '$1' is not in the index.", uri), nil))
 
 
 proc handle_request(s: var LspServer, msg: LspMessage) =
@@ -242,23 +270,21 @@ proc handle_notification(s: var LspServer, msg: LspMessage) =
    elif not s.is_initialized:
       return
 
-   # FIXME: Generalize to handle multiple files.
    case msg.m
    of "initialized":
       initialied(s)
    of "workspace/didChangeConfiguration":
       workspace_changed_configuration(s)
    of "textDocument/didOpen":
-      s.cache = new_ident_cache()
-      s.graph_uri = decode_url(get_str(msg.parameters["textDocument"]["uri"]))
-      update_configuration(s)
-      process_text(s, get_str(msg.parameters["textDocument"]["text"]))
+      let uri = decode_url(get_str(msg.parameters["textDocument"]["uri"]))
+      let text = get_str(msg.parameters["textDocument"]["text"])
+      process_text(s, uri, text)
    of "textDocument/didChange":
       # We can read all the changes at array index 0 since we only support the
       # 'full' text synchronization.
-      close_graph(s.graph)
-      s.graph_uri = decode_url(get_str(msg.parameters["textDocument"]["uri"]))
-      process_text(s, get_str(msg.parameters["contentChanges"][0]["text"]))
+      let uri = decode_url(get_str(msg.parameters["textDocument"]["uri"]))
+      let text = get_str(msg.parameters["contentChanges"][0]["text"])
+      process_text(s, uri, text)
    else:
       # Simply drop all other request.
       discard
