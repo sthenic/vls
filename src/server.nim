@@ -45,16 +45,6 @@ type
       force_diagnostics*: bool
 
 
-template get_path_from_uri(uri: string): string =
-   # On Windows, the uri will look like "file:///c:/path/to/some/file" and the
-   # path part is "/c:/path/to/some/file". The leading '/' needs to be removed
-   # in order for the path to be valid.
-   when defined(windows):
-      strip(parse_uri(uri).path, leading = true, trailing = false, {'/'})
-   else:
-      parse_uri(uri).path
-
-
 proc close(unit: var CompileUnit) =
    close_graph(unit.graph)
 

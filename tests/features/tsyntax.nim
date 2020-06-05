@@ -36,14 +36,14 @@ const src0_text = static_read(src0_path)
 run_test("textDocument/didOpen: src0.v",
    new_lsp_notification("textDocument/didOpen", %*{
       "textDocument": {
-         "uri": expand_filename(src0_path),
+         "uri": "file://" & expand_filename(src0_path),
          "languageId": "verilog",
          "version": 0,
          "text": src0_text
       }
    }),
-   new_lsp_notification(282, "textDocument/publishDiagnostics", %*{
-      "uri": expand_filename(src0_path),
+   new_lsp_notification(289, "textDocument/publishDiagnostics", %*{
+      "uri": "file://" & expand_filename(src0_path),
       "diagnostics": [
          new_lsp_diagnostic(new_lsp_position(0, 0), new_lsp_position(0, 0), ERROR,
             "1:1: Unexpected token 'mod'."
@@ -58,14 +58,14 @@ const src1_text = static_read(src1_path)
 run_test("textDocument/didOpen: src1.v",
    new_lsp_notification("textDocument/didOpen", %*{
       "textDocument": {
-         "uri": expand_filename(src1_path),
+         "uri": "file://" & expand_filename(src1_path),
          "languageId": "verilog",
          "version": 0,
          "text": src1_text
       }
    }),
-   new_lsp_notification(726, "textDocument/publishDiagnostics", %*{
-      "uri": expand_filename(src1_path),
+   new_lsp_notification(733, "textDocument/publishDiagnostics", %*{
+      "uri": "file://" & expand_filename(src1_path),
       "diagnostics": [
          new_lsp_diagnostic(new_lsp_position(3, 0), new_lsp_position(3, 0), ERROR,
             "4:1: Expected token Symbol, got 'endmodule'."

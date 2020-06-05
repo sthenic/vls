@@ -23,7 +23,7 @@ const src2_path = "./src/src2.v"
 const src2_text = static_read(src2_path)
 send(ifs, new_lsp_notification("textDocument/didOpen", %*{
    "textDocument": {
-      "uri": expand_filename(src2_path),
+      "uri": "file://" & expand_filename(src2_path),
       "languageId": "verilog",
       "version": 0,
       "text": src2_text
@@ -48,15 +48,15 @@ template run_test(title: string, stimuli, reference: LspMessage) =
 run_test("textDocument/declaration: port",
    new_lsp_request(0, "textDocument/declaration", %*{
       "textDocument": {
-         "uri": expand_filename(src2_path),
+         "uri": "file://" & expand_filename(src2_path),
       },
       "position": {
          "line": 20,
          "character": 22
       }
    }),
-   new_lsp_response(178, 0, %*[{
-      "uri": expand_filename(src2_path),
+   new_lsp_response(185, 0, %*[{
+      "uri": "file://" & expand_filename(src2_path),
       "range": {
          "start": {"line": 4, "character": 15},
          "end" : {"line": 4, "character": 15}
@@ -68,15 +68,15 @@ run_test("textDocument/declaration: port",
 run_test("textDocument/declaration: reg",
    new_lsp_request(1, "textDocument/declaration", %*{
       "textDocument": {
-         "uri": expand_filename(src2_path),
+         "uri": "file://" & expand_filename(src2_path),
       },
       "position": {
          "line": 28,
          "character": 17
       }
    }),
-   new_lsp_response(178, 1, %*[{
-      "uri": expand_filename(src2_path),
+   new_lsp_response(185, 1, %*[{
+      "uri": "file://" & expand_filename(src2_path),
       "range": {
          "start": {"line": 16, "character": 8},
          "end" : {"line": 16, "character": 8}
@@ -87,15 +87,15 @@ run_test("textDocument/declaration: reg",
 run_test("textDocument/declaration: reg (assignment)",
    new_lsp_request(2, "textDocument/declaration", %*{
       "textDocument": {
-         "uri": expand_filename(src2_path),
+         "uri": "file://" & expand_filename(src2_path),
       },
       "position": {
          "line": 22,
          "character": 22
       }
    }),
-   new_lsp_response(178, 2, %*[{
-      "uri": expand_filename(src2_path),
+   new_lsp_response(185, 2, %*[{
+      "uri": "file://" & expand_filename(src2_path),
       "range": {
          "start": {"line": 15, "character": 8},
          "end" : {"line": 15, "character": 8}
@@ -106,15 +106,15 @@ run_test("textDocument/declaration: reg (assignment)",
 run_test("textDocument/declaration: reg (array)",
    new_lsp_request(3, "textDocument/declaration", %*{
       "textDocument": {
-         "uri": expand_filename(src2_path),
+         "uri": "file://" & expand_filename(src2_path),
       },
       "position": {
          "line": 25,
          "character": 19
       }
    }),
-   new_lsp_response(178, 3, %*[{
-      "uri": expand_filename(src2_path),
+   new_lsp_response(185, 3, %*[{
+      "uri": "file://" & expand_filename(src2_path),
       "range": {
          "start": {"line": 17, "character": 8},
          "end" : {"line": 17, "character": 8}
@@ -125,15 +125,15 @@ run_test("textDocument/declaration: reg (array)",
 run_test("textDocument/declaration: integer",
    new_lsp_request(4, "textDocument/declaration", %*{
       "textDocument": {
-         "uri": expand_filename(src2_path),
+         "uri": "file://" & expand_filename(src2_path),
       },
       "position": {
          "line": 25,
          "character": 26
       }
    }),
-   new_lsp_response(180, 4, %*[{
-      "uri": expand_filename(src2_path),
+   new_lsp_response(187, 4, %*[{
+      "uri": "file://" & expand_filename(src2_path),
       "range": {
          "start": {"line": 18, "character": 12},
          "end" : {"line": 18, "character": 12}
@@ -144,15 +144,15 @@ run_test("textDocument/declaration: integer",
 run_test("textDocument/declaration: net (wire)",
    new_lsp_request(5, "textDocument/declaration", %*{
       "textDocument": {
-         "uri": expand_filename(src2_path),
+         "uri": "file://" & expand_filename(src2_path),
       },
       "position": {
          "line": 33,
          "character": 16
       }
    }),
-   new_lsp_response(178, 5, %*[{
-      "uri": expand_filename(src2_path),
+   new_lsp_response(185, 5, %*[{
+      "uri": "file://" & expand_filename(src2_path),
       "range": {
          "start": {"line": 14, "character": 9},
          "end" : {"line": 14, "character": 9}
@@ -163,15 +163,15 @@ run_test("textDocument/declaration: net (wire)",
 run_test("textDocument/declaration: task",
    new_lsp_request(6, "textDocument/declaration", %*{
       "textDocument": {
-         "uri": expand_filename(src2_path),
+         "uri": "file://" & expand_filename(src2_path),
       },
       "position": {
          "line": 44,
          "character": 15
       }
    }),
-   new_lsp_response(178, 6, %*[{
-      "uri": expand_filename(src2_path),
+   new_lsp_response(185, 6, %*[{
+      "uri": "file://" & expand_filename(src2_path),
       "range": {
          "start": {"line": 35, "character": 9},
          "end" : {"line": 35, "character": 9}
@@ -182,15 +182,15 @@ run_test("textDocument/declaration: task",
 run_test("textDocument/declaration: function",
    new_lsp_request(7, "textDocument/declaration", %*{
       "textDocument": {
-         "uri": expand_filename(src2_path),
+         "uri": "file://" & expand_filename(src2_path),
       },
       "position": {
          "line": 50,
          "character": 28
       }
    }),
-   new_lsp_response(180, 7, %*[{
-      "uri": expand_filename(src2_path),
+   new_lsp_response(187, 7, %*[{
+      "uri": "file://" & expand_filename(src2_path),
       "range": {
          "start": {"line": 39, "character": 13},
          "end" : {"line": 39, "character": 13}
@@ -201,15 +201,15 @@ run_test("textDocument/declaration: function",
 run_test("textDocument/declaration: genvar",
    new_lsp_request(8, "textDocument/declaration", %*{
       "textDocument": {
-         "uri": expand_filename(src2_path),
+         "uri": "file://" & expand_filename(src2_path),
       },
       "position": {
          "line": 60,
          "character": 27
       }
    }),
-   new_lsp_response(180, 8, %*[{
-      "uri": expand_filename(src2_path),
+   new_lsp_response(187, 8, %*[{
+      "uri": "file://" & expand_filename(src2_path),
       "range": {
          "start": {"line": 53, "character": 11},
          "end" : {"line": 53, "character": 11}
@@ -220,15 +220,15 @@ run_test("textDocument/declaration: genvar",
 run_test("textDocument/declaration: localparam (1)",
    new_lsp_request(9, "textDocument/declaration", %*{
       "textDocument": {
-         "uri": expand_filename(src2_path),
+         "uri": "file://" & expand_filename(src2_path),
       },
       "position": {
          "line": 55,
          "character": 24
       }
    }),
-   new_lsp_response(180, 9, %*[{
-      "uri": expand_filename(src2_path),
+   new_lsp_response(187, 9, %*[{
+      "uri": "file://" & expand_filename(src2_path),
       "range": {
          "start": {"line": 55, "character": 23},
          "end" : {"line": 55, "character": 23}
@@ -239,15 +239,15 @@ run_test("textDocument/declaration: localparam (1)",
 run_test("textDocument/declaration: localparam (2)",
    new_lsp_request(9, "textDocument/declaration", %*{
       "textDocument": {
-         "uri": expand_filename(src2_path),
+         "uri": "file://" & expand_filename(src2_path),
       },
       "position": {
          "line": 55,
          "character": 34
       }
    }),
-   new_lsp_response(180, 9, %*[{
-      "uri": expand_filename(src2_path),
+   new_lsp_response(187, 9, %*[{
+      "uri": "file://" & expand_filename(src2_path),
       "range": {
          "start": {"line": 55, "character": 32},
          "end" : {"line": 55, "character": 32}
@@ -258,15 +258,15 @@ run_test("textDocument/declaration: localparam (2)",
 run_test("textDocument/declaration: parameter",
    new_lsp_request(10, "textDocument/declaration", %*{
       "textDocument": {
-         "uri": expand_filename(src2_path),
+         "uri": "file://" & expand_filename(src2_path),
       },
       "position": {
          "line": 58,
          "character": 36
       }
    }),
-   new_lsp_response(181, 10, %*[{
-      "uri": expand_filename(src2_path),
+   new_lsp_response(188, 10, %*[{
+      "uri": "file://" & expand_filename(src2_path),
       "range": {
          "start": {"line": 56, "character": 20},
          "end" : {"line": 56, "character": 20}
@@ -277,15 +277,15 @@ run_test("textDocument/declaration: parameter",
 run_test("textDocument/declaration: defparam",
    new_lsp_request(11, "textDocument/declaration", %*{
       "textDocument": {
-         "uri": expand_filename(src2_path),
+         "uri": "file://" & expand_filename(src2_path),
       },
       "position": {
          "line": 71,
          "character": 14
       }
    }),
-   new_lsp_response(181, 11, %*[{
-      "uri": expand_filename(src2_path),
+   new_lsp_response(188, 11, %*[{
+      "uri": "file://" & expand_filename(src2_path),
       "range": {
          "start": {"line": 56, "character": 20},
          "end" : {"line": 56, "character": 20}
@@ -296,15 +296,15 @@ run_test("textDocument/declaration: defparam",
 run_test("textDocument/declaration: specparam",
    new_lsp_request(12, "textDocument/declaration", %*{
       "textDocument": {
-         "uri": expand_filename(src2_path),
+         "uri": "file://" & expand_filename(src2_path),
       },
       "position": {
          "line": 73,
          "character": 15
       }
    }),
-   new_lsp_response(181, 12, %*[{
-      "uri": expand_filename(src2_path),
+   new_lsp_response(188, 12, %*[{
+      "uri": "file://" & expand_filename(src2_path),
       "range": {
          "start": {"line": 73, "character": 14},
          "end" : {"line": 73, "character": 14}
@@ -315,15 +315,15 @@ run_test("textDocument/declaration: specparam",
 run_test("textDocument/declaration: event",
    new_lsp_request(13, "textDocument/declaration", %*{
       "textDocument": {
-         "uri": expand_filename(src2_path),
+         "uri": "file://" & expand_filename(src2_path),
       },
       "position": {
          "line": 76,
          "character": 16
       }
    }),
-   new_lsp_response(181, 13, %*[{
-      "uri": expand_filename(src2_path),
+   new_lsp_response(188, 13, %*[{
+      "uri": "file://" & expand_filename(src2_path),
       "range": {
          "start": {"line": 75, "character": 10},
          "end" : {"line": 75, "character": 10}
@@ -334,15 +334,15 @@ run_test("textDocument/declaration: event",
 run_test("textDocument/declaration: event (array)",
    new_lsp_request(14, "textDocument/declaration", %*{
       "textDocument": {
-         "uri": expand_filename(src2_path),
+         "uri": "file://" & expand_filename(src2_path),
       },
       "position": {
          "line": 76,
          "character": 41
       }
    }),
-   new_lsp_response(181, 14, %*[{
-      "uri": expand_filename(src2_path),
+   new_lsp_response(188, 14, %*[{
+      "uri": "file://" & expand_filename(src2_path),
       "range": {
          "start": {"line": 75, "character": 24},
          "end" : {"line": 75, "character": 24}
@@ -353,15 +353,15 @@ run_test("textDocument/declaration: event (array)",
 run_test("textDocument/declaration: module",
    new_lsp_request(15, "textDocument/declaration", %*{
       "textDocument": {
-         "uri": expand_filename(src2_path),
+         "uri": "file://" & expand_filename(src2_path),
       },
       "position": {
          "line": 83,
          "character": 9
       }
    }),
-   new_lsp_response(177, 15, %*[{
-      "uri": expand_filename(src2_path),
+   new_lsp_response(184, 15, %*[{
+      "uri": "file://" & expand_filename(src2_path),
       "range": {
          "start": {"line": 0, "character": 7},
          "end" : {"line": 0, "character": 7}
@@ -375,7 +375,7 @@ const src3_header_path = "./src/src3.vh"
 const src3_text = static_read(src3_path)
 send(ifs, new_lsp_notification("textDocument/didOpen", %*{
    "textDocument": {
-      "uri": expand_filename(src3_path),
+      "uri": "file://" & expand_filename(src3_path),
       "languageId": "verilog",
       "version": 0,
       "text": src3_text
@@ -386,15 +386,15 @@ assert len(recv(ofs).parameters["diagnostics"]) == 0
 run_test("textDocument/declaration: localparam from include file (overlapping)",
    new_lsp_request(15, "textDocument/declaration", %*{
       "textDocument": {
-         "uri": expand_filename(src3_path),
+         "uri": "file://" & expand_filename(src3_path),
       },
       "position": {
          "line": 15,
          "character": 12
       }
    }),
-   new_lsp_response(180, 15, %*[{
-      "uri": expand_filename(src3_header_path),
+   new_lsp_response(187, 15, %*[{
+      "uri": "file://" & expand_filename(src3_header_path),
       "range": {
          "start": {"line": 4, "character": 11},
          "end" : {"line": 4, "character": 11}

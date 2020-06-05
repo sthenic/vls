@@ -158,7 +158,7 @@ proc find_declaration*(g: Graph, line, col: int): seq[LspLocation] =
    if is_nil(declaration):
       return
 
-   let declaration_uri = g.locations.file_maps[declaration.loc.file - 1].filename
+   let declaration_uri = construct_uri(g.locations.file_maps[declaration.loc.file - 1].filename)
    let declaration_line = declaration.loc.line - 1
    let declaration_col = declaration.loc.col
    add(result, new_lsp_location(declaration_uri, int(declaration_line), int(declaration_col)))

@@ -285,6 +285,23 @@ proc detailed_compare*(x, y: LspMessage) =
       discard
 
 
+template get_path_from_uri*(uri: string): string =
+   # On Windows, the uri will look like "file:///c:/path/to/some/file" and the
+   # path part is "/c:/path/to/some/file". The leading '/' needs to be removed
+   # in order for the path to be valid.
+   when defined(windows):
+      strip(parse_uri(uri).path, leading = true, trailing = false, {'/'})
+   else:
+      parse_uri(uri).path
+
+
+template construct_uri*(filename: string): string =
+   when defined(windows):
+      "file:///" & filename
+   else:
+      "file://" & filename
+
+
 proc len(msg: LspMessage): int =
    result = len($(%msg))
 
