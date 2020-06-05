@@ -5,7 +5,6 @@ import osproc
 import json
 
 import ../../src/protocol
-import ../../src/diagnostic
 import ./bootstrap
 
 var nof_passed = 0

@@ -1,8 +1,7 @@
 import strutils
 
 import vparse
-import ./diagnostic
-import ./log
+import ./protocol
 
 proc check_syntax*(n: PNode, locs: PLocations): seq[LspDiagnostic] =
    case n.kind
@@ -135,6 +134,8 @@ proc find_declaration_of(n: PNode, identifier: PIdentifier): PNode =
       # node.
       result = nil
    else:
+      # FIXME: We should only 'arm' the identifier localization if we descend
+      #        into a declaration node!
       for s in n.sons:
          result = find_declaration_of(s, identifier)
          if not is_nil(result):

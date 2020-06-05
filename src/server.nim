@@ -8,7 +8,6 @@ import vparse
 import ./log
 import ./protocol
 import ./analyze
-import ./diagnostic
 import ./configuration
 
 
