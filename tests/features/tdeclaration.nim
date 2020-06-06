@@ -427,15 +427,15 @@ run_test("textDocument/declaration: integer in local scope (2)",
          "uri": "file://" & expand_filename(src3_path),
       },
       "position": {
-         "line": 41,
+         "line": 42,
          "character": 43
       }
    }),
    new_lsp_response(188, 15, %*[{
       "uri": "file://" & expand_filename(src3_path),
       "range": {
-         "start": {"line": 39, "character": 22},
-         "end" : {"line": 39, "character": 22}
+         "start": {"line": 40, "character": 22},
+         "end" : {"line": 40, "character": 22}
       }
    }])
 )
@@ -465,15 +465,15 @@ run_test("textDocument/declaration: wire in local scope (2)",
          "uri": "file://" & expand_filename(src3_path),
       },
       "position": {
-         "line": 40,
+         "line": 41,
          "character": 35
       }
    }),
    new_lsp_response(188, 15, %*[{
       "uri": "file://" & expand_filename(src3_path),
       "range": {
-         "start": {"line": 38, "character": 17},
-         "end" : {"line": 38, "character": 17}
+         "start": {"line": 39, "character": 17},
+         "end" : {"line": 39, "character": 17}
       }
    }])
 )
@@ -503,7 +503,7 @@ run_test("textDocument/declaration: global wire used in local scope (2)",
          "uri": "file://" & expand_filename(src3_path),
       },
       "position": {
-         "line": 40,
+         "line": 41,
          "character": 25
       }
    }),
@@ -522,12 +522,197 @@ run_test("textDocument/declaration: undeclared wire",
          "uri": "file://" & expand_filename(src3_path),
       },
       "position": {
-         "line": 46,
+         "line": 48,
          "character": 19
       }
    }),
    new_lsp_response(39, 15, new_jnull())
 )
+
+run_test("textDocument/declaration: macro expansion (1)",
+   new_lsp_request(15, "textDocument/declaration", %*{
+      "textDocument": {
+         "uri": "file://" & expand_filename(src3_path),
+      },
+      "position": {
+         "line": 18,
+         "character": 28
+      }
+   }),
+   new_lsp_response(186, 15, %*[{
+      "uri": "file://" & expand_filename(src3_path),
+      "range": {
+         "start": {"line": 12, "character": 8},
+         "end" : {"line": 12, "character": 8}
+      }
+   }])
+)
+
+run_test("textDocument/declaration: macro expansion (2)",
+   new_lsp_request(15, "textDocument/declaration", %*{
+      "textDocument": {
+         "uri": "file://" & expand_filename(src3_path),
+      },
+      "position": {
+         "line": 18,
+         "character": 31
+      }
+   }),
+   new_lsp_response(188, 15, %*[{
+      "uri": "file://" & expand_filename(src3_path),
+      "range": {
+         "start": {"line": 12, "character": 28},
+         "end" : {"line": 12, "character": 28}
+      }
+   }])
+)
+
+run_test("textDocument/declaration: macro expansion, out of bounds",
+   new_lsp_request(15, "textDocument/declaration", %*{
+      "textDocument": {
+         "uri": "file://" & expand_filename(src3_path),
+      },
+      "position": {
+         "line": 18,
+         "character": 29
+      }
+   }),
+   new_lsp_response(39, 15, new_jnull())
+)
+
+run_test("textDocument/declaration: nested macro expansion (1)",
+   new_lsp_request(15, "textDocument/declaration", %*{
+      "textDocument": {
+         "uri": "file://" & expand_filename(src3_path),
+      },
+      "position": {
+         "line": 37,
+         "character": 40
+      }
+   }),
+   new_lsp_response(186, 15, %*[{
+      "uri": "file://" & expand_filename(src3_path),
+      "range": {
+         "start": {"line": 28, "character": 9},
+         "end" : {"line": 28, "character": 9}
+      }
+   }])
+)
+
+run_test("textDocument/declaration: nested macro expansion (2)",
+   new_lsp_request(15, "textDocument/declaration", %*{
+      "textDocument": {
+         "uri": "file://" & expand_filename(src3_path),
+      },
+      "position": {
+         "line": 45,
+         "character": 38
+      }
+   }),
+   new_lsp_response(186, 15, %*[{
+      "uri": "file://" & expand_filename(src3_path),
+      "range": {
+         "start": {"line": 28, "character": 9},
+         "end" : {"line": 28, "character": 9}
+      }
+   }])
+)
+
+run_test("textDocument/declaration: macro expansion, two on one line (1)",
+   new_lsp_request(15, "textDocument/declaration", %*{
+      "textDocument": {
+         "uri": "file://" & expand_filename(src3_path),
+      },
+      "position": {
+         "line": 51,
+         "character": 28
+      }
+   }),
+   new_lsp_response(188, 15, %*[{
+      "uri": "file://" & expand_filename(src3_path),
+      "range": {
+         "start": {"line": 12, "character": 28},
+         "end" : {"line": 12, "character": 28}
+      }
+   }])
+)
+
+run_test("textDocument/declaration: macro expansion, two on one line (2)",
+   new_lsp_request(15, "textDocument/declaration", %*{
+      "textDocument": {
+         "uri": "file://" & expand_filename(src3_path),
+      },
+      "position": {
+         "line": 51,
+         "character": 62
+      }
+   }),
+   new_lsp_response(188, 15, %*[{
+      "uri": "file://" & expand_filename(src3_path),
+      "range": {
+         "start": {"line": 15, "character": 32},
+         "end" : {"line": 15, "character": 32}
+      }
+   }])
+)
+
+run_test("textDocument/declaration: macro expansion, expression in argument (1)",
+   new_lsp_request(15, "textDocument/declaration", %*{
+      "textDocument": {
+         "uri": "file://" & expand_filename(src3_path),
+      },
+      "position": {
+         "line": 52,
+         "character": 23
+      }
+   }),
+   new_lsp_response(186, 15, %*[{
+      "uri": "file://" & expand_filename(src3_path),
+      "range": {
+         "start": {"line": 12, "character": 8},
+         "end" : {"line": 12, "character": 8}
+      }
+   }])
+)
+
+run_test("textDocument/declaration: macro expansion, expression in argument (2)",
+   new_lsp_request(15, "textDocument/declaration", %*{
+      "textDocument": {
+         "uri": "file://" & expand_filename(src3_path),
+      },
+      "position": {
+         "line": 52,
+         "character": 33
+      }
+   }),
+   new_lsp_response(188, 15, %*[{
+      "uri": "file://" & expand_filename(src3_path),
+      "range": {
+         "start": {"line": 12, "character": 28},
+         "end" : {"line": 12, "character": 28}
+      }
+   }])
+)
+
+run_test("textDocument/declaration: macro expansion, expression in argument (3)",
+   new_lsp_request(15, "textDocument/declaration", %*{
+      "textDocument": {
+         "uri": "file://" & expand_filename(src3_path),
+      },
+      "position": {
+         "line": 53,
+         "character": 21
+      }
+   }),
+   new_lsp_response(188, 15, %*[{
+      "uri": "file://" & expand_filename(src3_path),
+      "range": {
+         "start": {"line": 15, "character": 32},
+         "end" : {"line": 15, "character": 32}
+      }
+   }])
+)
+
 
 # Shut down the server.
 shutdown(ifs, ofs)

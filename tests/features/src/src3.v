@@ -10,13 +10,13 @@ module module3 #(
     output wire [WIDTH-1:0] data_o
 );
 
-    reg my_reg = 1'b0;
+    reg my_reg = 1'b0; wire one = 1'b1;
     `include "src3.vh"
 
     reg [WIDTH_FROM_HEADER-1:0] wider_reg = 0;
 
     always @(posedge clk_i) begin
-        my_reg <= `NOT(my_reg);
+        my_reg <= `AND(my_reg, one);
         wider_reg <= wider_reg + 1;
     end
 
@@ -35,6 +35,7 @@ module module3 #(
             for (i = 0; i < WIDTH - 1; i = i + 1) begin
                 /* Do something WIDTH - 1 times. */
             end
+            wire foo = `AND_WITH_ZERO(a_common_wire);
         end else begin
             wire a_local_wire = 1'b1;
             integer   i;
@@ -42,9 +43,14 @@ module module3 #(
             for (i = 0; i < WIDTH + 3; i = i + 1) begin
                 /* Do something WIDTH + 3 times. */
             end
+            wire bar = `AND_WITH_ZERO(a_common_wire);
         end
 
         assign an_undeclared_wire = 1'b0;
     endgenerate
+
+    wire baz = `AND(my_reg, one) || `AND(wider_reg[0], wider_reg[1]);
+    wire fizz = `AND(my_reg || one,
+                     wider_reg[0]);
 
 endmodule

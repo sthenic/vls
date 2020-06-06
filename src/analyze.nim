@@ -2,6 +2,7 @@ import strutils
 
 import vparse
 import ./protocol
+import ./log
 
 
 type
@@ -113,8 +114,7 @@ proc check_syntax*(n: PNode, locs: PLocations): seq[LspDiagnostic] =
          add(result, check_syntax(s, locs))
 
 
-proc find_identifier_at(n: PNode, loc: Location, context: var AstContext): PNode =
-   # FIXME: Support identifiers inserted by macro expansion.
+proc find_identifier(n: PNode, loc: Location, context: var AstContext): PNode =
    case n.kind
    of IdentifierTypes:
       # If the node is an identifier type, check if the location is pointing to
@@ -131,10 +131,51 @@ proc find_identifier_at(n: PNode, loc: Location, context: var AstContext): PNode
       #        depending on the location of the first node within?
       for i, s in n.sons:
          add(context, i, n)
-         result = find_identifier_at(s, loc, context)
+         result = find_identifier(s, loc, context)
          if not is_nil(result):
             return
          discard pop(context)
+
+
+proc unroll_location(macro_maps: seq[MacroMap], loc: var Location) =
+   for i, map in macro_maps:
+      for j, lpair in map.locations:
+         if loc == lpair.x:
+            loc = new_location(-(i + 1), j, 0)
+
+
+proc find_identifier_physical(g: Graph, loc: Location, context: var AstContext): PNode =
+   ## Find the identifier at the physical location ``loc``, i.e. ``loc.file`` is
+   ## expected to not point at a macro entry.
+   var lookup_loc = loc
+   var start_col = 0
+   for i, map in g.locations.macro_maps:
+      for j, lpair in map.locations:
+         # The macro map's location database only stores the locations of the
+         # first character in the token and not the length of the token. Given
+         # that the location we're given as an input argument may point to
+         # anywhere within the token, we have to guess what to translate the
+         # physical location to.
+         if loc.file == lpair.x.file and loc.line == lpair.x.line and loc.col >= lpair.x.col:
+            lookup_loc = new_location(-(i + 1), j, 0)
+            start_col = lpair.x.col
+
+         # We don't break out of the loops since a better location may present
+         # itself by looking at later macro maps. The macro maps are organized
+         # in the order they appear in the source file, i.e. left to right, top
+         # to bottom.
+
+   if lookup_loc.file < 0:
+      unroll_location(g.locations.macro_maps, lookup_loc)
+
+   # Make the lookup.
+   result = find_identifier(g.root_node, lookup_loc, context)
+
+   # If we made the lookup using a virtual location, we have to be ready to roll
+   # back the lookup result if it turns out that the input location points
+   # beyond the identifier.
+   if not is_nil(result) and lookup_loc.file < 0 and loc.col > (start_col + len(result.identifier.s) - 1):
+      result = nil
 
 
 proc find_declaration_of(n: PNode, identifier: PIdentifier): PNode =
@@ -241,8 +282,7 @@ proc find_declaration*(g: Graph, line, col: int): seq[LspLocation] =
    # value is nil if there's no identifier at the target location.
    var context: AstContext
    init(context, 32)
-   let identifier = find_identifier_at(g.root_node, new_location(1, line, col),
-                                       context)
+   let identifier = find_identifier_physical(g, new_location(1, line, col), context)
    if is_nil(identifier):
       return
 
