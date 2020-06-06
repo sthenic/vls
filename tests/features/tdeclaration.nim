@@ -713,6 +713,82 @@ run_test("textDocument/declaration: macro expansion, expression in argument (3)"
    }])
 )
 
+run_test("textDocument/declaration: macro lookup, backtick",
+   new_lsp_request(15, "textDocument/declaration", %*{
+      "textDocument": {
+         "uri": "file://" & expand_filename(src3_path),
+      },
+      "position": {
+         "line": 18,
+         "character": 18
+      }
+   }),
+   new_lsp_response(185, 15, %*[{
+      "uri": "file://" & expand_filename(src3_header_path),
+      "range": {
+         "start": {"line": 2, "character": 8},
+         "end" : {"line": 2, "character": 8}
+      }
+   }])
+)
+
+run_test("textDocument/declaration: macro lookup, last character",
+   new_lsp_request(15, "textDocument/declaration", %*{
+      "textDocument": {
+         "uri": "file://" & expand_filename(src3_path),
+      },
+      "position": {
+         "line": 18,
+         "character": 21
+      }
+   }),
+   new_lsp_response(185, 15, %*[{
+      "uri": "file://" & expand_filename(src3_header_path),
+      "range": {
+         "start": {"line": 2, "character": 8},
+         "end" : {"line": 2, "character": 8}
+      }
+   }])
+)
+
+run_test("textDocument/declaration: macro lookup, in the middle",
+   new_lsp_request(15, "textDocument/declaration", %*{
+      "textDocument": {
+         "uri": "file://" & expand_filename(src3_path),
+      },
+      "position": {
+         "line": 37,
+         "character": 32
+      }
+   }),
+   new_lsp_response(187, 15, %*[{
+      "uri": "file://" & expand_filename(src3_header_path),
+      "range": {
+         "start": {"line": 17, "character": 8},
+         "end" : {"line": 17, "character": 8}
+      }
+   }])
+)
+
+run_test("textDocument/declaration: macro lookup, redefinition",
+   new_lsp_request(15, "textDocument/declaration", %*{
+      "textDocument": {
+         "uri": "file://" & expand_filename(src3_path),
+      },
+      "position": {
+         "line": 57,
+         "character": 19
+      }
+   }),
+   new_lsp_response(188, 15, %*[{
+      "uri": "file://" & expand_filename(src3_path),
+      "range": {
+         "start": {"line": 56, "character": 12},
+         "end" : {"line": 56, "character": 12}
+      }
+   }])
+)
+
 
 # Shut down the server.
 shutdown(ifs, ofs)

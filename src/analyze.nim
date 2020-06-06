@@ -2,7 +2,6 @@ import strutils
 
 import vparse
 import ./protocol
-import ./log
 
 
 type
@@ -119,8 +118,10 @@ proc find_identifier(n: PNode, loc: Location, context: var AstContext): PNode =
    of IdentifierTypes:
       # If the node is an identifier type, check if the location is pointing to
       # anywhere within the identifier. Otherwise, we skip it.
-      if loc.file == n.loc.file and loc.line == n.loc.line and loc.col >= n.loc.col and
-         loc.col <= (n.loc.col + len(n.identifier.s) - 1):
+      if (
+         loc.file == n.loc.file and loc.line == n.loc.line and
+         loc.col >= n.loc.col and loc.col <= (n.loc.col + len(n.identifier.s) - 1)
+      ):
          result = n
       else:
          result = nil
@@ -276,6 +277,19 @@ proc find_declaration_of(context: AstContext, identifier: PIdentifier): PNode =
 proc find_declaration*(g: Graph, line, col: int): seq[LspLocation] =
    ## Find where the identifier at ``pos`` is declared. This proc returns a
    ## sequence of LSP locations (which may be empty or just include one element).
+
+   # Before we can assume that the input location is pointing to an identifier,
+   # we have to deal with the possibility that it's pointing to a macro.
+   let loc = new_location(1, line, col)
+   for i, map in g.locations.macro_maps:
+      if (
+         loc.file == map.expansion_loc.file and
+         loc.line == map.expansion_loc.line and
+         loc.col >= map.expansion_loc.col and
+         loc.col <= (map.expansion_loc.col + len(map.name))
+      ):
+         let uri = construct_uri(g.locations.file_maps[map.define_loc.file - 1].filename)
+         return @[new_lsp_location(uri, int(map.define_loc.line - 1), int(map.define_loc.col))]
 
    # We begin by finding the identifier at the input position, keeping in mind
    # that the position doesn't have point to the start of the token. The return

@@ -53,4 +53,8 @@ module module3 #(
     wire fizz = `AND(my_reg || one,
                      wider_reg[0]);
 
+    /* Redefine the `AND macro. */
+    `define AND(x, y) (x & y)
+    wire buzz = `AND(one, my_reg);
+
 endmodule
