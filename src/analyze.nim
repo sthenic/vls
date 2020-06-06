@@ -22,6 +22,11 @@ proc add(c: var AstContext, pos: int, n: PNode) =
    add(c, AstContextItem(pos: pos, n: n))
 
 
+proc in_bounds(x, y: Location, len: int): bool =
+   result = x.file == y.file and x.line == y.line and
+            x.col >= y.col and x.col <= (y.col + len - 1)
+
+
 proc check_syntax*(n: PNode, locs: PLocations): seq[LspDiagnostic] =
    case n.kind
    of {NkTokenError, NkCritical}:
@@ -118,10 +123,7 @@ proc find_identifier(n: PNode, loc: Location, context: var AstContext): PNode =
    of IdentifierTypes:
       # If the node is an identifier type, check if the location is pointing to
       # anywhere within the identifier. Otherwise, we skip it.
-      if (
-         loc.file == n.loc.file and loc.line == n.loc.line and
-         loc.col >= n.loc.col and loc.col <= (n.loc.col + len(n.identifier.s) - 1)
-      ):
+      if in_bounds(loc, n.loc, len(n.identifier.s)):
          result = n
       else:
          result = nil
@@ -282,12 +284,8 @@ proc find_declaration*(g: Graph, line, col: int): seq[LspLocation] =
    # we have to deal with the possibility that it's pointing to a macro.
    let loc = new_location(1, line, col)
    for i, map in g.locations.macro_maps:
-      if (
-         loc.file == map.expansion_loc.file and
-         loc.line == map.expansion_loc.line and
-         loc.col >= map.expansion_loc.col and
-         loc.col <= (map.expansion_loc.col + len(map.name))
-      ):
+      # +1 is to compensate for the expansion location starting at the backtick.
+      if in_bounds(loc, map.expansion_loc, len(map.name) + 1):
          let uri = construct_uri(g.locations.file_maps[map.define_loc.file - 1].filename)
          return @[new_lsp_location(uri, int(map.define_loc.line - 1), int(map.define_loc.col))]
 
