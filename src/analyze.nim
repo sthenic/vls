@@ -3,6 +3,25 @@ import strutils
 import vparse
 import ./protocol
 
+
+type
+   # An AST context item represents a specific node and its position in the
+   # parent node's list of sons.
+   AstContextItem = object
+      pos: int
+      n: PNode
+
+   AstContext = seq[AstContextItem]
+
+
+proc init(c: var AstContext, len: int) =
+   c = new_seq_of_cap[AstContextItem](len)
+
+
+proc add(c: var AstContext, pos: int, n: PNode) =
+   add(c, AstContextItem(pos: pos, n: n))
+
+
 proc check_syntax*(n: PNode, locs: PLocations): seq[LspDiagnostic] =
    case n.kind
    of {NkTokenError, NkCritical}:
@@ -94,7 +113,7 @@ proc check_syntax*(n: PNode, locs: PLocations): seq[LspDiagnostic] =
          add(result, check_syntax(s, locs))
 
 
-proc find_identifier_at(n: PNode, loc: Location): PNode =
+proc find_identifier_at(n: PNode, loc: Location, context: var AstContext): PNode =
    # FIXME: Support identifiers inserted by macro expansion.
    case n.kind
    of IdentifierTypes:
@@ -110,36 +129,107 @@ proc find_identifier_at(n: PNode, loc: Location): PNode =
    else:
       # FIXME: Perhaps we can improve the search here? Skipping entire subtrees
       #        depending on the location of the first node within?
-      for s in n.sons:
-         result = find_identifier_at(s, loc)
+      for i, s in n.sons:
+         add(context, i, n)
+         result = find_identifier_at(s, loc, context)
          if not is_nil(result):
-            break
+            return
+         discard pop(context)
 
 
 proc find_declaration_of(n: PNode, identifier: PIdentifier): PNode =
-   ## Find the AST node declaring ``identifier`` (which is assumed to be in the
-   ## set IdentifierTypes).
-   # If we find an identifier node, we check if it's a match. If we encountered
-   # any other primitive node, we skip it. Otherwise, we recursively call this
-   # function for each node in the subtree, breaking if we find a match.
+   # We have to hande each type of declaration node individually in order to
+   # find the correct identifier node.
+   result = nil
    case n.kind
-   of IdentifierTypes:
-      if n.identifier.s == identifier.s:
-         result = n
-      else:
-         result = nil
-   of PrimitiveTypes - IdentifierTypes + {NkDefparamDecl}:
+   of NkPortDecl:
+      # Look for the first NkPortIdentifier node.
+      for s in n.sons:
+         if s.kind == NkPortIdentifier and s.identifier.s == identifier.s:
+            result = s
+            break
+
+   of NkTaskDecl, NkFunctionDecl, NkGenvarDecl:
+      # Look for the first NkIdentifier node.
+      for s in n.sons:
+         if s.kind == NkIdentifier and s.identifier.s == identifier.s:
+            result = s
+            break
+
+   of NkRegDecl, NkIntegerDecl, NkRealDecl, NkRealtimeDecl, NkTimeDecl, NkNetDecl, NkEventDecl:
+      for s in n.sons:
+         case s.kind
+         of NkArrayIdentifer, NkAssignment:
+            # The first son is expected to be the identifier.
+            if s.sons[0].kind == NkIdentifier and s.sons[0].identifier.s == identifier.s:
+               result = s.sons[0]
+               break
+         of NkIdentifier:
+            if s.identifier.s == identifier.s:
+               result = s
+               break
+         else:
+            discard
+
+   of NkParameterDecl, NkLocalparamDecl:
+      # When we find a NkParamAssignment node, the first son is expected to be
+      # the identifier.
+      for s in n.sons:
+         if s.kind == NkParamAssignment and
+               s.sons[0].kind == NkParameterIdentifier and
+               s.sons[0].identifier.s == identifier.s:
+            result = s
+            break
+
+   of NkSpecparamDecl:
+      # When we find a NkAssignment node, the first son is expected to be the
+      # identifier.
+      for s in n.sons:
+         if s.kind == NkAssignment and
+               s.sons[0].kind == NkIdentifier and
+               s.sons[0].identifier.s == identifier.s:
+            result = s
+            break
+
+   of NkModuleDecl:
+      # Module declarations are special, we have to continue searching the
+      # subtree like the else branch.
+      # FIXME: Search through the include paths as well.
+      for s in n.sons:
+         if s.kind == NkModuleIdentifier and s.identifier.s == identifier.s:
+            result = s
+            break
+         else:
+            result = find_declaration_of(s, identifier)
+            if not is_nil(result):
+               break
+
+   of PrimitiveTypes + {NkDefparamDecl}:
       # Defparam declarations specifically targets an existing parameter and
       # changes its value. Looking up a declaration should never lead to this
       # node.
-      result = nil
+      discard
+
    else:
-      # FIXME: We should only 'arm' the identifier localization if we descend
-      #        into a declaration node!
       for s in n.sons:
          result = find_declaration_of(s, identifier)
          if not is_nil(result):
             break
+
+
+proc find_declaration_of(context: AstContext, identifier: PIdentifier): PNode =
+   # Traverse the context bottom-up, descending into any declaration nodes we
+   # find along the way.
+   result = nil
+   for i in countdown(high(context), 0):
+      let context_item = context[i]
+      if context_item.n.kind notin PrimitiveTypes:
+         for pos in countdown(context_item.pos, 0):
+            let s = context_item.n.sons[pos]
+            if s.kind in DeclarationTypes - {NkDefparamDecl}:
+               result = find_declaration_of(s, identifier)
+               if not is_nil(result):
+                  return
 
 
 proc find_declaration*(g: Graph, line, col: int): seq[LspLocation] =
@@ -149,12 +239,16 @@ proc find_declaration*(g: Graph, line, col: int): seq[LspLocation] =
    # We begin by finding the identifier at the input position, keeping in mind
    # that the position doesn't have point to the start of the token. The return
    # value is nil if there's no identifier at the target location.
-   let identifier = find_identifier_at(g.root_node, new_location(1, line, col))
+   var context: AstContext
+   init(context, 32)
+   let identifier = find_identifier_at(g.root_node, new_location(1, line, col),
+                                       context)
    if is_nil(identifier):
       return
 
-   # Now that we've found the identifier, we look for the matching declaration.
-   let declaration = find_declaration_of(g.root_node, identifier.identifier)
+   # Now that we've found the identifier, we look for the matching declaration
+   # traversing the context bottom-up.
+   let declaration = find_declaration_of(context, identifier.identifier)
    if is_nil(declaration):
       return
 
