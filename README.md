@@ -22,7 +22,7 @@ This tool is a Verilog IEEE 1364-2005 [language server](https://microsoft.github
 - [ ] textDocument/completion
 - [ ] textDocument/hover
 - [ ] textDocument/signatureHelp
-- [ ] textDocument/declaration
+- [x] textDocument/declaration
 - [ ] textDocument/definition
 - [ ] textDocument/references
 - [ ] textDocument/documentHighlight
