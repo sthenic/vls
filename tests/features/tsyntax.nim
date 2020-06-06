@@ -31,6 +31,15 @@ template run_test(title: string, stimuli, reference: LspMessage) =
       inc(nof_failed)
       detailed_compare(response, reference)
 
+
+# Test suite title
+styledWriteLine(stdout, styleBright,
+"""
+
+Test suite: syntax
+------------------""")
+
+
 const src0_path = "./src/src0.v"
 const src0_text = static_read(src0_path)
 run_test("textDocument/didOpen: src0.v",

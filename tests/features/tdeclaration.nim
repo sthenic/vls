@@ -45,6 +45,14 @@ template run_test(title: string, stimuli, reference: LspMessage) =
       detailed_compare(response, reference)
 
 
+# Test suite title
+styledWriteLine(stdout, styleBright,
+"""
+
+Test suite: declaration
+-----------------------""")
+
+
 run_test("textDocument/declaration: port",
    new_lsp_request(0, "textDocument/declaration", %*{
       "textDocument": {

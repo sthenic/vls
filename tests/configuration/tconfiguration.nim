@@ -77,6 +77,14 @@ proc new_configuration(max_nof_diagnostics: int, include_paths, defines: seq[str
    result.max_nof_diagnostics = max_nof_diagnostics
 
 
+# Test suite title
+styledWriteLine(stdout, styleBright,
+"""
+
+Test suite: configuration
+-------------------------""")
+
+
 run_test("verilog.include_paths", """
 [verilog]
 include_paths = [
