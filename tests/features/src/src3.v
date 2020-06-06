@@ -26,4 +26,25 @@ module module3 #(
         .b (my_reg_from_module4)
     );
 
+    wire a_common_wire;
+    generate
+        if (WIDTH == 8) begin
+            wire a_local_wire = 1'b0;
+            assign a_common_wire = a_local_wire;
+            integer i;
+            for (i = 0; i < WIDTH - 1; i = i + 1) begin
+                /* Do something WIDTH - 1 times. */
+            end
+        end else begin
+            wire a_local_wire = 1'b1;
+            integer   i;
+            assign a_common_wire = a_local_wire;
+            for (i = 0; i < WIDTH + 3; i = i + 1) begin
+                /* Do something WIDTH + 3 times. */
+            end
+        end
+
+        assign an_undeclared_wire = 1'b0;
+    endgenerate
+
 endmodule

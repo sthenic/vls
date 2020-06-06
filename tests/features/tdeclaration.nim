@@ -402,6 +402,133 @@ run_test("textDocument/declaration: localparam from include file (overlapping)",
    }])
 )
 
+run_test("textDocument/declaration: integer in local scope (1)",
+   new_lsp_request(15, "textDocument/declaration", %*{
+      "textDocument": {
+         "uri": "file://" & expand_filename(src3_path),
+      },
+      "position": {
+         "line": 34,
+         "character": 17
+      }
+   }),
+   new_lsp_response(188, 15, %*[{
+      "uri": "file://" & expand_filename(src3_path),
+      "range": {
+         "start": {"line": 33, "character": 20},
+         "end" : {"line": 33, "character": 20}
+      }
+   }])
+)
+
+run_test("textDocument/declaration: integer in local scope (2)",
+   new_lsp_request(15, "textDocument/declaration", %*{
+      "textDocument": {
+         "uri": "file://" & expand_filename(src3_path),
+      },
+      "position": {
+         "line": 41,
+         "character": 43
+      }
+   }),
+   new_lsp_response(188, 15, %*[{
+      "uri": "file://" & expand_filename(src3_path),
+      "range": {
+         "start": {"line": 39, "character": 22},
+         "end" : {"line": 39, "character": 22}
+      }
+   }])
+)
+
+run_test("textDocument/declaration: wire in local scope (1)",
+   new_lsp_request(15, "textDocument/declaration", %*{
+      "textDocument": {
+         "uri": "file://" & expand_filename(src3_path),
+      },
+      "position": {
+         "line": 32,
+         "character": 46
+      }
+   }),
+   new_lsp_response(188, 15, %*[{
+      "uri": "file://" & expand_filename(src3_path),
+      "range": {
+         "start": {"line": 31, "character": 17},
+         "end" : {"line": 31, "character": 17}
+      }
+   }])
+)
+
+run_test("textDocument/declaration: wire in local scope (2)",
+   new_lsp_request(15, "textDocument/declaration", %*{
+      "textDocument": {
+         "uri": "file://" & expand_filename(src3_path),
+      },
+      "position": {
+         "line": 40,
+         "character": 35
+      }
+   }),
+   new_lsp_response(188, 15, %*[{
+      "uri": "file://" & expand_filename(src3_path),
+      "range": {
+         "start": {"line": 38, "character": 17},
+         "end" : {"line": 38, "character": 17}
+      }
+   }])
+)
+
+run_test("textDocument/declaration: global wire used in local scope (1)",
+   new_lsp_request(15, "textDocument/declaration", %*{
+      "textDocument": {
+         "uri": "file://" & expand_filename(src3_path),
+      },
+      "position": {
+         "line": 32,
+         "character": 19
+      }
+   }),
+   new_lsp_response(186, 15, %*[{
+      "uri": "file://" & expand_filename(src3_path),
+      "range": {
+         "start": {"line": 28, "character": 9},
+         "end" : {"line": 28, "character": 9}
+      }
+   }])
+)
+
+run_test("textDocument/declaration: global wire used in local scope (2)",
+   new_lsp_request(15, "textDocument/declaration", %*{
+      "textDocument": {
+         "uri": "file://" & expand_filename(src3_path),
+      },
+      "position": {
+         "line": 40,
+         "character": 25
+      }
+   }),
+   new_lsp_response(186, 15, %*[{
+      "uri": "file://" & expand_filename(src3_path),
+      "range": {
+         "start": {"line": 28, "character": 9},
+         "end" : {"line": 28, "character": 9}
+      }
+   }])
+)
+
+run_test("textDocument/declaration: undeclared wire",
+   new_lsp_request(15, "textDocument/declaration", %*{
+      "textDocument": {
+         "uri": "file://" & expand_filename(src3_path),
+      },
+      "position": {
+         "line": 46,
+         "character": 19
+      }
+   }),
+   new_lsp_response(39, 15, new_jnull())
+)
+
 # Shut down the server.
 shutdown(ifs, ofs)
 
