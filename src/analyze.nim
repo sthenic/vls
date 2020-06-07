@@ -2,7 +2,7 @@ import strutils
 
 import vparse
 import ./protocol
-
+import ./source_unit
 
 type
    # An AST context item represents a specific node and its position in the
@@ -27,7 +27,7 @@ proc in_bounds(x, y: Location, len: int): bool =
             x.col >= y.col and x.col <= (y.col + len - 1)
 
 
-proc check_syntax*(n: PNode, locs: PLocations): seq[LspDiagnostic] =
+proc check_syntax(n: PNode, locs: PLocations): seq[LspDiagnostic] =
    case n.kind
    of {NkTokenError, NkCritical}:
       # Create a diagnostic message representing the error node.
@@ -116,6 +116,10 @@ proc check_syntax*(n: PNode, locs: PLocations): seq[LspDiagnostic] =
    else:
       for s in n.sons:
          add(result, check_syntax(s, locs))
+
+
+proc check_syntax*(unit: SourceUnit): seq[LspDiagnostic] =
+   result = check_syntax(unit.graph.root_node, unit.graph.locations)
 
 
 proc find_identifier(n: PNode, loc: Location, context: var AstContext): PNode =
@@ -276,10 +280,11 @@ proc find_declaration(context: AstContext, identifier: PIdentifier): PNode =
                   return
 
 
-proc find_declaration*(g: Graph, line, col: int): seq[LspLocation] =
+proc find_declaration*(unit: SourceUnit, line, col: int): seq[LspLocation] =
    ## Find where the identifier at (``line``, ``col``) is declared. This proc
    ## returns a sequence of LSP locations (which may be empty or just include
    ## one element).
+   let g = unit.graph
 
    # Before we can assume that the input location is pointing to an identifier,
    # we have to deal with the possibility that it's pointing to a macro.
@@ -307,4 +312,3 @@ proc find_declaration*(g: Graph, line, col: int): seq[LspLocation] =
 
    let uri = construct_uri(g.locations.file_maps[n.loc.file - 1].filename)
    add(result, new_lsp_location(uri, int(n.loc.line - 1), int(n.loc.col)))
-

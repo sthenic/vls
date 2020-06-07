@@ -9,6 +9,7 @@ import ./log
 import ./protocol
 import ./analyze
 import ./configuration
+import ./source_unit
 
 
 const
@@ -21,12 +22,6 @@ const
 
 
 type
-   CompileUnit = object
-      uri: string
-      cache: IdentifierCache
-      graph: Graph
-      configuration: Configuration
-
    LspClientCapabilities = object
       diagnostics: bool
       configuration: bool
@@ -37,16 +32,12 @@ type
       is_shut_down: bool
       should_exit: bool
       root_uri: string
-      compile_units: Table[string, CompileUnit]
+      source_units: Table[string, SourceUnit]
       cache: IdentifierCache
       client_capabilities: LspClientCapabilities
       # TODO: This should really not be an option if Neovims language client
       #       correctly reported diagnostic capabilities.
       force_diagnostics*: bool
-
-
-proc close(unit: var CompileUnit) =
-   close_graph(unit.graph)
 
 
 proc init(cc: var LspClientCapabilities) =
@@ -60,7 +51,7 @@ proc open*(s: var LspServer, ifs, ofs : Stream) =
    s.is_initialized = false
    s.is_shut_down = false
    set_len(s.root_uri, 0)
-   s.compile_units = init_table[string, CompileUnit](64)
+   s.source_units = init_table[string, SourceUnit](64)
    init(s.client_capabilities)
 
    # The syslog facilities are only available on Linux and macOS. If the server
@@ -85,9 +76,9 @@ proc recv(s: LspServer): LspMessage =
    result = recv(s.ifs)
 
 
-proc publish_diagnostics(s: LspServer, unit: CompileUnit) =
+proc publish_diagnostics(s: LspServer, unit: SourceUnit) =
    ## Publish diagnostics for the compile unit ``unit``.
-   var diagnostics = check_syntax(unit.graph.root_node, unit.graph.locations)
+   var diagnostics = check_syntax(unit)
    # Limit the maximum number of diagnostic messages if required. Negative
    # values signifies an unlimited number of
    let limit = unit.configuration.max_nof_diagnostics
@@ -96,55 +87,33 @@ proc publish_diagnostics(s: LspServer, unit: CompileUnit) =
       log.debug("Limiting the number of diagnostic messages to $1", limit)
       set_len(diagnostics, limit)
    let parameters = %*{
-      "uri": unit.uri,
+      "uri": construct_uri(unit.filename),
       "diagnostics": diagnostics
    }
    log.debug("Publishing diagnostics: $1", parameters)
    send(s, new_lsp_notification("textDocument/publishDiagnostics", parameters))
 
 
-proc get_configuration(uri: string): Configuration =
-   # Search for a configuration file starting at the file uri and walking up to
-   # the root directory. If we find a file but fail to parse it, we fall back to
-   # default values.
-   log.debug("Searching for a configuration file.")
-   let filename = find_configuration_file(get_path_from_uri(uri))
-   try:
-      result = configuration.parse_file(filename)
-      log.debug("Parsed configuration file '$1'.", filename)
-      log.debug($result)
-   except ConfigurationParseError as e:
-      log.error("Failed to parse configuration file: $1", e.msg)
-      init(result)
-
-
 proc process_text(s: var LspServer, uri, text: string) =
-   ## Create a new compile unit from the input ``text``. The environment
+   ## Create a new source unit from the input ``text``. The environment
    ## (include paths etc.) is initialized from the ``uri``. The resulting
-   ## compile unit will be indexed with the ``uri`` as key.
+   ## source unit will be indexed with the ``uri`` as key.
    log.debug("Processing text from '$1'.", uri)
+   var unit: SourceUnit
+   open(unit, get_path_from_uri(uri), text)
 
-   let ss = new_string_stream(text)
-   let configuration = get_configuration(uri)
-   let cache = new_ident_cache()
-   var graph: Graph
-   open_graph(graph, cache, ss, get_path_from_uri(uri),
-              configuration.include_paths, configuration.defines)
-   close(ss)
-
-   # Index the compile unit to be able to analyze the graph when the client
+   # Index the source unit to be able to analyze the graph when the client
    # makes subsequent request. If an element already exists in the table, we
-   # call the close proc before discarding the old compile unit in favor of
+   # call the close proc before discarding the old source unit in favor of
    # the new.
-   if has_key(s.compile_units, uri):
-      log.debug("Closing compile unit for file '$1'.", uri)
-      close(s.compile_units[uri])
-   log.debug("Adding a new compile unit for the file '$1' to the index.", uri)
-   s.compile_units[uri] = CompileUnit(uri: uri, cache: cache, graph: graph,
-                                      configuration: configuration)
+   if has_key(s.source_units, uri):
+      log.debug("Closing source unit for file '$1'.", uri)
+      close(s.source_units[uri])
+   log.debug("Adding a new source unit for the file '$1' to the index.", uri)
+   s.source_units[uri] = unit
 
    if s.client_capabilities.diagnostics or s.force_diagnostics:
-      publish_diagnostics(s, s.compile_units[uri])
+      publish_diagnostics(s, s.source_units[uri])
 
 
 proc initialize(s: var LspServer, msg: LspMessage) =
@@ -188,8 +157,8 @@ proc declaration(s: LspServer, msg: LspMessage) =
    let line = get_int(msg.parameters["position"]["line"])
    let col = get_int(msg.parameters["position"]["character"])
    let uri = get_str(msg.parameters["textDocument"]["uri"])
-   if has_key(s.compile_units, uri):
-      let locations = find_declaration(s.compile_units[uri].graph, line + 1, col)
+   if has_key(s.source_units, uri):
+      let locations = find_declaration(s.source_units[uri], line + 1, col)
       if len(locations) > 0:
          send(s, new_lsp_response(msg.id, %locations))
       else:
