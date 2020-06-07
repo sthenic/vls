@@ -181,7 +181,7 @@ proc find_identifier_physical(g: Graph, loc: Location, context: var AstContext):
       result = nil
 
 
-proc find_declaration_of(n: PNode, identifier: PIdentifier): PNode =
+proc find_declaration(n: PNode, identifier: PIdentifier): PNode =
    # We have to hande each type of declaration node individually in order to
    # find the correct identifier node.
    result = nil
@@ -244,7 +244,7 @@ proc find_declaration_of(n: PNode, identifier: PIdentifier): PNode =
             result = s
             break
          else:
-            result = find_declaration_of(s, identifier)
+            result = find_declaration(s, identifier)
             if not is_nil(result):
                break
 
@@ -256,12 +256,12 @@ proc find_declaration_of(n: PNode, identifier: PIdentifier): PNode =
 
    else:
       for s in n.sons:
-         result = find_declaration_of(s, identifier)
+         result = find_declaration(s, identifier)
          if not is_nil(result):
             break
 
 
-proc find_declaration_of(context: AstContext, identifier: PIdentifier): PNode =
+proc find_declaration(context: AstContext, identifier: PIdentifier): PNode =
    # Traverse the context bottom-up, descending into any declaration nodes we
    # find along the way.
    result = nil
@@ -271,14 +271,15 @@ proc find_declaration_of(context: AstContext, identifier: PIdentifier): PNode =
          for pos in countdown(context_item.pos, 0):
             let s = context_item.n.sons[pos]
             if s.kind in DeclarationTypes - {NkDefparamDecl}:
-               result = find_declaration_of(s, identifier)
+               result = find_declaration(s, identifier)
                if not is_nil(result):
                   return
 
 
 proc find_declaration*(g: Graph, line, col: int): seq[LspLocation] =
-   ## Find where the identifier at ``pos`` is declared. This proc returns a
-   ## sequence of LSP locations (which may be empty or just include one element).
+   ## Find where the identifier at (``line``, ``col``) is declared. This proc
+   ## returns a sequence of LSP locations (which may be empty or just include
+   ## one element).
 
    # Before we can assume that the input location is pointing to an identifier,
    # we have to deal with the possibility that it's pointing to a macro.
@@ -300,11 +301,10 @@ proc find_declaration*(g: Graph, line, col: int): seq[LspLocation] =
 
    # Now that we've found the identifier, we look for the matching declaration
    # traversing the context bottom-up.
-   let declaration = find_declaration_of(context, identifier.identifier)
-   if is_nil(declaration):
+   let n = find_declaration(context, identifier.identifier)
+   if is_nil(n):
       return
 
-   let declaration_uri = construct_uri(g.locations.file_maps[declaration.loc.file - 1].filename)
-   let declaration_line = declaration.loc.line - 1
-   let declaration_col = declaration.loc.col
-   add(result, new_lsp_location(declaration_uri, int(declaration_line), int(declaration_col)))
+   let uri = construct_uri(g.locations.file_maps[n.loc.file - 1].filename)
+   add(result, new_lsp_location(uri, int(n.loc.line - 1), int(n.loc.col)))
+

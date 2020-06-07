@@ -166,7 +166,8 @@ proc initialize(s: var LspServer, msg: LspMessage) =
       }
       result["capabilities"] = %*{
          "textDocumentSync": 1,
-         "declarationProvider": true
+         "declarationProvider": true,
+         "definitionProvider": true
       }
       send(s, new_lsp_response(msg.id, result))
       s.is_initialized = true
@@ -216,6 +217,9 @@ proc handle_request(s: var LspServer, msg: LspMessage) =
    of "shutdown":
       shutdown(s, msg)
    of "textDocument/declaration":
+      declaration(s, msg)
+   of "textDocument/definition":
+      # FIXME: Figure out if this is good enough.
       declaration(s, msg)
    else:
       let str = format("Unsupported method '$1'.", msg.m)
