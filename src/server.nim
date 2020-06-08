@@ -247,6 +247,11 @@ proc handle_notification(s: var LspServer, msg: LspMessage) =
       let uri = decode_url(get_str(msg.parameters["textDocument"]["uri"]))
       let text = get_str(msg.parameters["contentChanges"][0]["text"])
       process_text(s, uri, text)
+   of "textDocument/didClose":
+      let uri = decode_url(get_str(msg.parameters["textDocument"]["uri"]))
+      if has_key(s.source_units, uri):
+         close(s.source_units[uri])
+         del(s.source_units, uri)
    else:
       # Simply drop all other request.
       discard
