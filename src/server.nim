@@ -156,7 +156,7 @@ proc shutdown(s: var LspServer, msg: LspMessage) =
 proc declaration(s: LspServer, msg: LspMessage) =
    let line = get_int(msg.parameters["position"]["line"])
    let col = get_int(msg.parameters["position"]["character"])
-   let uri = get_str(msg.parameters["textDocument"]["uri"])
+   let uri = decode_url(get_str(msg.parameters["textDocument"]["uri"]))
    if has_key(s.source_units, uri):
       let locations = find_declaration(s.source_units[uri], line + 1, col)
       if len(locations) > 0:
