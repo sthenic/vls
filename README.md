@@ -31,16 +31,18 @@ This tool is a Verilog IEEE 1364-2005 [language server](https://microsoft.github
 
 ## Configuration
 
-The language server is configured with a [TOML](https://github.com/toml-lang/toml) file. When a text document is opened and passed to the language server with the `textDocument/didOpen` request, before parsing its contents, the server looks for a configuration file. The search process walks from the directory of the input  file up to the root directory looking for one of the following files (listed in the order of precedence):
+The language server is configured with a [TOML](https://github.com/toml-lang/toml) file that's parsed by the [`vltoml`](https://github.com/sthenic/vltoml) library.
 
-1. `.vls.toml`
-2. `vls.toml`
-3. `.vls/.vls.toml`
-4. `.vls/vls.toml`
-5. `vls/.vls.toml`
-6. `vls/vls.toml`
+When a text document is opened by the client (`textDocument/didOpen` request) or its contents change (`textDocument/didChange` request), the server looks for a configuration file. The search process walks from the directory of the input  file up to the root directory looking for one of the following files (listed in the order of precedence):
 
-In short, the configuration file can have two different names: `.vls.toml` or `vls.toml` and can reside immediately on the ascended path, or inside a directory named: `.vls/` or `vls/`.
+1. `.vl.toml`
+2. `vl.toml`
+3. `.vl/.vl.toml`
+4. `.vl/vl.toml`
+5. `vl/.vl.toml`
+6. `vl/vl.toml`
+
+In short, the configuration file can have two different names: `.vl.toml` or `vl.toml` and can reside immediately on the ascended path, or inside a directory named: `.vl/` or `vl/`.
 
 ### Example
 

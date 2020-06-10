@@ -1,9 +1,7 @@
-# This module collects the operations
-
 import streams
+import vltoml
 import vparse
 
-import ./configuration
 import ./log
 
 type
@@ -21,7 +19,7 @@ proc get_configuration(source_filename: string): Configuration =
    log.debug("Searching for a configuration file.")
    let filename = find_configuration_file(source_filename)
    try:
-      result = configuration.parse_file(filename)
+      result = vltoml.parse_file(filename)
       log.debug("Parsed configuration file '$1'.", filename)
       log.debug($result)
    except ConfigurationParseError as e:

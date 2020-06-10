@@ -10,6 +10,7 @@ bin = @["vls"]
 requires "nim >= 1.2.0"
 requires "parsetoml >= 0.5.0"
 requires "vparse >= 0.1.0"
+requires "vltoml >= 0.1.0"
 
 
 task dbuild, "install":
@@ -22,7 +23,6 @@ task dinstall, "install":
 
 task test, "Run the test suite":
    exec("nimble protocoltests")
-   exec("nimble configurationtests")
    exec("nimble featuretests")
 
 
@@ -36,8 +36,3 @@ task featuretests, "Run the language feature test suite":
    with_dir("tests/features"):
       exec("nim c --hints:off -r tsyntax")
       exec("nim c --hints:off -r tdeclaration")
-
-
-task configurationtests, "Run the TOML configuration test suite":
-   with_dir("tests/configuration"):
-      exec("nim c --hints:off -r tconfiguration")
