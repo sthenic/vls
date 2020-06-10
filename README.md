@@ -112,11 +112,7 @@ https://github.com/natebosch/vim-lsc
 
 https://github.com/hekwall/nvim-lsp
 
-    lua <<EOF
-      local nvim_lsp = require 'nvim_lsp'
-      local util = require 'nvim_lsp/util'
-      nvim_lsp.vls.setup {}
-    EOF
+    lua require 'nvim_lsp'.vls.setup {}
 
 ## Documentation
 Coming soon.
