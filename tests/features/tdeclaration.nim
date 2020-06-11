@@ -797,6 +797,26 @@ run_test("textDocument/declaration: macro lookup, redefinition",
    }])
 )
 
+const src4_path = "./src/src4.v"
+run_test("textDocument/declaration: module lookup",
+   new_lsp_request(15, "textDocument/declaration", %*{
+      "textDocument": {
+         "uri": "file://" & expand_filename(src3_path),
+      },
+      "position": {
+         "line": 23,
+         "character": 7
+      }
+   }),
+   new_lsp_response(184, 15, %*[{
+      "uri": "file://" & expand_filename(src4_path),
+      "range": {
+         "start": {"line": 0, "character": 7},
+         "end" : {"line": 0, "character": 7}
+      }
+   }])
+)
+
 
 # Shut down the server.
 shutdown(ifs, ofs)

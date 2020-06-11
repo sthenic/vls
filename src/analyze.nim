@@ -1,8 +1,11 @@
 import strutils
-
+import streams
+import os
 import vparse
+
 import ./protocol
 import ./source_unit
+import ./log
 
 type
    # An AST context item represents a specific node and its position in the
@@ -12,6 +15,10 @@ type
       n: PNode
 
    AstContext = seq[AstContextItem]
+
+
+const
+   VERILOG_EXTENSIONS = [".v"]
 
 
 proc init(c: var AstContext, len: int) =
@@ -280,6 +287,39 @@ proc find_declaration(context: AstContext, identifier: PIdentifier): PNode =
                   return
 
 
+iterator walk_verilog_files(dir: string): string {.inline.} =
+   for kind, path in walk_dir(dir):
+      let (_, _, ext) = split_file(path)
+      if kind == pcFile and ext in VERILOG_EXTENSIONS:
+         yield path
+
+
+proc find_module_declaration(unit: SourceUnit, identifier: PIdentifier): seq[LspLocation] =
+   for dir in unit.configuration.include_paths:
+      for filename in walk_verilog_files(dir):
+         # FIXME: Maybe forward include paths and defines?
+         log.debug("Parsing file '$1'.", filename)
+         let fs = new_file_stream(filename)
+         let cache = new_ident_cache()
+         var graph: Graph
+         open_graph(graph, cache, fs, filename, [], [])
+         close(fs)
+
+         if graph.root_node.kind == NkSourceText:
+            # Module declarations nodes have to appear in the outermost tree.
+            for s in graph.root_node.sons:
+               if (
+                  s.kind == NkModuleDecl and
+                  s.sons[0].kind == NkModuleIdentifier and
+                  s.sons[0].identifier.s == identifier.s
+               ):
+                  close_graph(graph)
+                  return @[new_lsp_location(construct_uri(filename),
+                                            int(s.sons[0].loc.line - 1),
+                                            int(s.sons[0].loc.col))]
+         close_graph(graph)
+
+
 proc find_declaration*(unit: SourceUnit, line, col: int): seq[LspLocation] =
    ## Find where the identifier at (``line``, ``col``) is declared. This proc
    ## returns a sequence of LSP locations (which may be empty or just include
@@ -305,10 +345,12 @@ proc find_declaration*(unit: SourceUnit, line, col: int): seq[LspLocation] =
       return
 
    # Now that we've found the identifier, we look for the matching declaration
-   # traversing the context bottom-up.
+   # traversing the context bottom-up. If we don't find a declaration, we may be
+   # holding a module identifier. We support lookup for module declarations but
+   # we have to search through the include paths first.
    let n = find_declaration(context, identifier.identifier)
    if is_nil(n):
-      return
+      return find_module_declaration(unit, identifier.identifier)
 
    let uri = construct_uri(g.locations.file_maps[n.loc.file - 1].filename)
    add(result, new_lsp_location(uri, int(n.loc.line - 1), int(n.loc.col)))
