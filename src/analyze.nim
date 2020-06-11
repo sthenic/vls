@@ -304,30 +304,36 @@ iterator walk_verilog_files(dir: string): string {.inline.} =
          yield path
 
 
+iterator walk_module_declarations(filename: string): PNode {.inline.} =
+   # Module declarations cannot be nested and must occur on the outer level in
+   # the source text,
+   let fs = new_file_stream(filename)
+   if not is_nil(fs):
+      let cache = new_ident_cache()
+      var graph: Graph
+      log.debug("Parsing file '$1'.", filename)
+      open_graph(graph, cache, fs, filename, [], [])
+      close(fs)
+      if graph.root_node.kind == NkSourceText:
+         for s in graph.root_node.sons:
+            if s.kind == NkModuleDecl:
+               yield s
+      close_graph(graph)
+
+
 proc find_module_declaration(unit: SourceUnit, identifier: PIdentifier): seq[LspLocation] =
    for dir in unit.configuration.include_paths:
       for filename in walk_verilog_files(dir):
-         # FIXME: Maybe forward include paths and defines?
-         log.debug("Parsing file '$1'.", filename)
-         let fs = new_file_stream(filename)
-         let cache = new_ident_cache()
-         var graph: Graph
-         open_graph(graph, cache, fs, filename, [], [])
-         close(fs)
+         for module in walk_module_declarations(filename):
+            for s in module.sons:
+               if s.kind == NkModuleIdentifier and s.identifier.s == identifier.s:
+                  return @[
+                     new_lsp_location(construct_uri(filename), int(s.loc.line - 1), int(s.loc.col))
+                  ]
 
-         if graph.root_node.kind == NkSourceText:
-            # Module declarations nodes have to appear in the outermost tree.
-            for s in graph.root_node.sons:
-               if (
-                  s.kind == NkModuleDecl and
-                  s.sons[0].kind == NkModuleIdentifier and
-                  s.sons[0].identifier.s == identifier.s
-               ):
-                  close_graph(graph)
-                  return @[new_lsp_location(construct_uri(filename),
-                                            int(s.sons[0].loc.line - 1),
-                                            int(s.sons[0].loc.col))]
-         close_graph(graph)
+
+proc find_module_port_declaration(unit: SourceUnit, module, port: PIdentifier): seq[LspLocation] =
+   discard
 
 
 proc is_external_identifier(context: AstContext): bool =

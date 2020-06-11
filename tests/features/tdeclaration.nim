@@ -808,11 +808,11 @@ run_test("textDocument/declaration: module lookup",
          "character": 7
       }
    }),
-   new_lsp_response(184, 15, %*[{
+   new_lsp_response(186, 15, %*[{
       "uri": "file://" & expand_filename(src4_path),
       "range": {
-         "start": {"line": 0, "character": 7},
-         "end" : {"line": 0, "character": 7}
+         "start": {"line": 0, "character": 32},
+         "end" : {"line": 0, "character": 32}
       }
    }])
 )

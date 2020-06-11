@@ -1,4 +1,4 @@
-module module4 (
+(* some_attr = "true" *) module module4 (
     input wire clk_i,
     output wire data_o
 );
