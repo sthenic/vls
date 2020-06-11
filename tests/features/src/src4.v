@@ -1,8 +1,11 @@
 module module4 (
-    input wire a,
-    output wire b
+    input wire clk_i,
+    output wire data_o
 );
 
-    assign b = ~a;
+    reg tmp = 1'b0;
+    always @(posedge clk_i)
+        tmp <= ~tmp;
+    assign data_o = tmp;
 
 endmodule

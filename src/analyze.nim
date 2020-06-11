@@ -287,6 +287,16 @@ proc find_declaration(context: AstContext, identifier: PIdentifier): PNode =
                   return
 
 
+proc find_internal_declaration(unit: SourceUnit, context: AstContext,
+                               identifier: PIdentifier): seq[LspLocation] =
+   log.debug("Looking up an internal declaration for '$1'.", identifier.s)
+   # TODO: Find all declarations meybe? Is that even legal?
+   let n = find_declaration(context, identifier)
+   if not is_nil(n):
+      let uri = construct_uri(unit.graph.locations.file_maps[n.loc.file - 1].filename)
+      result = @[new_lsp_location(uri, int(n.loc.line - 1), int(n.loc.col))]
+
+
 iterator walk_verilog_files(dir: string): string {.inline.} =
    for kind, path in walk_dir(dir):
       let (_, _, ext) = split_file(path)
@@ -320,6 +330,36 @@ proc find_module_declaration(unit: SourceUnit, identifier: PIdentifier): seq[Lsp
          close_graph(graph)
 
 
+proc is_external_identifier(context: AstContext): bool =
+   # An external identifier is either a module instantiation or.
+   if len(context) > 0:
+      let n = context[^1].n
+      let pos = context[^1].pos
+      case n.kind
+      of NkModuleInstantiation:
+         result = true
+      of NkPortConnection:
+         var seen_another_identifier = false
+         for i in 0..<pos:
+            seen_another_identifier = (n.sons[i].kind == NkIdentifier)
+         result = not seen_another_identifier
+      else:
+         result = false
+   else:
+      result = false
+
+
+proc find_external_declaration(unit: SourceUnit, context: AstContext,
+                               identifier: PIdentifier): seq[LspLocation] =
+   log.debug("Looking up an external declaration for '$1'.", identifier.s)
+   case context[^1].n.kind
+   of NkModuleInstantiation:
+      result = find_module_declaration(unit, identifier)
+   else:
+      # FIXME: Support looking up external module port declarations.
+      discard
+
+
 proc find_declaration*(unit: SourceUnit, line, col: int): seq[LspLocation] =
    ## Find where the identifier at (``line``, ``col``) is declared. This proc
    ## returns a sequence of LSP locations (which may be empty or just include
@@ -344,13 +384,10 @@ proc find_declaration*(unit: SourceUnit, line, col: int): seq[LspLocation] =
    if is_nil(identifier):
       return
 
-   # Now that we've found the identifier, we look for the matching declaration
-   # traversing the context bottom-up. If we don't find a declaration, we may be
-   # holding a module identifier. We support lookup for module declarations but
-   # we have to search through the include paths first.
-   let n = find_declaration(context, identifier.identifier)
-   if is_nil(n):
-      return find_module_declaration(unit, identifier.identifier)
-
-   let uri = construct_uri(g.locations.file_maps[n.loc.file - 1].filename)
-   add(result, new_lsp_location(uri, int(n.loc.line - 1), int(n.loc.col)))
+   # We have to determine if we should look for an internal (in the context) or
+   # an external declaration. In the case of the latter, we only support lookup
+   # of module instantiations and their ports.
+   if is_external_identifier(context):
+      return find_external_declaration(unit, context, identifier.identifier)
+   else:
+      return find_internal_declaration(unit, context, identifier.identifier)

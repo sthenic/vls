@@ -20,10 +20,10 @@ module module3 #(
         wider_reg <= wider_reg + 1;
     end
 
-    wire my_reg_from_module4;
+    wire from_module4;
     module4 module4_inst (
-        .a (my_reg),
-        .b (my_reg_from_module4)
+        (* some_attr = "true" *) .clk_i (clk_i),
+        .data_o (from_module4)
     );
 
     wire a_common_wire;

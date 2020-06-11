@@ -817,6 +817,38 @@ run_test("textDocument/declaration: module lookup",
    }])
 )
 
+run_test("textDocument/declaration: module port lookup",
+   new_lsp_request(15, "textDocument/declaration", %*{
+      "textDocument": {
+         "uri": "file://" & expand_filename(src3_path),
+      },
+      "position": {
+         "line": 24,
+         "character": 35
+      }
+   }),
+   new_lsp_response(39, 15, new_jnull())
+)
+
+run_test("textDocument/declaration: module port connection lookup",
+   new_lsp_request(15, "textDocument/declaration", %*{
+      "textDocument": {
+         "uri": "file://" & expand_filename(src3_path),
+      },
+      "position": {
+         "line": 24,
+         "character": 44
+      }
+   }),
+   new_lsp_response(186, 15, %*[{
+      "uri": "file://" & expand_filename(src3_path),
+      "range": {
+         "start": {"line": 3, "character": 15},
+         "end" : {"line": 3, "character": 15}
+      }
+   }])
+)
+
 
 # Shut down the server.
 shutdown(ifs, ofs)
