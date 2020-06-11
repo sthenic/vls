@@ -18,13 +18,14 @@ proc get_configuration(source_filename: string): Configuration =
    # we fall back to default values.
    log.debug("Searching for a configuration file.")
    let filename = find_configuration_file(source_filename)
-   try:
-      result = vltoml.parse_file(filename)
-      log.debug("Parsed configuration file '$1'.", filename)
-      log.debug($result)
-   except ConfigurationParseError as e:
-      log.error("Failed to parse configuration file: $1", e.msg)
-      init(result)
+   init(result)
+   if len(filename) > 0:
+      try:
+         result = vltoml.parse_file(filename)
+         log.debug("Using configuration file '$1'.", filename)
+         log.debug($result)
+      except ConfigurationParseError as e:
+         log.error("Failed to parse configuration file: '$1'", e.msg)
 
 
 proc open*(unit: var SourceUnit, filename, text: string) =
