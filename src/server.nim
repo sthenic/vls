@@ -194,7 +194,7 @@ proc handle_request(s: var LspServer, msg: LspMessage) =
       send(s, new_lsp_response(msg.id, RPC_INVALID_REQUEST, str, nil))
 
 
-proc initialied(s: LspServer) =
+proc initialized(s: LspServer) =
    # Handles the 'initialized' notification sent from the language client. We
    # use this to register for dynamic events.
    if s.client_capabilities.configuration:
@@ -233,7 +233,7 @@ proc handle_notification(s: var LspServer, msg: LspMessage) =
 
    case msg.m
    of "initialized":
-      initialied(s)
+      initialized(s)
    of "workspace/didChangeConfiguration":
       workspace_changed_configuration(s)
    of "textDocument/didOpen":
