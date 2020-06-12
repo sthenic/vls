@@ -1,4 +1,6 @@
-(* some_attr = "true" *) module module5 (
+(* some_attr = "true" *) module module5 #(
+    parameter FOO = 0, parameter BaR = "baz"
+)(
     .clk_i(clk_local),
     data_o, valid_o
 );

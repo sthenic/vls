@@ -1,0 +1,7 @@
+[verilog]
+include_paths = [
+    "src"
+]
+
+[vls]
+max_nof_diagnostics = 5

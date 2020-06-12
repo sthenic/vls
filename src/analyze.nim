@@ -34,6 +34,19 @@ proc in_bounds(x, y: Location, len: int): bool =
             x.col >= y.col and x.col <= (y.col + len - 1)
 
 
+# TODO: These functions should probably move into vparse.
+proc find_first(n: PNode, kinds: NodeKinds): PNode =
+   result = nil
+   if n.kind notin PrimitiveTypes:
+      for s in n.sons:
+         if s.kind in kinds:
+            return s
+
+
+template find_first(n: PNode, kind: NodeKind): PNode =
+   find_first(n, {kind})
+
+
 proc check_syntax(n: PNode, locs: PLocations): seq[LspDiagnostic] =
    case n.kind
    of {NkTokenError, NkCritical}:
@@ -247,17 +260,11 @@ proc find_declaration(n: PNode, identifier: PIdentifier): PNode =
             break
 
    of NkModuleDecl:
-      # Module declarations are special, we have to continue searching the
-      # subtree like the else branch.
-      # FIXME: Search through the include paths as well.
-      for s in n.sons:
-         if s.kind == NkModuleIdentifier and s.identifier.s == identifier.s:
-            result = s
-            break
-         else:
-            result = find_declaration(s, identifier)
-            if not is_nil(result):
-               break
+      # This path is never taken since a the lookup of a module declaration is
+      # handled by find_module_declaration() which performs a lookup.
+      let id = find_first(n, NkModuleIdentifier)
+      if not is_nil(id) and id.identifier.s == identifier.s:
+         result = id
 
    of PrimitiveTypes + {NkDefparamDecl}:
       # Defparam declarations specifically targets an existing parameter and
@@ -290,7 +297,7 @@ proc find_declaration(context: AstContext, identifier: PIdentifier): PNode =
 proc find_internal_declaration(unit: SourceUnit, context: AstContext,
                                identifier: PIdentifier): seq[LspLocation] =
    log.debug("Looking up an internal declaration for '$1'.", identifier.s)
-   # TODO: Find all declarations meybe? Is that even legal?
+   # TODO: Find all declarations maybe? Is that even legal?
    let n = find_declaration(context, identifier)
    if not is_nil(n):
       let uri = construct_uri(unit.graph.locations.file_maps[n.loc.file - 1].filename)
@@ -353,58 +360,75 @@ iterator walk_ports(n: PNode): PNode {.inline.} =
                   yield p
 
 
-proc find_first(n: PNode, kinds: NodeKinds): PNode =
-   result = nil
-   if n.kind notin PrimitiveTypes:
-      for s in n.sons:
-         if s.kind in kinds:
-            return s
-
-
-template find_first(n: PNode, kind: NodeKind): PNode =
-   find_first(n, {kind})
-
-
 proc find_module_port_declaration(unit: SourceUnit, module_id, port_id: PIdentifier): seq[LspLocation] =
    for filename, module in walk_module_declarations(unit.configuration.include_paths):
-      for s in module.sons:
-         if s.kind == NkModuleIdentifier and s.identifier.s == module_id.s:
-            # We've found the module. Start going through the ports,
-            # looking for a match.
-            for port in walk_ports(module):
-               case port.kind
-               of NkPortDecl:
-                  let id = find_first(port, NkPortIdentifier)
+      let id = find_first(module, NkModuleIdentifier)
+      if is_nil(id) or id.identifier.s != module_id.s:
+         continue
+
+      # We've found the module. Start going through the ports looking for
+      # a match.
+      for port in walk_ports(module):
+         case port.kind
+         of NkPortDecl:
+            let id = find_first(port, NkPortIdentifier)
+            if not is_nil(id) and id.identifier.s == port_id.s:
+               return @[
+                  new_lsp_location(construct_uri(filename),
+                                    int(id.loc.line - 1),
+                                    int(id.loc.col))
+               ]
+         of NkPort:
+            # If we find a port identifier as the first node, that's the
+            # name that this port is known by from the outside. Otherwise,
+            # we're looking for the first identifier in a port reference.
+            let id = find_first(port, NkPortIdentifier)
+            if not is_nil(id) and id.identifier.s == port_id.s:
+               return @[
+                  new_lsp_location(construct_uri(filename),
+                                    int(id.loc.line - 1),
+                                    int(id.loc.col))
+               ]
+            else:
+               let port_ref = find_first(port, NkPortReference)
+               if not is_nil(port_ref):
+                  let id = find_first(port_ref, NkPortIdentifier)
                   if not is_nil(id) and id.identifier.s == port_id.s:
                      return @[
                         new_lsp_location(construct_uri(filename),
-                                         int(id.loc.line - 1),
-                                         int(id.loc.col))
+                                          int(id.loc.line - 1),
+                                          int(id.loc.col))
                      ]
-               of NkPort:
-                  # If we find a port identifier as the first node, that's the
-                  # name that this port is known by from the outside. Otherwise,
-                  # we're looking for the first identifier in a port reference.
-                  let id = find_first(port, NkPortIdentifier)
-                  if not is_nil(id) and id.identifier.s == port_id.s:
-                     return @[
-                        new_lsp_location(construct_uri(filename),
-                                         int(id.loc.line - 1),
-                                         int(id.loc.col))
-                     ]
-                  else:
-                     let port_ref = find_first(port, NkPortReference)
-                     if not is_nil(port_ref):
-                        let id = find_first(port_ref, NkPortIdentifier)
-                        if not is_nil(id) and id.identifier.s == port_id.s:
-                           return @[
-                              new_lsp_location(construct_uri(filename),
-                                               int(id.loc.line - 1),
-                                               int(id.loc.col))
-                           ]
-               else:
-                  return
+         else:
             return
+      return
+
+
+iterator walk_parameter_ports(n: PNode): PNode {.inline.} =
+   if n.kind == NkModuleDecl:
+      for s in n.sons:
+         if s.kind == NkModuleParameterPortList:
+            for p in s.sons:
+               if p.kind == NkParameterDecl:
+                  yield p
+
+
+proc find_module_parameter_port_declaration(unit: SourceUnit, module_id, parameter_id: PIdentifier): seq[LspLocation] =
+   for filename, module in walk_module_declarations(unit.configuration.include_paths):
+      let id = find_first(module, NkModuleIdentifier)
+      if is_nil(id) or id.identifier.s != module_id.s:
+         continue
+
+      for parameter in walk_parameter_ports(module):
+         let assignment = find_first(parameter, NkParamAssignment)
+         if not is_nil(assignment):
+            let id = find_first(assignment, NkParameterIdentifier)
+            if not is_nil(id) and id.identifier.s == parameter_id.s:
+               return @[
+                  new_lsp_location(construct_uri(filename),
+                                   int(id.loc.line - 1),
+                                   int(id.loc.col))
+               ]
 
 
 proc is_external_identifier(context: AstContext): bool =
@@ -414,12 +438,20 @@ proc is_external_identifier(context: AstContext): bool =
       let pos = context[^1].pos
       case n.kind
       of NkModuleInstantiation:
+         # TODO: This fails to find a module declaration if it's located in the
+         #       same file (context) and the file itself is _not_ on the include
+         #       path.
          result = true
       of NkPortConnection:
+         # We only perform an external lookup if the target identifier is the
+         # one following the dot.
          var seen_another_identifier = false
          for i in 0..<pos:
             seen_another_identifier = (n.sons[i].kind == NkIdentifier)
          result = not seen_another_identifier
+      of NkAssignment:
+         if len(context) > 1:
+            result = context[^2].n.kind == NkParameterValueAssignment
       else:
          result = false
    else:
@@ -438,6 +470,13 @@ proc find_external_declaration(unit: SourceUnit, context: AstContext,
       let module = find_first(context[^3].n, IdentifierTypes)
       if not is_nil(module):
          result = find_module_port_declaration(unit, module.identifier, identifier)
+   of NkAssignment:
+      # When this proc is called, it's already been established that an
+      # assignment node implies that we should look for an external port
+      # declaration. But before we can do that, we need the module name.
+      let module = find_first(context[^3].n, IdentifierTypes)
+      if not is_nil(module):
+         result = find_module_parameter_port_declaration(unit, module.identifier, identifier)
    else:
       discard
 
