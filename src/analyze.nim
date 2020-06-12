@@ -34,19 +34,6 @@ proc in_bounds(x, y: Location, len: int): bool =
             x.col >= y.col and x.col <= (y.col + len - 1)
 
 
-# TODO: These functions should probably move into vparse.
-proc find_first(n: PNode, kinds: NodeKinds): PNode =
-   result = nil
-   if n.kind notin PrimitiveTypes:
-      for s in n.sons:
-         if s.kind in kinds:
-            return s
-
-
-template find_first(n: PNode, kind: NodeKind): PNode =
-   find_first(n, {kind})
-
-
 proc check_syntax(n: PNode, locs: PLocations): seq[LspDiagnostic] =
    case n.kind
    of {NkTokenError, NkCritical}:
@@ -342,13 +329,6 @@ proc find_module_declaration(unit: SourceUnit, identifier: PIdentifier): seq[Lsp
             return @[
                new_lsp_location(construct_uri(filename), int(s.loc.line - 1), int(s.loc.col))
             ]
-
-
-iterator walk_identifiers(n: PNode): PNode {.inline.} =
-   if n.kind notin PrimitiveTypes:
-      for s in n.sons:
-         if s.kind in IdentifierTypes:
-            yield s
 
 
 iterator walk_ports(n: PNode): PNode {.inline.} =
