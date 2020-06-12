@@ -827,7 +827,13 @@ run_test("textDocument/declaration: module port lookup",
          "character": 35
       }
    }),
-   new_lsp_response(39, 15, new_jnull())
+   new_lsp_response(186, 15, %*[{
+      "uri": "file://" & expand_filename(src4_path),
+      "range": {
+         "start": {"line": 1, "character": 44},
+         "end" : {"line": 1, "character": 44}
+      }
+   }])
 )
 
 run_test("textDocument/declaration: module port connection lookup",

@@ -321,19 +321,73 @@ iterator walk_module_declarations(filename: string): PNode {.inline.} =
       close_graph(graph)
 
 
-proc find_module_declaration(unit: SourceUnit, identifier: PIdentifier): seq[LspLocation] =
-   for dir in unit.configuration.include_paths:
+iterator walk_module_declarations(include_paths: seq[string]): tuple[filename: string, n: PNode] {.inline.} =
+   for dir in include_paths:
       for filename in walk_verilog_files(dir):
          for module in walk_module_declarations(filename):
-            for s in module.sons:
-               if s.kind == NkModuleIdentifier and s.identifier.s == identifier.s:
-                  return @[
-                     new_lsp_location(construct_uri(filename), int(s.loc.line - 1), int(s.loc.col))
-                  ]
+            yield (filename, module)
 
 
-proc find_module_port_declaration(unit: SourceUnit, module, port: PIdentifier): seq[LspLocation] =
-   discard
+proc find_module_declaration(unit: SourceUnit, identifier: PIdentifier): seq[LspLocation] =
+   for filename, module in walk_module_declarations(unit.configuration.include_paths):
+      for s in module.sons:
+         if s.kind == NkModuleIdentifier and s.identifier.s == identifier.s:
+            return @[
+               new_lsp_location(construct_uri(filename), int(s.loc.line - 1), int(s.loc.col))
+            ]
+
+
+iterator walk_identifiers(n: PNode): PNode {.inline.} =
+   if n.kind notin PrimitiveTypes:
+      for s in n.sons:
+         if s.kind in IdentifierTypes:
+            yield s
+
+
+iterator walk_ports(n: PNode): PNode {.inline.} =
+   if n.kind == NkModuleDecl:
+      for s in n.sons:
+         if s.kind in {NkListOfPortDeclarations, NkListOfPorts}:
+            for p in s.sons:
+               if p.kind in {NkPortDecl, NkPort}:
+                  yield p
+
+
+proc find_first(n: PNode, kinds: NodeKinds): PNode =
+   result = nil
+   if n.kind notin PrimitiveTypes:
+      for s in n.sons:
+         if s.kind in kinds:
+            return s
+
+
+template find_first(n: PNode, kind: NodeKind): PNode =
+   find_first(n, {kind})
+
+
+proc find_module_port_declaration(unit: SourceUnit, module_id, port_id: PIdentifier): seq[LspLocation] =
+   for filename, module in walk_module_declarations(unit.configuration.include_paths):
+      for s in module.sons:
+         if s.kind == NkModuleIdentifier and s.identifier.s == module_id.s:
+            # We've found the module. Start going through the ports,
+            # looking for a match.
+            for port in walk_ports(module):
+               case port.kind
+               of NkPortDecl:
+                  let id = find_first(port, NkPortIdentifier)
+                  if not is_nil(id):
+                     if id.identifier.s == port_id.s:
+                        return @[
+                           new_lsp_location(construct_uri(filename),
+                                            int(id.loc.line - 1),
+                                            int(id.loc.col))
+                        ]
+               of NkPort:
+                  # FIXME: Implement
+                  return
+               else:
+                  return
+            return
 
 
 proc is_external_identifier(context: AstContext): bool =
@@ -361,8 +415,13 @@ proc find_external_declaration(unit: SourceUnit, context: AstContext,
    case context[^1].n.kind
    of NkModuleInstantiation:
       result = find_module_declaration(unit, identifier)
+   of NkPortConnection:
+      # We first need to find the name of the module before we can proceed with
+      # the lookup.
+      let module = find_first(context[^3].n, IdentifierTypes)
+      if not is_nil(module):
+         result = find_module_port_declaration(unit, module.identifier, identifier)
    else:
-      # FIXME: Support looking up external module port declarations.
       discard
 
 
