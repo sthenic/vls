@@ -855,6 +855,76 @@ run_test("textDocument/declaration: module port connection lookup",
    }])
 )
 
+# Open the file "./src/src4.v", expecting no parsing errors.
+const src4_text = static_read(src4_path)
+send(ifs, new_lsp_notification("textDocument/didOpen", %*{
+   "textDocument": {
+      "uri": "file://" & expand_filename(src4_path),
+      "languageId": "verilog",
+      "version": 0,
+      "text": src4_text
+   }
+}))
+assert len(recv(ofs).parameters["diagnostics"]) == 0
+
+const src5_path = "./src/src5.v"
+run_test("textDocument/declaration: module port lookup, explicit port reference",
+   new_lsp_request(15, "textDocument/declaration", %*{
+      "textDocument": {
+         "uri": "file://" & expand_filename(src4_path),
+      },
+      "position": {
+         "line": 12,
+         "character": 10
+      }
+   }),
+   new_lsp_response(184, 15, %*[{
+      "uri": "file://" & expand_filename(src5_path),
+      "range": {
+         "start": {"line": 1, "character": 5},
+         "end" : {"line": 1, "character": 5}
+      }
+   }])
+)
+
+run_test("textDocument/declaration: module port lookup, implicit port reference (1)",
+   new_lsp_request(15, "textDocument/declaration", %*{
+      "textDocument": {
+         "uri": "file://" & expand_filename(src4_path),
+      },
+      "position": {
+         "line": 13,
+         "character": 14
+      }
+   }),
+   new_lsp_response(184, 15, %*[{
+      "uri": "file://" & expand_filename(src5_path),
+      "range": {
+         "start": {"line": 2, "character": 4},
+         "end" : {"line": 2, "character": 4}
+      }
+   }])
+)
+
+run_test("textDocument/declaration: module port lookup, implicit port reference (2)",
+   new_lsp_request(15, "textDocument/declaration", %*{
+      "textDocument": {
+         "uri": "file://" & expand_filename(src4_path),
+      },
+      "position": {
+         "line": 14,
+         "character": 9
+      }
+   }),
+   new_lsp_response(186, 15, %*[{
+      "uri": "file://" & expand_filename(src5_path),
+      "range": {
+         "start": {"line": 2, "character": 12},
+         "end" : {"line": 2, "character": 12}
+      }
+   }])
+)
+
 
 # Shut down the server.
 shutdown(ifs, ofs)

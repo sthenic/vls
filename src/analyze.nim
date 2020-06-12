@@ -375,16 +375,33 @@ proc find_module_port_declaration(unit: SourceUnit, module_id, port_id: PIdentif
                case port.kind
                of NkPortDecl:
                   let id = find_first(port, NkPortIdentifier)
-                  if not is_nil(id):
-                     if id.identifier.s == port_id.s:
-                        return @[
-                           new_lsp_location(construct_uri(filename),
-                                            int(id.loc.line - 1),
-                                            int(id.loc.col))
-                        ]
+                  if not is_nil(id) and id.identifier.s == port_id.s:
+                     return @[
+                        new_lsp_location(construct_uri(filename),
+                                         int(id.loc.line - 1),
+                                         int(id.loc.col))
+                     ]
                of NkPort:
-                  # FIXME: Implement
-                  return
+                  # If we find a port identifier as the first node, that's the
+                  # name that this port is known by from the outside. Otherwise,
+                  # we're looking for the first identifier in a port reference.
+                  let id = find_first(port, NkPortIdentifier)
+                  if not is_nil(id) and id.identifier.s == port_id.s:
+                     return @[
+                        new_lsp_location(construct_uri(filename),
+                                         int(id.loc.line - 1),
+                                         int(id.loc.col))
+                     ]
+                  else:
+                     let port_ref = find_first(port, NkPortReference)
+                     if not is_nil(port_ref):
+                        let id = find_first(port_ref, NkPortIdentifier)
+                        if not is_nil(id) and id.identifier.s == port_id.s:
+                           return @[
+                              new_lsp_location(construct_uri(filename),
+                                               int(id.loc.line - 1),
+                                               int(id.loc.col))
+                           ]
                else:
                   return
             return
