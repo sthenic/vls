@@ -16,9 +16,16 @@ type
 
    AstContext = seq[AstContextItem]
 
+   AnalyzeError* = object of ValueError
+
 
 const
    VERILOG_EXTENSIONS = [".v"]
+
+
+proc new_analyze_error(msg: string, args: varargs[string, `$`]): ref AnalyzeError =
+   new result
+   result.msg = format(msg, args)
 
 
 proc init(c: var AstContext, len: int) =
@@ -272,14 +279,14 @@ proc find_declaration(context: AstContext, identifier: PIdentifier): PNode =
                   return
 
 
-proc find_internal_declaration(unit: SourceUnit, context: AstContext,
-                               identifier: PIdentifier): seq[LspLocation] =
+proc find_internal_declaration(unit: SourceUnit, context: AstContext, identifier: PIdentifier): LspLocation =
    log.debug("Looking up an internal declaration for '$1'.", identifier.s)
-   # TODO: Find all declarations maybe? Is that even legal?
    let n = find_declaration(context, identifier)
    if not is_nil(n):
       let uri = construct_uri(unit.graph.locations.file_maps[n.loc.file - 1].filename)
-      result = @[new_lsp_location(uri, int(n.loc.line - 1), int(n.loc.col))]
+      result = new_lsp_location(uri, int(n.loc.line - 1), int(n.loc.col))
+   else:
+      raise new_analyze_error("Failed to find the declaration of identifier '$1'.", identifier.s)
 
 
 iterator walk_verilog_files(dir: string): string {.inline.} =
@@ -313,13 +320,12 @@ iterator walk_module_declarations(include_paths: seq[string]): tuple[filename: s
             yield (filename, module)
 
 
-proc find_module_declaration(unit: SourceUnit, identifier: PIdentifier): seq[LspLocation] =
+proc find_module_declaration(unit: SourceUnit, identifier: PIdentifier): LspLocation =
    for filename, module in walk_module_declarations(unit.configuration.include_paths):
       for s in module.sons:
          if s.kind == NkModuleIdentifier and s.identifier.s == identifier.s:
-            return @[
-               new_lsp_location(construct_uri(filename), int(s.loc.line - 1), int(s.loc.col))
-            ]
+            return new_lsp_location(construct_uri(filename), int(s.loc.line - 1), int(s.loc.col))
+   raise new_analyze_error("Failed to find the declaration of module '$1'.", identifier.s)
 
 
 iterator walk_ports(n: PNode): PNode {.inline.} =
@@ -331,48 +337,42 @@ iterator walk_ports(n: PNode): PNode {.inline.} =
                   yield p
 
 
-proc find_module_port_declaration(unit: SourceUnit, module_id, port_id: PIdentifier): seq[LspLocation] =
+proc find_module_port_declaration(unit: SourceUnit, module_id, port_id: PIdentifier): LspLocation =
    for filename, module in walk_module_declarations(unit.configuration.include_paths):
       let id = find_first(module, NkModuleIdentifier)
       if is_nil(id) or id.identifier.s != module_id.s:
          continue
 
-      # We've found the module. Start going through the ports looking for
-      # a match.
+      # We've found the module. Start going through the ports looking for a match.
       for port in walk_ports(module):
          case port.kind
          of NkPortDecl:
             let id = find_first(port, NkPortIdentifier)
             if not is_nil(id) and id.identifier.s == port_id.s:
-               return @[
-                  new_lsp_location(construct_uri(filename),
-                                    int(id.loc.line - 1),
-                                    int(id.loc.col))
-               ]
+               return new_lsp_location(construct_uri(filename),
+                                       int(id.loc.line - 1),
+                                       int(id.loc.col))
          of NkPort:
             # If we find a port identifier as the first node, that's the
             # name that this port is known by from the outside. Otherwise,
             # we're looking for the first identifier in a port reference.
             let id = find_first(port, NkPortIdentifier)
             if not is_nil(id) and id.identifier.s == port_id.s:
-               return @[
-                  new_lsp_location(construct_uri(filename),
-                                    int(id.loc.line - 1),
-                                    int(id.loc.col))
-               ]
+               return new_lsp_location(construct_uri(filename),
+                                       int(id.loc.line - 1),
+                                       int(id.loc.col))
             else:
                let port_ref = find_first(port, NkPortReference)
                if not is_nil(port_ref):
                   let id = find_first(port_ref, NkPortIdentifier)
                   if not is_nil(id) and id.identifier.s == port_id.s:
-                     return @[
-                        new_lsp_location(construct_uri(filename),
-                                          int(id.loc.line - 1),
-                                          int(id.loc.col))
-                     ]
+                     return new_lsp_location(construct_uri(filename),
+                                             int(id.loc.line - 1),
+                                             int(id.loc.col))
          else:
-            return
-      return
+            discard
+
+   raise new_analyze_error("Failed to find the declaration of port '$1'.", port_id.s)
 
 
 iterator walk_parameter_ports(n: PNode): PNode {.inline.} =
@@ -384,7 +384,7 @@ iterator walk_parameter_ports(n: PNode): PNode {.inline.} =
                   yield p
 
 
-proc find_module_parameter_port_declaration(unit: SourceUnit, module_id, parameter_id: PIdentifier): seq[LspLocation] =
+proc find_module_parameter_port_declaration(unit: SourceUnit, module_id, parameter_id: PIdentifier): LspLocation =
    for filename, module in walk_module_declarations(unit.configuration.include_paths):
       let id = find_first(module, NkModuleIdentifier)
       if is_nil(id) or id.identifier.s != module_id.s:
@@ -395,11 +395,9 @@ proc find_module_parameter_port_declaration(unit: SourceUnit, module_id, paramet
          if not is_nil(assignment):
             let id = find_first(assignment, NkParameterIdentifier)
             if not is_nil(id) and id.identifier.s == parameter_id.s:
-               return @[
-                  new_lsp_location(construct_uri(filename),
-                                   int(id.loc.line - 1),
-                                   int(id.loc.col))
-               ]
+               return new_lsp_location(construct_uri(filename), int(id.loc.line - 1), int(id.loc.col))
+
+   raise new_analyze_error("Failed to find the declaration of parameter port '$1'.", parameter_id.s)
 
 
 proc is_external_identifier(context: AstContext): bool =
@@ -429,8 +427,7 @@ proc is_external_identifier(context: AstContext): bool =
       result = false
 
 
-proc find_external_declaration(unit: SourceUnit, context: AstContext,
-                               identifier: PIdentifier): seq[LspLocation] =
+proc find_external_declaration(unit: SourceUnit, context: AstContext, identifier: PIdentifier): LspLocation =
    log.debug("Looking up an external declaration for '$1'.", identifier.s)
    case context[^1].n.kind
    of NkModuleInstantiation:
@@ -449,13 +446,12 @@ proc find_external_declaration(unit: SourceUnit, context: AstContext,
       if not is_nil(module):
          result = find_module_parameter_port_declaration(unit, module.identifier, identifier)
    else:
-      discard
+      raise new_analyze_error("Invalid context for an external declaration lookup.")
 
 
-proc find_declaration*(unit: SourceUnit, line, col: int): seq[LspLocation] =
+proc find_declaration*(unit: SourceUnit, line, col: int): LspLocation =
    ## Find where the identifier at (``line``, ``col``) is declared. This proc
-   ## returns a sequence of LSP locations (which may be empty or just include
-   ## one element).
+   ## returns an LSP locations if successful. Otherwise, it raises an AnalyzeError.
    let g = unit.graph
 
    # Before we can assume that the input location is pointing to an identifier,
@@ -465,7 +461,7 @@ proc find_declaration*(unit: SourceUnit, line, col: int): seq[LspLocation] =
       # +1 is to compensate for the expansion location starting at the backtick.
       if in_bounds(loc, map.expansion_loc, len(map.name) + 1):
          let uri = construct_uri(g.locations.file_maps[map.define_loc.file - 1].filename)
-         return @[new_lsp_location(uri, int(map.define_loc.line - 1), int(map.define_loc.col))]
+         return new_lsp_location(uri, int(map.define_loc.line - 1), int(map.define_loc.col))
 
    # We begin by finding the identifier at the input position, keeping in mind
    # that the position doesn't have point to the start of the token. The return
@@ -474,7 +470,7 @@ proc find_declaration*(unit: SourceUnit, line, col: int): seq[LspLocation] =
    init(context, 32)
    let identifier = find_identifier_physical(g, new_location(1, line, col), context)
    if is_nil(identifier):
-      return
+      raise new_analyze_error("Failed to find at identifer at the target location.")
 
    # We have to determine if we should look for an internal (in the context) or
    # an external declaration. In the case of the latter, we only support lookup

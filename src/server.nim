@@ -157,10 +157,10 @@ proc declaration(s: LspServer, msg: LspMessage) =
    let col = get_int(msg.parameters["position"]["character"])
    let uri = decode_url(get_str(msg.parameters["textDocument"]["uri"]))
    if has_key(s.source_units, uri):
-      let locations = find_declaration(s.source_units[uri], line + 1, col)
-      if len(locations) > 0:
-         send(s, new_lsp_response(msg.id, %locations))
-      else:
+      try:
+         let location = find_declaration(s.source_units[uri], line + 1, col)
+         send(s, new_lsp_response(msg.id, %[location]))
+      except AnalyzeError:
          send(s, new_lsp_response(msg.id, new_jnull()))
    else:
       send(s, new_lsp_response(msg.id, RPC_INTERNAL_ERROR, format("File '$1' is not in the index.", uri), nil))
