@@ -198,27 +198,22 @@ proc find_declaration(n: PNode, identifier: PIdentifier): PNode =
    result = nil
    case n.kind
    of NkPortDecl:
-      # Look for the first NkPortIdentifier node.
-      for s in n.sons:
-         if s.kind == NkPortIdentifier and s.identifier.s == identifier.s:
-            result = s
-            break
+      let id = find_first(n, NkPortIdentifier)
+      if not is_nil(id) and id.identifier.s == identifier.s:
+         result = id
 
    of NkTaskDecl, NkFunctionDecl, NkGenvarDecl:
-      # Look for the first NkIdentifier node.
-      for s in n.sons:
-         if s.kind == NkIdentifier and s.identifier.s == identifier.s:
-            result = s
-            break
+      let id = find_first(n, NkIdentifier)
+      if not is_nil(id) and id.identifier.s == identifier.s:
+         result = id
 
    of NkRegDecl, NkIntegerDecl, NkRealDecl, NkRealtimeDecl, NkTimeDecl, NkNetDecl, NkEventDecl:
       for s in n.sons:
          case s.kind
          of NkArrayIdentifer, NkAssignment:
-            # The first son is expected to be the identifier.
-            if s.sons[0].kind == NkIdentifier and s.sons[0].identifier.s == identifier.s:
-               result = s.sons[0]
-               break
+            let id = find_first(s, NkIdentifier)
+            if not is_nil(id) and id.identifier.s == identifier.s:
+               result = id
          of NkIdentifier:
             if s.identifier.s == identifier.s:
                result = s
@@ -229,22 +224,18 @@ proc find_declaration(n: PNode, identifier: PIdentifier): PNode =
    of NkParameterDecl, NkLocalparamDecl:
       # When we find a NkParamAssignment node, the first son is expected to be
       # the identifier.
-      for s in n.sons:
-         if s.kind == NkParamAssignment and
-               s.sons[0].kind == NkParameterIdentifier and
-               s.sons[0].identifier.s == identifier.s:
-            result = s
-            break
+      for s in walk_sons(n, NkParamAssignment):
+         let id = find_first(s, NkParameterIdentifier)
+         if not is_nil(id) and id.identifier.s == identifier.s:
+            result = id
 
    of NkSpecparamDecl:
       # When we find a NkAssignment node, the first son is expected to be the
       # identifier.
-      for s in n.sons:
-         if s.kind == NkAssignment and
-               s.sons[0].kind == NkIdentifier and
-               s.sons[0].identifier.s == identifier.s:
-            result = s
-            break
+      for s in walk_sons(n, NkAssignment):
+         let id = find_first(s, NkIdentifier)
+         if not is_nil(id) and id.identifier.s == identifier.s:
+            result = id
 
    of NkModuleDecl:
       # This path is never taken since a the lookup of a module declaration is
