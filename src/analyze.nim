@@ -41,6 +41,55 @@ proc in_bounds(x, y: Location, len: int): bool =
             x.col >= y.col and x.col <= (y.col + len - 1)
 
 
+iterator walk_verilog_files(dir: string): string {.inline.} =
+   for kind, path in walk_dir(dir):
+      let (_, _, ext) = split_file(path)
+      if kind == pcFile and ext in VERILOG_EXTENSIONS:
+         yield path
+
+
+iterator walk_module_declarations(filename: string): PNode {.inline.} =
+   # Module declarations cannot be nested and must occur on the outer level in
+   # the source text,
+   let fs = new_file_stream(filename)
+   if not is_nil(fs):
+      let cache = new_ident_cache()
+      var graph: Graph
+      log.debug("Parsing file '$1'.", filename)
+      open_graph(graph, cache, fs, filename, [], [])
+      close(fs)
+      if graph.root_node.kind == NkSourceText:
+         for s in graph.root_node.sons:
+            if s.kind == NkModuleDecl:
+               yield s
+      close_graph(graph)
+
+
+iterator walk_module_declarations(include_paths: seq[string]): tuple[filename: string, n: PNode] {.inline.} =
+   for dir in include_paths:
+      for filename in walk_verilog_files(dir):
+         for module in walk_module_declarations(filename):
+            yield (filename, module)
+
+
+iterator walk_ports(n: PNode): PNode {.inline.} =
+   if n.kind == NkModuleDecl:
+      for s in n.sons:
+         if s.kind in {NkListOfPortDeclarations, NkListOfPorts}:
+            for p in s.sons:
+               if p.kind in {NkPortDecl, NkPort}:
+                  yield p
+
+
+iterator walk_parameter_ports(n: PNode): PNode {.inline.} =
+   if n.kind == NkModuleDecl:
+      for s in n.sons:
+         if s.kind == NkModuleParameterPortList:
+            for p in s.sons:
+               if p.kind == NkParameterDecl:
+                  yield p
+
+
 proc check_syntax(n: PNode, locs: PLocations): seq[LspDiagnostic] =
    case n.kind
    of {NkTokenError, NkCritical}:
@@ -279,62 +328,12 @@ proc find_declaration(context: AstContext, identifier: PIdentifier): PNode =
                   return
 
 
-proc find_internal_declaration(unit: SourceUnit, context: AstContext, identifier: PIdentifier): LspLocation =
-   log.debug("Looking up an internal declaration for '$1'.", identifier.s)
-   let n = find_declaration(context, identifier)
-   if not is_nil(n):
-      let uri = construct_uri(unit.graph.locations.file_maps[n.loc.file - 1].filename)
-      result = new_lsp_location(uri, int(n.loc.line - 1), int(n.loc.col))
-   else:
-      raise new_analyze_error("Failed to find the declaration of identifier '$1'.", identifier.s)
-
-
-iterator walk_verilog_files(dir: string): string {.inline.} =
-   for kind, path in walk_dir(dir):
-      let (_, _, ext) = split_file(path)
-      if kind == pcFile and ext in VERILOG_EXTENSIONS:
-         yield path
-
-
-iterator walk_module_declarations(filename: string): PNode {.inline.} =
-   # Module declarations cannot be nested and must occur on the outer level in
-   # the source text,
-   let fs = new_file_stream(filename)
-   if not is_nil(fs):
-      let cache = new_ident_cache()
-      var graph: Graph
-      log.debug("Parsing file '$1'.", filename)
-      open_graph(graph, cache, fs, filename, [], [])
-      close(fs)
-      if graph.root_node.kind == NkSourceText:
-         for s in graph.root_node.sons:
-            if s.kind == NkModuleDecl:
-               yield s
-      close_graph(graph)
-
-
-iterator walk_module_declarations(include_paths: seq[string]): tuple[filename: string, n: PNode] {.inline.} =
-   for dir in include_paths:
-      for filename in walk_verilog_files(dir):
-         for module in walk_module_declarations(filename):
-            yield (filename, module)
-
-
 proc find_module_declaration(unit: SourceUnit, identifier: PIdentifier): LspLocation =
    for filename, module in walk_module_declarations(unit.configuration.include_paths):
       for s in module.sons:
          if s.kind == NkModuleIdentifier and s.identifier.s == identifier.s:
             return new_lsp_location(construct_uri(filename), int(s.loc.line - 1), int(s.loc.col))
    raise new_analyze_error("Failed to find the declaration of module '$1'.", identifier.s)
-
-
-iterator walk_ports(n: PNode): PNode {.inline.} =
-   if n.kind == NkModuleDecl:
-      for s in n.sons:
-         if s.kind in {NkListOfPortDeclarations, NkListOfPorts}:
-            for p in s.sons:
-               if p.kind in {NkPortDecl, NkPort}:
-                  yield p
 
 
 proc find_module_port_declaration(unit: SourceUnit, module_id, port_id: PIdentifier): LspLocation =
@@ -373,15 +372,6 @@ proc find_module_port_declaration(unit: SourceUnit, module_id, port_id: PIdentif
             discard
 
    raise new_analyze_error("Failed to find the declaration of port '$1'.", port_id.s)
-
-
-iterator walk_parameter_ports(n: PNode): PNode {.inline.} =
-   if n.kind == NkModuleDecl:
-      for s in n.sons:
-         if s.kind == NkModuleParameterPortList:
-            for p in s.sons:
-               if p.kind == NkParameterDecl:
-                  yield p
 
 
 proc find_module_parameter_port_declaration(unit: SourceUnit, module_id, parameter_id: PIdentifier): LspLocation =
@@ -425,6 +415,16 @@ proc is_external_identifier(context: AstContext): bool =
          result = false
    else:
       result = false
+
+
+proc find_internal_declaration(unit: SourceUnit, context: AstContext, identifier: PIdentifier): LspLocation =
+   log.debug("Looking up an internal declaration for '$1'.", identifier.s)
+   let n = find_declaration(context, identifier)
+   if not is_nil(n):
+      let uri = construct_uri(unit.graph.locations.file_maps[n.loc.file - 1].filename)
+      result = new_lsp_location(uri, int(n.loc.line - 1), int(n.loc.col))
+   else:
+      raise new_analyze_error("Failed to find the declaration of identifier '$1'.", identifier.s)
 
 
 proc find_external_declaration(unit: SourceUnit, context: AstContext, identifier: PIdentifier): LspLocation =
