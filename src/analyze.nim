@@ -476,9 +476,9 @@ proc find_declaration*(unit: SourceUnit, line, col: int): LspLocation =
    # an external declaration. In the case of the latter, we only support lookup
    # of module instantiations and their ports.
    if is_external_identifier(context):
-      return find_external_declaration(unit, context, identifier.identifier)
+      result = find_external_declaration(unit, context, identifier.identifier)
    else:
-      return find_internal_declaration(unit, context, identifier.identifier)
+      result = find_internal_declaration(unit, context, identifier.identifier)
 
 
 proc find_references(n: PNode, identifier: PIdentifier): seq[PNode] =
@@ -496,16 +496,6 @@ proc find_references(n: PNode, identifier: PIdentifier): seq[PNode] =
    else:
       for s in n.sons:
          add(result, find_references(s, identifier))
-
-
-# FIXME: Move to vparse
-proc to_physical(macro_maps: seq[MacroMap], loc: Location): Location =
-   result = loc
-   while true:
-      if result.file > 0:
-         break
-      log.debug("Walking location to $1 -> $2.", result,macro_maps[-(result.file + 1)].locations[result.line].x)
-      result = macro_maps[-(result.file + 1)].locations[result.line].x
 
 
 proc find_references(unit: SourceUnit, identifier: PIdentifier): seq[LspLocation] =
