@@ -146,6 +146,7 @@ run_test("textDocument/references: port (2)",
 
 # Open the file "./src/src3.v", expecting no parsing errors.
 const src3_path = "./src/src3.v"
+const src3_header_path = "./src/src3.vh"
 const src3_text = static_read(src3_path)
 send(ifs, new_lsp_notification("textDocument/didOpen", %*{
    "textDocument": {
@@ -336,10 +337,123 @@ run_test("textDocument/references: reg (also used as an argument in a nested mac
    ])
 )
 
-# What about something like:
-#  `define FOO clk_i
-#  .clk_i(FOO)
-#
+
+run_test("textDocument/references: macro usage (1)",
+   new_lsp_request(0, "textDocument/references", %*{
+      "textDocument": {
+         "uri": "file://" & expand_filename(src3_path),
+      },
+      "position": {
+         "line": 60,
+         "character": 22
+      },
+      "context": {
+         "includeDeclaration": false
+      }
+   }),
+   new_lsp_response(339, 0, %*[
+   {
+      "uri": "file://" & expand_filename(src3_path),
+      "range": {
+         "start": {"line": 60, "character": 21},
+         "end" : {"line": 60, "character": 21}
+      }
+   },
+   {
+      "uri": "file://" & expand_filename(src3_path),
+      "range": {
+         "start": {"line": 61, "character": 24},
+         "end" : {"line": 61, "character": 24}
+      }
+   }
+   ])
+)
+
+
+run_test("textDocument/references: macro usage (2)",
+   new_lsp_request(0, "textDocument/references", %*{
+      "textDocument": {
+         "uri": "file://" & expand_filename(src3_path),
+      },
+      "position": {
+         "line": 52,
+         "character": 19
+      },
+      "context": {
+         "includeDeclaration": false
+      }
+   }),
+   new_lsp_response(949, 0, %*[
+   {
+      "uri": "file://" & expand_filename(src3_path),
+      "range": {
+         "start": {"line": 18, "character": 18},
+         "end" : {"line": 18, "character": 18}
+      }
+   },
+   {
+      "uri": "file://" & expand_filename(src3_header_path),
+      "range": {
+         "start": {"line": 17, "character": 25},
+         "end" : {"line": 17, "character": 25}
+      }
+   },
+   {
+      "uri": "file://" & expand_filename(src3_header_path),
+      "range": {
+         "start": {"line": 17, "character": 25},
+         "end" : {"line": 17, "character": 25}
+      }
+   },
+   {
+      "uri": "file://" & expand_filename(src3_path),
+      "range": {
+         "start": {"line": 51, "character": 15},
+         "end" : {"line": 51, "character": 15}
+      }
+   },
+   {
+      "uri": "file://" & expand_filename(src3_path),
+      "range": {
+         "start": {"line": 51, "character": 36},
+         "end" : {"line": 51, "character": 36}
+      }
+   },
+   {
+      "uri": "file://" & expand_filename(src3_path),
+      "range": {
+         "start": {"line": 52, "character": 16},
+         "end" : {"line": 52, "character": 16}
+      }
+   }
+   ])
+)
+
+
+run_test("textDocument/references: macro usage (3), redefined",
+   new_lsp_request(0, "textDocument/references", %*{
+      "textDocument": {
+         "uri": "file://" & expand_filename(src3_path),
+      },
+      "position": {
+         "line": 57,
+         "character": 17
+      },
+      "context": {
+         "includeDeclaration": false
+      }
+   }),
+   new_lsp_response(187, 0, %*[
+   {
+      "uri": "file://" & expand_filename(src3_path),
+      "range": {
+         "start": {"line": 57, "character": 16},
+         "end" : {"line": 57, "character": 16}
+      }
+   }
+   ])
+)
+
 
 # Shut down the server.
 shutdown(ifs, ofs)

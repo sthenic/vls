@@ -457,7 +457,7 @@ proc find_declaration*(unit: SourceUnit, line, col: int): LspLocation =
    # Before we can assume that the input location is pointing to an identifier,
    # we have to deal with the possibility that it's pointing to a macro.
    let loc = new_location(1, line, col)
-   for i, map in g.locations.macro_maps:
+   for map in g.locations.macro_maps:
       # +1 is to compensate for the expansion location starting at the backtick.
       if in_bounds(loc, map.expansion_loc, len(map.name) + 1):
          let uri = construct_uri(g.locations.file_maps[map.define_loc.file - 1].filename)
@@ -468,7 +468,7 @@ proc find_declaration*(unit: SourceUnit, line, col: int): LspLocation =
    # value is nil if there's no identifier at the target location.
    var context: AstContext
    init(context, 32)
-   let identifier = find_identifier_physical(g, new_location(1, line, col), context)
+   let identifier = find_identifier_physical(g, loc, context)
    if is_nil(identifier):
       raise new_analyze_error("Failed to find an identifer at the target location.")
 
@@ -521,16 +521,30 @@ proc find_references(unit: SourceUnit, identifier: PIdentifier): seq[LspLocation
 
 
 proc find_references*(unit: SourceUnit, line, col: int, include_declaration: bool = false): seq[LspLocation] =
+   # FIXME: Handle include_declaration
    let g = unit.graph
 
-   # FIXME: Find all references to macros?
+   # Before we can assume that the input location is pointing to an identifier,
+   # we have to deal with the possibility that it's pointing to a macro.
+   let loc = new_location(1, line, col)
+   for map in g.locations.macro_maps:
+      # +1 is to compensate for the expansion location starting at the backtick.
+      if in_bounds(loc, map.expansion_loc, len(map.name) + 1):
+         # If we find a match, loop through the macro maps again, looking for all maps that use the
+         # same macro definition as the one we just found.
+         for m in g.locations.macro_maps:
+            if m.define_loc == map.define_loc:
+               var expansion_loc = m.expansion_loc
+               if expansion_loc.file < 0:
+                  expansion_loc = to_physical(g.locations.macro_maps, expansion_loc)
+               let uri = construct_uri(g.locations.file_maps[expansion_loc.file - 1].filename)
+               add(result, new_lsp_location(uri, int(expansion_loc.line - 1), int(expansion_loc.col)))
+         return
+
    var context: AstContext
    init(context, 32)
-   let identifier = find_identifier_physical(g, new_location(1, line, col), context)
+   let identifier = find_identifier_physical(g, loc, context)
    if is_nil(identifier):
       raise new_analyze_error("Failed to find an identifer at the target location.")
 
-   log.debug("Found identifier $1", pretty(identifier))
-
    result = find_references(unit, identifier.identifier)
-   # FIXME: Handle include_declaration
