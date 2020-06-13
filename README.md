@@ -24,7 +24,7 @@ This tool is a Verilog IEEE 1364-2005 [language server](https://microsoft.github
 - [ ] textDocument/signatureHelp
 - [x] textDocument/declaration
 - [ ] textDocument/definition
-- [ ] textDocument/references
+- [x] textDocument/references
 - [ ] textDocument/documentHighlight
 - [ ] textDocument/rename
 - [ ] textDocument/prepareRename
