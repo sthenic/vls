@@ -14,7 +14,7 @@ This tool is a Verilog IEEE 1364-2005 [language server](https://microsoft.github
 
 ### Text synchronization
 - [x] textDocument/didChange
-- [ ] textDocument/didClose
+- [x] textDocument/didClose
 - [x] textDocument/didOpen
 - [ ] textDocument/didSave
 
