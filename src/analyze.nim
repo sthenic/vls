@@ -470,7 +470,7 @@ proc find_declaration*(unit: SourceUnit, line, col: int): LspLocation =
    init(context, 32)
    let identifier = find_identifier_physical(g, new_location(1, line, col), context)
    if is_nil(identifier):
-      raise new_analyze_error("Failed to find at identifer at the target location.")
+      raise new_analyze_error("Failed to find an identifer at the target location.")
 
    # We have to determine if we should look for an internal (in the context) or
    # an external declaration. In the case of the latter, we only support lookup
@@ -479,3 +479,44 @@ proc find_declaration*(unit: SourceUnit, line, col: int): LspLocation =
       return find_external_declaration(unit, context, identifier.identifier)
    else:
       return find_internal_declaration(unit, context, identifier.identifier)
+
+
+proc find_references(n: PNode, identifier: PIdentifier): seq[PNode] =
+   case n.kind
+   of IdentifierTypes:
+      if n.identifier.s == identifier.s:
+         add(result, n)
+   of PrimitiveTypes - IdentifierTypes:
+      discard
+   of NkPortConnection:
+      # For port connections, we have to skip the first identifier since that's
+      # the name of the port.
+      for s in walk_sons(n, find_first_index(n, NkIdentifier) + 1):
+         add(result, find_references(s, identifier))
+   else:
+      for s in n.sons:
+         add(result, find_references(s, identifier))
+
+
+proc find_references(unit: SourceUnit, identifier: PIdentifier): seq[LspLocation] =
+   # We look for all mentions of the target identifier within the module context.
+   # TODO: Filter out declaration nodes.
+   # Probably
+   for n in find_references(unit.graph.root_node, identifier):
+      # FIXME: Need to handle virtual locations.
+      let uri = construct_uri(unit.graph.locations.file_maps[n.loc.file - 1].filename)
+      add(result, new_lsp_location(uri, int(n.loc.line - 1), int(n.loc.col)))
+
+
+proc find_references*(unit: SourceUnit, line, col: int, include_declaration: bool = false): seq[LspLocation] =
+   let g = unit.graph
+
+   # FIXME: Find all references to macros?
+   var context: AstContext
+   init(context, 32)
+   let identifier = find_identifier_physical(g, new_location(1, line, col), context)
+   if is_nil(identifier):
+      raise new_analyze_error("Failed to find an identifer at the target location.")
+
+   result = find_references(unit, identifier.identifier)
+   # FIXME: Handle include_declaration

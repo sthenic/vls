@@ -36,3 +36,4 @@ task featuretests, "Run the language feature test suite":
    with_dir("tests/features"):
       exec("nim c --hints:off -r tsyntax")
       exec("nim c --hints:off -r tdeclaration")
+      exec("nim c --hints:off -r treferences")

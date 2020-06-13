@@ -85,7 +85,7 @@ module tb_mymodule();
         .WIDTH (2)
     ) dut (
         .clk_i(),
-        .rst_i(),
+        .rst_i(rst_i),
         .data_i(),
         .data_o()
     );

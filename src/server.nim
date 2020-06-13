@@ -135,7 +135,8 @@ proc initialize(s: var LspServer, msg: LspMessage) =
       result["capabilities"] = %*{
          "textDocumentSync": 1,
          "declarationProvider": true,
-         "definitionProvider": true
+         "definitionProvider": true,
+         "referencesProvider": true
       }
       send(s, new_lsp_response(msg.id, result))
       s.is_initialized = true
@@ -166,6 +167,21 @@ proc declaration(s: LspServer, msg: LspMessage) =
       send(s, new_lsp_response(msg.id, RPC_INTERNAL_ERROR, format("File '$1' is not in the index.", uri), nil))
 
 
+proc references(s: LspServer, msg: LspMessage) =
+   let line = get_int(msg.parameters["position"]["line"])
+   let col = get_int(msg.parameters["position"]["character"])
+   let uri = decode_url(get_str(msg.parameters["textDocument"]["uri"]))
+   let include_declaration = get_bool(msg.parameters["context"]["includeDeclaration"])
+   if has_key(s.source_units, uri):
+      try:
+         let locations = find_references(s.source_units[uri], line + 1, col, include_declaration)
+         send(s, new_lsp_response(msg.id, %locations))
+      except AnalyzeError:
+         send(s, new_lsp_response(msg.id, new_jnull()))
+   else:
+      send(s, new_lsp_response(msg.id, RPC_INTERNAL_ERROR, format("File '$1' is not in the index.", uri), nil))
+
+
 proc handle_request(s: var LspServer, msg: LspMessage) =
    # If the server is shut down we respond to every request with an error.
    # Otherwise, unless the server is initialized, we only respond to the
@@ -189,6 +205,8 @@ proc handle_request(s: var LspServer, msg: LspMessage) =
    of "textDocument/definition":
       # FIXME: Figure out if this is good enough.
       declaration(s, msg)
+   of "textDocument/references":
+      references(s, msg)
    else:
       let str = format("Unsupported method '$1'.", msg.m)
       send(s, new_lsp_response(msg.id, RPC_INVALID_REQUEST, str, nil))
