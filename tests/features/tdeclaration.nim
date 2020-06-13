@@ -963,6 +963,25 @@ run_test("textDocument/declaration: module parameter port lookup (2)",
    }])
 )
 
+run_test("textDocument/declaration: module parameter value",
+   new_lsp_request(15, "textDocument/declaration", %*{
+      "textDocument": {
+         "uri": "file://" & expand_filename(src4_path),
+      },
+      "position": {
+         "line": 13,
+         "character": 26
+      }
+   }),
+   new_lsp_response(188, 15, %*[{
+      "uri": "file://" & expand_filename(src4_path),
+      "range": {
+         "start": {"line": 10, "character": 25},
+         "end" : {"line": 10, "character": 25}
+      }
+   }])
+)
+
 
 # Shut down the server.
 shutdown(ifs, ofs)

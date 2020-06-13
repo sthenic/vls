@@ -410,7 +410,12 @@ proc is_external_identifier(context: AstContext): bool =
          result = not seen_another_identifier
       of NkAssignment:
          if len(context) > 1:
-            result = context[^2].n.kind == NkParameterValueAssignment
+            # We only perform an external lookup if the target identifier is the
+            # one following the dot.
+            var seen_another_identifier = false
+            for i in 0..<pos:
+               seen_another_identifier = (n.sons[i].kind == NkIdentifier)
+            result = context[^2].n.kind == NkParameterValueAssignment and not seen_another_identifier
       else:
          result = false
    else:
