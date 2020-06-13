@@ -498,14 +498,26 @@ proc find_references(n: PNode, identifier: PIdentifier): seq[PNode] =
          add(result, find_references(s, identifier))
 
 
+# FIXME: Move to vparse
+proc to_physical(macro_maps: seq[MacroMap], loc: Location): Location =
+   result = loc
+   while true:
+      if result.file > 0:
+         break
+      log.debug("Walking location to $1 -> $2.", result,macro_maps[-(result.file + 1)].locations[result.line].x)
+      result = macro_maps[-(result.file + 1)].locations[result.line].x
+
+
 proc find_references(unit: SourceUnit, identifier: PIdentifier): seq[LspLocation] =
-   # We look for all mentions of the target identifier within the module context.
-   # TODO: Filter out declaration nodes.
-   # Probably
+   # TODO: Filter out declaration nodes?
    for n in find_references(unit.graph.root_node, identifier):
-      # FIXME: Need to handle virtual locations.
-      let uri = construct_uri(unit.graph.locations.file_maps[n.loc.file - 1].filename)
-      add(result, new_lsp_location(uri, int(n.loc.line - 1), int(n.loc.col)))
+      var loc = n.loc
+      # Translate virtual locations into physical locations.
+      if n.loc.file < 0:
+         loc = to_physical(unit.graph.locations.macro_maps, n.loc)
+
+      let uri = construct_uri(unit.graph.locations.file_maps[loc.file - 1].filename)
+      add(result, new_lsp_location(uri, int(loc.line - 1), int(loc.col)))
 
 
 proc find_references*(unit: SourceUnit, line, col: int, include_declaration: bool = false): seq[LspLocation] =
@@ -517,6 +529,8 @@ proc find_references*(unit: SourceUnit, line, col: int, include_declaration: boo
    let identifier = find_identifier_physical(g, new_location(1, line, col), context)
    if is_nil(identifier):
       raise new_analyze_error("Failed to find an identifer at the target location.")
+
+   log.debug("Found identifier $1", pretty(identifier))
 
    result = find_references(unit, identifier.identifier)
    # FIXME: Handle include_declaration

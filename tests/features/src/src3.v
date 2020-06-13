@@ -57,4 +57,8 @@ module module3 #(
     `define AND(x, y) (x & y)
     wire buzz = `AND(one, my_reg);
 
+    `define FOO one
+    wire some_wire = `FOO;
+    wire another_wire = `FOO;
+
 endmodule

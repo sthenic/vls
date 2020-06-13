@@ -144,6 +144,197 @@ run_test("textDocument/references: port (2)",
    ])
 )
 
+# Open the file "./src/src3.v", expecting no parsing errors.
+const src3_path = "./src/src3.v"
+const src3_text = static_read(src3_path)
+send(ifs, new_lsp_notification("textDocument/didOpen", %*{
+   "textDocument": {
+      "uri": "file://" & expand_filename(src3_path),
+      "languageId": "verilog",
+      "version": 0,
+      "text": src3_text
+   }
+}))
+assert len(recv(ofs).parameters["diagnostics"]) == 0
+
+run_test("textDocument/references: reg (also used as macro argument)",
+   new_lsp_request(0, "textDocument/references", %*{
+      "textDocument": {
+         "uri": "file://" & expand_filename(src3_path),
+      },
+      "position": {
+         "line": 18,
+         "character": 11
+      },
+      "context": {
+         "includeDeclaration": false
+      }
+   }),
+   new_lsp_response(943, 0, %*[
+   {
+      "uri": "file://" & expand_filename(src3_path),
+      "range": {
+         "start": {"line": 12, "character": 8},
+         "end" : {"line": 12, "character": 8}
+      }
+   },
+   {
+      "uri": "file://" & expand_filename(src3_path),
+      "range": {
+         "start": {"line": 18, "character": 8},
+         "end" : {"line": 18, "character": 8}
+      }
+   },
+   {
+      "uri": "file://" & expand_filename(src3_path),
+      "range": {
+         "start": {"line": 18, "character": 23},
+         "end" : {"line": 18, "character": 23}
+      }
+   },
+   {
+      "uri": "file://" & expand_filename(src3_path),
+      "range": {
+         "start": {"line": 51, "character": 20},
+         "end" : {"line": 51, "character": 20}
+      }
+   },
+   {
+      "uri": "file://" & expand_filename(src3_path),
+      "range": {
+         "start": {"line": 52, "character": 21},
+         "end" : {"line": 52, "character": 21}
+      }
+   },
+   {
+      "uri": "file://" & expand_filename(src3_path),
+      "range": {
+         "start": {"line": 57, "character": 26},
+         "end" : {"line": 57, "character": 26}
+      }
+   }
+   ])
+)
+
+
+run_test("textDocument/references: reg (also used as an argument in a nested macro)",
+   new_lsp_request(0, "textDocument/references", %*{
+      "textDocument": {
+         "uri": "file://" & expand_filename(src3_path),
+      },
+      "position": {
+         "line": 32,
+         "character": 23
+      },
+      "context": {
+         "includeDeclaration": false
+      }
+   }),
+   new_lsp_response(793, 0, %*[
+   {
+      "uri": "file://" & expand_filename(src3_path),
+      "range": {
+         "start": {"line": 28, "character": 9},
+         "end" : {"line": 28, "character": 9}
+      }
+   },
+   {
+      "uri": "file://" & expand_filename(src3_path),
+      "range": {
+         "start": {"line": 32, "character": 19},
+         "end" : {"line": 32, "character": 19}
+      }
+   },
+   {
+      "uri": "file://" & expand_filename(src3_path),
+      "range": {
+         "start": {"line": 37, "character": 38},
+         "end" : {"line": 37, "character": 38}
+      }
+   },
+   {
+      "uri": "file://" & expand_filename(src3_path),
+      "range": {
+         "start": {"line": 41, "character": 19},
+         "end" : {"line": 41, "character": 19}
+      }
+   },
+   {
+      "uri": "file://" & expand_filename(src3_path),
+      "range": {
+         "start": {"line": 45, "character": 38},
+         "end" : {"line": 45, "character": 38}
+      }
+   }
+   ])
+)
+
+
+run_test("textDocument/references: reg (also used as an argument in a nested macro)",
+   new_lsp_request(0, "textDocument/references", %*{
+      "textDocument": {
+         "uri": "file://" & expand_filename(src3_path),
+      },
+      "position": {
+         "line": 59,
+         "character": 17
+      },
+      "context": {
+         "includeDeclaration": false
+      }
+   }),
+   new_lsp_response(1099, 0, %*[
+   {
+      "uri": "file://" & expand_filename(src3_path),
+      "range": {
+         "start": {"line": 12, "character": 28},
+         "end" : {"line": 12, "character": 28}
+      }
+   },
+   {
+      "uri": "file://" & expand_filename(src3_path),
+      "range": {
+         "start": {"line": 18, "character": 31},
+         "end" : {"line": 18, "character": 31}
+      }
+   },
+   {
+      "uri": "file://" & expand_filename(src3_path),
+      "range": {
+         "start": {"line": 51, "character": 28},
+         "end" : {"line": 51, "character": 28}
+      }
+   },
+   {
+      "uri": "file://" & expand_filename(src3_path),
+      "range": {
+         "start": {"line": 52, "character": 31},
+         "end" : {"line": 52, "character": 31}
+      }
+   },
+   {
+      "uri": "file://" & expand_filename(src3_path),
+      "range": {
+         "start": {"line": 57, "character": 21},
+         "end" : {"line": 57, "character": 21}
+      }
+   },
+   {
+      "uri": "file://" & expand_filename(src3_path),
+      "range": {
+         "start": {"line": 59, "character": 16},
+         "end" : {"line": 59, "character": 16}
+      }
+   },
+   {
+      "uri": "file://" & expand_filename(src3_path),
+      "range": {
+         "start": {"line": 59, "character": 16},
+         "end" : {"line": 59, "character": 16}
+      }
+   }
+   ])
+)
 
 # What about something like:
 #  `define FOO clk_i
