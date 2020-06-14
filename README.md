@@ -2,7 +2,17 @@
 [![LICENSE](https://img.shields.io/badge/license-MIT-blue.svg?style=flat-square)](https://opensource.org/licenses/MIT)
 
 # vls
-This tool is a Verilog IEEE 1364-2005 [language server](https://microsoft.github.io/language-server-protocol/) written in [Nim](https://nim-lang.org). The parsing is handled by [vparse](https://github.com/sthenic/vparse).
+This tool is a Verilog IEEE 1364-2005 [language server](https://microsoft.github.io/language-server-protocol/) written in [Nim](https://nim-lang.org). The parsing is handled by [`vparse`](https://github.com/sthenic/vparse).
+
+## Index
+
+- [Supported protocol features](#supported-protocol-features)
+- [Configuration](#configuration)
+- [Editor integration](#editor-integration)
+- [Version numbers](#version-numbers)
+- [Reporting a bug](#reporting-a-bug)
+- [License](#license)
+- [Third-party dependencies](#third-party-dependencies)
 
 ## Supported protocol features
 
@@ -72,7 +82,7 @@ max_nof_diagnostics = 10
 ### `verilog` table
 
 - `include_paths` is an array of strings expressing the include paths where `vls` should look for externally defined modules and files targeted by `` `include`` directives.
-- `defines` is an array of strings expressing the defines that should be passed to `vls`. The rules follow that of the `-D` option for [vparse](https://github.com/sthenic/vparse). It's possible to specify a macro by using the character `=` to separate the macro name from its body.
+- `defines` is an array of strings expressing the defines that should be passed to `vls`. The rules follow that of the `-D` option for [`vparse`](https://github.com/sthenic/vparse). It's possible to specify a macro by using the character `=` to separate the macro name from its body.
 
 ### `vls` table
 
@@ -83,9 +93,9 @@ In the future, configuration may also be handled through the LSP [workspace conf
 
 ## Editor integration
 
-### vscode
+### Visual studio code
 
-Install the extension [vls-vscode](https://github.com/sthenic/vls-vscode).
+Install the [`vls-vscode`](https://github.com/sthenic/vls-vscode) extension.
 
 ### vim-lsp
 
@@ -129,7 +139,4 @@ This tool is free software released under the [MIT license](https://opensource.o
 ## Third-party dependencies
 
 * [Nim's standard library](https://github.com/nim-lang/Nim)
-* [vparse](https://github.com/sthenic/vparse)
-
-## Author
-`vls` is maintained by [Marcus Eriksson](mailto:marcus.jr.eriksson@gmail.com).
+* [`vparse`](https://github.com/sthenic/vparse)
