@@ -313,18 +313,25 @@ proc find_declaration(n: PNode, identifier: PIdentifier): PNode =
             break
 
 
-proc find_declaration(context: AstContext, identifier: PIdentifier): PNode =
+proc find_declaration(context: AstContext, identifier: PIdentifier): tuple[n: PNode, context: AstContextItem] =
    # Traverse the context bottom-up, descending into any declaration nodes we
    # find along the way.
-   result = nil
+   result.n = nil
    for i in countdown(high(context), 0):
       let context_item = context[i]
       if context_item.n.kind notin PrimitiveTypes:
          for pos in countdown(context_item.pos, 0):
             let s = context_item.n.sons[pos]
             if s.kind in DeclarationTypes - {NkDefparamDecl}:
-               result = find_declaration(s, identifier)
-               if not is_nil(result):
+               result.n = find_declaration(s, identifier)
+               if not is_nil(result.n):
+                  if context_item.n.kind in {NkModuleParameterPortList, NkListOfPortDeclarations, NkListOfPorts}:
+                     # If the declaration was enclosed in any of the list types,
+                     # its scope stretches from the parent node and onwards.
+                     result.context = context[i-1]
+                  else:
+                     result.context.pos = pos
+                     result.context.n = context[i].n
                   return
 
 
@@ -424,7 +431,7 @@ proc is_external_identifier(context: AstContext): bool =
 
 proc find_internal_declaration(unit: SourceUnit, context: AstContext, identifier: PIdentifier): LspLocation =
    log.debug("Looking up an internal declaration for '$1'.", identifier.s)
-   let n = find_declaration(context, identifier)
+   let (n, _) = find_declaration(context, identifier)
    if not is_nil(n):
       let uri = construct_uri(unit.graph.locations.file_maps[n.loc.file - 1].filename)
       result = new_lsp_location(uri, int(n.loc.line - 1), int(n.loc.col))
@@ -503,16 +510,17 @@ proc find_references(n: PNode, identifier: PIdentifier): seq[PNode] =
          add(result, find_references(s, identifier))
 
 
-proc find_references(unit: SourceUnit, identifier: PIdentifier): seq[LspLocation] =
-   # TODO: Filter out declaration nodes?
-   for n in find_references(unit.graph.root_node, identifier):
-      var loc = n.loc
-      # Translate virtual locations into physical locations.
-      if n.loc.file < 0:
-         loc = to_physical(unit.graph.locations.macro_maps, n.loc)
+proc find_references(unit: SourceUnit, context: AstContextItem, identifier: PIdentifier): seq[LspLocation] =
+   for i in countup(context.pos, high(context.n.sons)):
+      # FIXME: Comment on +1
+      for n in find_references(context.n.sons[i], identifier):
+         var loc = n.loc
+         # Translate virtual locations into physical locations.
+         if n.loc.file < 0:
+            loc = to_physical(unit.graph.locations.macro_maps, n.loc)
 
-      let uri = construct_uri(unit.graph.locations.file_maps[loc.file - 1].filename)
-      add(result, new_lsp_location(uri, int(loc.line - 1), int(loc.col)))
+         let uri = construct_uri(unit.graph.locations.file_maps[loc.file - 1].filename)
+         add(result, new_lsp_location(uri, int(loc.line - 1), int(loc.col)))
 
 
 proc find_references*(unit: SourceUnit, line, col: int, include_declaration: bool = false): seq[LspLocation] =
@@ -536,10 +544,14 @@ proc find_references*(unit: SourceUnit, line, col: int, include_declaration: boo
                add(result, new_lsp_location(uri, int(expansion_loc.line - 1), int(expansion_loc.col)))
          return
 
-   var context: AstContext
-   init(context, 32)
-   let identifier = find_identifier_physical(g, loc, context)
+   var identifier_context: AstContext
+   init(identifier_context, 32)
+   let identifier = find_identifier_physical(g, loc, identifier_context)
    if is_nil(identifier):
       raise new_analyze_error("Failed to find an identifer at the target location.")
 
-   result = find_references(unit, identifier.identifier)
+   let (declaration, declaration_context) = find_declaration(identifier_context, identifier.identifier)
+   if is_nil(declaration):
+      raise new_analyze_error("Failed to find the declaration of identifier '$1'.", identifier.s)
+
+   result = find_references(unit, declaration_context, identifier.identifier)
