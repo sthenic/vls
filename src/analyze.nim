@@ -510,9 +510,10 @@ proc find_references(n: PNode, identifier: PIdentifier): seq[PNode] =
          add(result, find_references(s, identifier))
 
 
-proc find_references(unit: SourceUnit, context: AstContextItem, identifier: PIdentifier): seq[LspLocation] =
-   for i in countup(context.pos, high(context.n.sons)):
-      # FIXME: Comment on +1
+proc find_references(unit: SourceUnit, context: AstContextItem, identifier: PIdentifier,
+                     include_declaration: bool): seq[LspLocation] =
+   let start = if include_declaration: context.pos else: context.pos + 1
+   for i in countup(start, high(context.n.sons)):
       for n in find_references(context.n.sons[i], identifier):
          var loc = n.loc
          # Translate virtual locations into physical locations.
@@ -523,8 +524,7 @@ proc find_references(unit: SourceUnit, context: AstContextItem, identifier: PIde
          add(result, new_lsp_location(uri, int(loc.line - 1), int(loc.col)))
 
 
-proc find_references*(unit: SourceUnit, line, col: int, include_declaration: bool = false): seq[LspLocation] =
-   # FIXME: Handle include_declaration
+proc find_references*(unit: SourceUnit, line, col: int, include_declaration: bool): seq[LspLocation] =
    let g = unit.graph
 
    # Before we can assume that the input location is pointing to an identifier,
@@ -554,4 +554,4 @@ proc find_references*(unit: SourceUnit, line, col: int, include_declaration: boo
    if is_nil(declaration):
       raise new_analyze_error("Failed to find the declaration of identifier '$1'.", identifier.s)
 
-   result = find_references(unit, declaration_context, identifier.identifier)
+   result = find_references(unit, declaration_context, identifier.identifier, include_declaration)

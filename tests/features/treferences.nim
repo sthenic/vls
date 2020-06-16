@@ -66,14 +66,7 @@ run_test("textDocument/references: port (1)",
          "includeDeclaration": false
       }
    }),
-   new_lsp_response(641, 0, %*[
-   {
-      "uri": "file://" & expand_filename(src2_path),
-      "range": {
-         "start": {"line": 4, "character": 15},
-         "end" : {"line": 4, "character": 15}
-      }
-   },
+   new_lsp_response(491, 0, %*[
    {
       "uri": "file://" & expand_filename(src2_path),
       "range": {
@@ -110,6 +103,38 @@ run_test("textDocument/references: port (2)",
       },
       "context": {
          "includeDeclaration": false
+      }
+   }),
+   new_lsp_response(339, 0, %*[
+   {
+      "uri": "file://" & expand_filename(src2_path),
+      "range": {
+         "start": {"line": 21, "character": 12},
+         "end" : {"line": 21, "character": 12}
+      }
+   },
+   {
+      "uri": "file://" & expand_filename(src2_path),
+      "range": {
+         "start": {"line": 62, "character": 16},
+         "end" : {"line": 62, "character": 16}
+      }
+   }
+   ])
+)
+
+
+run_test("textDocument/references: port (3) w/ declaration",
+   new_lsp_request(0, "textDocument/references", %*{
+      "textDocument": {
+         "uri": "file://" & expand_filename(src2_path),
+      },
+      "position": {
+         "line": 5,
+         "character": 17
+      },
+      "context": {
+         "includeDeclaration": true
       }
    }),
    new_lsp_response(489, 0, %*[
@@ -162,6 +187,59 @@ run_test("textDocument/references: reg (also used as macro argument)",
       },
       "context": {
          "includeDeclaration": false
+      }
+   }),
+   new_lsp_response(793, 0, %*[
+   {
+      "uri": "file://" & expand_filename(src3_path),
+      "range": {
+         "start": {"line": 18, "character": 8},
+         "end" : {"line": 18, "character": 8}
+      }
+   },
+   {
+      "uri": "file://" & expand_filename(src3_path),
+      "range": {
+         "start": {"line": 18, "character": 23},
+         "end" : {"line": 18, "character": 23}
+      }
+   },
+   {
+      "uri": "file://" & expand_filename(src3_path),
+      "range": {
+         "start": {"line": 51, "character": 20},
+         "end" : {"line": 51, "character": 20}
+      }
+   },
+   {
+      "uri": "file://" & expand_filename(src3_path),
+      "range": {
+         "start": {"line": 52, "character": 21},
+         "end" : {"line": 52, "character": 21}
+      }
+   },
+   {
+      "uri": "file://" & expand_filename(src3_path),
+      "range": {
+         "start": {"line": 57, "character": 26},
+         "end" : {"line": 57, "character": 26}
+      }
+   }
+   ])
+)
+
+
+run_test("textDocument/references: reg (also used as macro argument) w/ declaration",
+   new_lsp_request(0, "textDocument/references", %*{
+      "textDocument": {
+         "uri": "file://" & expand_filename(src3_path),
+      },
+      "position": {
+         "line": 18,
+         "character": 11
+      },
+      "context": {
+         "includeDeclaration": true
       }
    }),
    new_lsp_response(943, 0, %*[
@@ -224,14 +302,7 @@ run_test("textDocument/references: reg (also used as an argument in a nested mac
          "includeDeclaration": false
       }
    }),
-   new_lsp_response(793, 0, %*[
-   {
-      "uri": "file://" & expand_filename(src3_path),
-      "range": {
-         "start": {"line": 28, "character": 9},
-         "end" : {"line": 28, "character": 9}
-      }
-   },
+   new_lsp_response(643, 0, %*[
    {
       "uri": "file://" & expand_filename(src3_path),
       "range": {
@@ -277,14 +348,7 @@ run_test("textDocument/references: reg (also used as an argument in a nested mac
          "includeDeclaration": false
       }
    }),
-   new_lsp_response(1099, 0, %*[
-   {
-      "uri": "file://" & expand_filename(src3_path),
-      "range": {
-         "start": {"line": 12, "character": 28},
-         "end" : {"line": 12, "character": 28}
-      }
-   },
+   new_lsp_response(947, 0, %*[
    {
       "uri": "file://" & expand_filename(src3_path),
       "range": {
@@ -459,6 +523,52 @@ run_test("textDocument/references: integer in local scope",
       },
       "context": {
          "includeDeclaration": false
+      }
+   }),
+   new_lsp_response(643, 0, %*[
+   {
+      "uri": "file://" & expand_filename(src3_path),
+      "range": {
+         "start": {"line": 42, "character": 17},
+         "end" : {"line": 42, "character": 17}
+      }
+   },
+   {
+      "uri": "file://" & expand_filename(src3_path),
+      "range": {
+         "start": {"line": 42, "character": 24},
+         "end" : {"line": 42, "character": 24}
+      }
+   },
+   {
+      "uri": "file://" & expand_filename(src3_path),
+      "range": {
+         "start": {"line": 42, "character": 39},
+         "end" : {"line": 42, "character": 39}
+      }
+   },
+   {
+      "uri": "file://" & expand_filename(src3_path),
+      "range": {
+         "start": {"line": 42, "character": 43},
+         "end" : {"line": 42, "character": 43}
+      }
+   }
+   ])
+)
+
+
+run_test("textDocument/references: integer in local scope (w/ declaration)",
+   new_lsp_request(0, "textDocument/references", %*{
+      "textDocument": {
+         "uri": "file://" & expand_filename(src3_path),
+      },
+      "position": {
+         "line": 42,
+         "character": 24
+      },
+      "context": {
+         "includeDeclaration": true
       }
    }),
    new_lsp_response(795, 0, %*[
