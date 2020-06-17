@@ -339,7 +339,8 @@ proc find_module_declaration(unit: SourceUnit, identifier: PIdentifier): LspLoca
    for filename, module in walk_module_declarations(unit.configuration.include_paths):
       for s in module.sons:
          if s.kind == NkModuleIdentifier and s.identifier.s == identifier.s:
-            return new_lsp_location(construct_uri(filename), int(s.loc.line - 1), int(s.loc.col))
+            return new_lsp_location(construct_uri(filename), int(s.loc.line - 1),
+                                    int(s.loc.col), len(s.identifier.s))
    raise new_analyze_error("Failed to find the declaration of module '$1'.", identifier.s)
 
 
@@ -357,7 +358,8 @@ proc find_module_port_declaration(unit: SourceUnit, module_id, port_id: PIdentif
             if not is_nil(id) and id.identifier.s == port_id.s:
                return new_lsp_location(construct_uri(filename),
                                        int(id.loc.line - 1),
-                                       int(id.loc.col))
+                                       int(id.loc.col),
+                                       len(id.identifier.s))
          of NkPort:
             # If we find a port identifier as the first node, that's the
             # name that this port is known by from the outside. Otherwise,
@@ -366,7 +368,8 @@ proc find_module_port_declaration(unit: SourceUnit, module_id, port_id: PIdentif
             if not is_nil(id) and id.identifier.s == port_id.s:
                return new_lsp_location(construct_uri(filename),
                                        int(id.loc.line - 1),
-                                       int(id.loc.col))
+                                       int(id.loc.col),
+                                       len(id.identifier.s))
             else:
                let port_ref = find_first(port, NkPortReference)
                if not is_nil(port_ref):
@@ -374,7 +377,8 @@ proc find_module_port_declaration(unit: SourceUnit, module_id, port_id: PIdentif
                   if not is_nil(id) and id.identifier.s == port_id.s:
                      return new_lsp_location(construct_uri(filename),
                                              int(id.loc.line - 1),
-                                             int(id.loc.col))
+                                             int(id.loc.col),
+                                             len(id.identifier.s))
          else:
             discard
 
@@ -392,7 +396,8 @@ proc find_module_parameter_port_declaration(unit: SourceUnit, module_id, paramet
          if not is_nil(assignment):
             let id = find_first(assignment, NkParameterIdentifier)
             if not is_nil(id) and id.identifier.s == parameter_id.s:
-               return new_lsp_location(construct_uri(filename), int(id.loc.line - 1), int(id.loc.col))
+               return new_lsp_location(construct_uri(filename), int(id.loc.line - 1),
+                                       int(id.loc.col), len(id.identifier.s))
 
    raise new_analyze_error("Failed to find the declaration of parameter port '$1'.", parameter_id.s)
 
@@ -434,7 +439,7 @@ proc find_internal_declaration(unit: SourceUnit, context: AstContext, identifier
    let (n, _) = find_declaration(context, identifier)
    if not is_nil(n):
       let uri = construct_uri(unit.graph.locations.file_maps[n.loc.file - 1].filename)
-      result = new_lsp_location(uri, int(n.loc.line - 1), int(n.loc.col))
+      result = new_lsp_location(uri, int(n.loc.line - 1), int(n.loc.col), len(n.identifier.s))
    else:
       raise new_analyze_error("Failed to find the declaration of identifier '$1'.", identifier.s)
 
@@ -473,7 +478,8 @@ proc find_declaration*(unit: SourceUnit, line, col: int): LspLocation =
       # +1 is to compensate for the expansion location starting at the backtick.
       if in_bounds(loc, map.expansion_loc, len(map.name) + 1):
          let uri = construct_uri(g.locations.file_maps[map.define_loc.file - 1].filename)
-         return new_lsp_location(uri, int(map.define_loc.line - 1), int(map.define_loc.col))
+         return new_lsp_location(uri, int(map.define_loc.line - 1), int(map.define_loc.col),
+                                 len(map.name))
 
    # We begin by finding the identifier at the input position, keeping in mind
    # that the position doesn't have point to the start of the token. The return
@@ -521,7 +527,8 @@ proc find_references(unit: SourceUnit, context: AstContextItem, identifier: PIde
             loc = to_physical(unit.graph.locations.macro_maps, n.loc)
 
          let uri = construct_uri(unit.graph.locations.file_maps[loc.file - 1].filename)
-         add(result, new_lsp_location(uri, int(loc.line - 1), int(loc.col)))
+         log.debug("foo")
+         add(result, new_lsp_location(uri, int(loc.line - 1), int(loc.col), len(n.identifier.s)))
 
 
 proc find_references*(unit: SourceUnit, line, col: int, include_declaration: bool): seq[LspLocation] =
@@ -541,7 +548,8 @@ proc find_references*(unit: SourceUnit, line, col: int, include_declaration: boo
                if expansion_loc.file < 0:
                   expansion_loc = to_physical(g.locations.macro_maps, expansion_loc)
                let uri = construct_uri(g.locations.file_maps[expansion_loc.file - 1].filename)
-               add(result, new_lsp_location(uri, int(expansion_loc.line - 1), int(expansion_loc.col)))
+               add(result, new_lsp_location(uri, int(expansion_loc.line - 1),
+                                            int(expansion_loc.col), len(m.name) + 1))
          return
 
    var identifier_context: AstContext

@@ -110,10 +110,13 @@ proc new_lsp_position*(line, col: int): LspPosition =
    result.col = col
 
 
-proc new_lsp_location*(uri: string, line, col: int): LspLocation =
-   let pos = new_lsp_position(line, col)
+proc new_lsp_location*(uri: string, line, col, len: int): LspLocation =
+   # The stop position is exclusive so to highlight the full length we
+   # need to point one position past the final character.
+   let start = new_lsp_position(line, col)
+   let stop = new_lsp_position(line, col + len)
    result.uri = uri
-   result.rng = LspRange(start: pos, stop: pos)
+   result.rng = LspRange(start: start, stop: stop)
 
 
 proc new_lsp_diagnostic*(start, stop: LspPosition, severity: LspSeverity,

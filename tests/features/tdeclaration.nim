@@ -67,7 +67,7 @@ run_test("textDocument/declaration: port",
       "uri": "file://" & expand_filename(src2_path),
       "range": {
          "start": {"line": 4, "character": 15},
-         "end" : {"line": 4, "character": 15}
+         "end" : {"line": 4, "character": 20}
       }
    }])
 )
@@ -83,11 +83,11 @@ run_test("textDocument/declaration: reg",
          "character": 17
       }
    }),
-   new_lsp_response(185, 1, %*[{
+   new_lsp_response(186, 1, %*[{
       "uri": "file://" & expand_filename(src2_path),
       "range": {
          "start": {"line": 16, "character": 8},
-         "end" : {"line": 16, "character": 8}
+         "end" : {"line": 16, "character": 22}
       }
    }])
 )
@@ -102,11 +102,11 @@ run_test("textDocument/declaration: reg (assignment)",
          "character": 22
       }
    }),
-   new_lsp_response(185, 2, %*[{
+   new_lsp_response(186, 2, %*[{
       "uri": "file://" & expand_filename(src2_path),
       "range": {
          "start": {"line": 15, "character": 8},
-         "end" : {"line": 15, "character": 8}
+         "end" : {"line": 15, "character": 19}
       }
    }])
 )
@@ -121,11 +121,11 @@ run_test("textDocument/declaration: reg (array)",
          "character": 19
       }
    }),
-   new_lsp_response(185, 3, %*[{
+   new_lsp_response(186, 3, %*[{
       "uri": "file://" & expand_filename(src2_path),
       "range": {
          "start": {"line": 17, "character": 8},
-         "end" : {"line": 17, "character": 8}
+         "end" : {"line": 17, "character": 18}
       }
    }])
 )
@@ -144,7 +144,7 @@ run_test("textDocument/declaration: integer",
       "uri": "file://" & expand_filename(src2_path),
       "range": {
          "start": {"line": 18, "character": 12},
-         "end" : {"line": 18, "character": 12}
+         "end" : {"line": 18, "character": 13}
       }
    }])
 )
@@ -159,11 +159,11 @@ run_test("textDocument/declaration: net (wire)",
          "character": 16
       }
    }),
-   new_lsp_response(185, 5, %*[{
+   new_lsp_response(186, 5, %*[{
       "uri": "file://" & expand_filename(src2_path),
       "range": {
          "start": {"line": 14, "character": 9},
-         "end" : {"line": 14, "character": 9}
+         "end" : {"line": 14, "character": 16}
       }
    }])
 )
@@ -178,11 +178,11 @@ run_test("textDocument/declaration: task",
          "character": 15
       }
    }),
-   new_lsp_response(185, 6, %*[{
+   new_lsp_response(186, 6, %*[{
       "uri": "file://" & expand_filename(src2_path),
       "range": {
          "start": {"line": 35, "character": 9},
-         "end" : {"line": 35, "character": 9}
+         "end" : {"line": 35, "character": 22}
       }
    }])
 )
@@ -201,7 +201,7 @@ run_test("textDocument/declaration: function",
       "uri": "file://" & expand_filename(src2_path),
       "range": {
          "start": {"line": 39, "character": 13},
-         "end" : {"line": 39, "character": 13}
+         "end" : {"line": 39, "character": 20}
       }
    }])
 )
@@ -220,7 +220,7 @@ run_test("textDocument/declaration: genvar",
       "uri": "file://" & expand_filename(src2_path),
       "range": {
          "start": {"line": 53, "character": 11},
-         "end" : {"line": 53, "character": 11}
+         "end" : {"line": 53, "character": 12}
       }
    }])
 )
@@ -239,7 +239,7 @@ run_test("textDocument/declaration: localparam (1)",
       "uri": "file://" & expand_filename(src2_path),
       "range": {
          "start": {"line": 55, "character": 23},
-         "end" : {"line": 55, "character": 23}
+         "end" : {"line": 55, "character": 26}
       }
    }])
 )
@@ -258,7 +258,7 @@ run_test("textDocument/declaration: localparam (2)",
       "uri": "file://" & expand_filename(src2_path),
       "range": {
          "start": {"line": 55, "character": 32},
-         "end" : {"line": 55, "character": 32}
+         "end" : {"line": 55, "character": 35}
       }
    }])
 )
@@ -277,7 +277,7 @@ run_test("textDocument/declaration: parameter",
       "uri": "file://" & expand_filename(src2_path),
       "range": {
          "start": {"line": 56, "character": 20},
-         "end" : {"line": 56, "character": 20}
+         "end" : {"line": 56, "character": 23}
       }
    }])
 )
@@ -296,7 +296,7 @@ run_test("textDocument/declaration: defparam",
       "uri": "file://" & expand_filename(src2_path),
       "range": {
          "start": {"line": 56, "character": 20},
-         "end" : {"line": 56, "character": 20}
+         "end" : {"line": 56, "character": 23}
       }
    }])
 )
@@ -315,7 +315,7 @@ run_test("textDocument/declaration: specparam",
       "uri": "file://" & expand_filename(src2_path),
       "range": {
          "start": {"line": 73, "character": 14},
-         "end" : {"line": 73, "character": 14}
+         "end" : {"line": 73, "character": 16}
       }
    }])
 )
@@ -334,7 +334,7 @@ run_test("textDocument/declaration: event",
       "uri": "file://" & expand_filename(src2_path),
       "range": {
          "start": {"line": 75, "character": 10},
-         "end" : {"line": 75, "character": 10}
+         "end" : {"line": 75, "character": 22}
       }
    }])
 )
@@ -353,7 +353,7 @@ run_test("textDocument/declaration: event (array)",
       "uri": "file://" & expand_filename(src2_path),
       "range": {
          "start": {"line": 75, "character": 24},
-         "end" : {"line": 75, "character": 24}
+         "end" : {"line": 75, "character": 37}
       }
    }])
 )
@@ -368,11 +368,11 @@ run_test("textDocument/declaration: module",
          "character": 9
       }
    }),
-   new_lsp_response(184, 15, %*[{
+   new_lsp_response(185, 15, %*[{
       "uri": "file://" & expand_filename(src2_path),
       "range": {
          "start": {"line": 0, "character": 7},
-         "end" : {"line": 0, "character": 7}
+         "end" : {"line": 0, "character": 15}
       }
    }])
 )
@@ -405,7 +405,7 @@ run_test("textDocument/declaration: localparam from include file (overlapping)",
       "uri": "file://" & expand_filename(src3_header_path),
       "range": {
          "start": {"line": 4, "character": 11},
-         "end" : {"line": 4, "character": 11}
+         "end" : {"line": 4, "character": 28}
       }
    }])
 )
@@ -424,7 +424,7 @@ run_test("textDocument/declaration: integer in local scope (1)",
       "uri": "file://" & expand_filename(src3_path),
       "range": {
          "start": {"line": 33, "character": 20},
-         "end" : {"line": 33, "character": 20}
+         "end" : {"line": 33, "character": 21}
       }
    }])
 )
@@ -443,7 +443,7 @@ run_test("textDocument/declaration: integer in local scope (2)",
       "uri": "file://" & expand_filename(src3_path),
       "range": {
          "start": {"line": 40, "character": 22},
-         "end" : {"line": 40, "character": 22}
+         "end" : {"line": 40, "character": 23}
       }
    }])
 )
@@ -462,7 +462,7 @@ run_test("textDocument/declaration: wire in local scope (1)",
       "uri": "file://" & expand_filename(src3_path),
       "range": {
          "start": {"line": 31, "character": 17},
-         "end" : {"line": 31, "character": 17}
+         "end" : {"line": 31, "character": 29}
       }
    }])
 )
@@ -481,7 +481,7 @@ run_test("textDocument/declaration: wire in local scope (2)",
       "uri": "file://" & expand_filename(src3_path),
       "range": {
          "start": {"line": 39, "character": 17},
-         "end" : {"line": 39, "character": 17}
+         "end" : {"line": 39, "character": 29}
       }
    }])
 )
@@ -496,11 +496,11 @@ run_test("textDocument/declaration: global wire used in local scope (1)",
          "character": 19
       }
    }),
-   new_lsp_response(186, 15, %*[{
+   new_lsp_response(187, 15, %*[{
       "uri": "file://" & expand_filename(src3_path),
       "range": {
          "start": {"line": 28, "character": 9},
-         "end" : {"line": 28, "character": 9}
+         "end" : {"line": 28, "character": 22}
       }
    }])
 )
@@ -515,11 +515,11 @@ run_test("textDocument/declaration: global wire used in local scope (2)",
          "character": 25
       }
    }),
-   new_lsp_response(186, 15, %*[{
+   new_lsp_response(187, 15, %*[{
       "uri": "file://" & expand_filename(src3_path),
       "range": {
          "start": {"line": 28, "character": 9},
-         "end" : {"line": 28, "character": 9}
+         "end" : {"line": 28, "character": 22}
       }
    }])
 )
@@ -547,11 +547,11 @@ run_test("textDocument/declaration: macro expansion (1)",
          "character": 28
       }
    }),
-   new_lsp_response(186, 15, %*[{
+   new_lsp_response(187, 15, %*[{
       "uri": "file://" & expand_filename(src3_path),
       "range": {
          "start": {"line": 12, "character": 8},
-         "end" : {"line": 12, "character": 8}
+         "end" : {"line": 12, "character": 14}
       }
    }])
 )
@@ -570,7 +570,7 @@ run_test("textDocument/declaration: macro expansion (2)",
       "uri": "file://" & expand_filename(src3_path),
       "range": {
          "start": {"line": 12, "character": 28},
-         "end" : {"line": 12, "character": 28}
+         "end" : {"line": 12, "character": 31}
       }
    }])
 )
@@ -598,11 +598,11 @@ run_test("textDocument/declaration: nested macro expansion (1)",
          "character": 40
       }
    }),
-   new_lsp_response(186, 15, %*[{
+   new_lsp_response(187, 15, %*[{
       "uri": "file://" & expand_filename(src3_path),
       "range": {
          "start": {"line": 28, "character": 9},
-         "end" : {"line": 28, "character": 9}
+         "end" : {"line": 28, "character": 22}
       }
    }])
 )
@@ -617,11 +617,11 @@ run_test("textDocument/declaration: nested macro expansion (2)",
          "character": 38
       }
    }),
-   new_lsp_response(186, 15, %*[{
+   new_lsp_response(187, 15, %*[{
       "uri": "file://" & expand_filename(src3_path),
       "range": {
          "start": {"line": 28, "character": 9},
-         "end" : {"line": 28, "character": 9}
+         "end" : {"line": 28, "character": 22}
       }
    }])
 )
@@ -640,7 +640,7 @@ run_test("textDocument/declaration: macro expansion, two on one line (1)",
       "uri": "file://" & expand_filename(src3_path),
       "range": {
          "start": {"line": 12, "character": 28},
-         "end" : {"line": 12, "character": 28}
+         "end" : {"line": 12, "character": 31}
       }
    }])
 )
@@ -659,7 +659,7 @@ run_test("textDocument/declaration: macro expansion, two on one line (2)",
       "uri": "file://" & expand_filename(src3_path),
       "range": {
          "start": {"line": 15, "character": 32},
-         "end" : {"line": 15, "character": 32}
+         "end" : {"line": 15, "character": 41}
       }
    }])
 )
@@ -674,11 +674,11 @@ run_test("textDocument/declaration: macro expansion, expression in argument (1)"
          "character": 23
       }
    }),
-   new_lsp_response(186, 15, %*[{
+   new_lsp_response(187, 15, %*[{
       "uri": "file://" & expand_filename(src3_path),
       "range": {
          "start": {"line": 12, "character": 8},
-         "end" : {"line": 12, "character": 8}
+         "end" : {"line": 12, "character": 14}
       }
    }])
 )
@@ -697,7 +697,7 @@ run_test("textDocument/declaration: macro expansion, expression in argument (2)"
       "uri": "file://" & expand_filename(src3_path),
       "range": {
          "start": {"line": 12, "character": 28},
-         "end" : {"line": 12, "character": 28}
+         "end" : {"line": 12, "character": 31}
       }
    }])
 )
@@ -716,7 +716,7 @@ run_test("textDocument/declaration: macro expansion, expression in argument (3)"
       "uri": "file://" & expand_filename(src3_path),
       "range": {
          "start": {"line": 15, "character": 32},
-         "end" : {"line": 15, "character": 32}
+         "end" : {"line": 15, "character": 41}
       }
    }])
 )
@@ -731,11 +731,11 @@ run_test("textDocument/declaration: macro lookup, backtick",
          "character": 18
       }
    }),
-   new_lsp_response(185, 15, %*[{
+   new_lsp_response(186, 15, %*[{
       "uri": "file://" & expand_filename(src3_header_path),
       "range": {
          "start": {"line": 2, "character": 8},
-         "end" : {"line": 2, "character": 8}
+         "end" : {"line": 2, "character": 11}
       }
    }])
 )
@@ -750,11 +750,11 @@ run_test("textDocument/declaration: macro lookup, last character",
          "character": 21
       }
    }),
-   new_lsp_response(185, 15, %*[{
+   new_lsp_response(186, 15, %*[{
       "uri": "file://" & expand_filename(src3_header_path),
       "range": {
          "start": {"line": 2, "character": 8},
-         "end" : {"line": 2, "character": 8}
+         "end" : {"line": 2, "character": 11}
       }
    }])
 )
@@ -769,11 +769,11 @@ run_test("textDocument/declaration: macro lookup, in the middle",
          "character": 32
       }
    }),
-   new_lsp_response(187, 15, %*[{
+   new_lsp_response(188, 15, %*[{
       "uri": "file://" & expand_filename(src3_header_path),
       "range": {
          "start": {"line": 17, "character": 8},
-         "end" : {"line": 17, "character": 8}
+         "end" : {"line": 17, "character": 21}
       }
    }])
 )
@@ -792,7 +792,7 @@ run_test("textDocument/declaration: macro lookup, redefinition",
       "uri": "file://" & expand_filename(src3_path),
       "range": {
          "start": {"line": 56, "character": 12},
-         "end" : {"line": 56, "character": 12}
+         "end" : {"line": 56, "character": 15}
       }
    }])
 )
@@ -812,7 +812,7 @@ run_test("textDocument/declaration: module lookup",
       "uri": "file://" & expand_filename(src4_path),
       "range": {
          "start": {"line": 0, "character": 32},
-         "end" : {"line": 0, "character": 32}
+         "end" : {"line": 0, "character": 39}
       }
    }])
 )
@@ -831,7 +831,7 @@ run_test("textDocument/declaration: module port lookup",
       "uri": "file://" & expand_filename(src4_path),
       "range": {
          "start": {"line": 1, "character": 44},
-         "end" : {"line": 1, "character": 44}
+         "end" : {"line": 1, "character": 49}
       }
    }])
 )
@@ -850,7 +850,7 @@ run_test("textDocument/declaration: module port connection lookup",
       "uri": "file://" & expand_filename(src3_path),
       "range": {
          "start": {"line": 3, "character": 15},
-         "end" : {"line": 3, "character": 15}
+         "end" : {"line": 3, "character": 20}
       }
    }])
 )
@@ -878,11 +878,11 @@ run_test("textDocument/declaration: module port lookup, explicit port reference"
          "character": 10
       }
    }),
-   new_lsp_response(184, 15, %*[{
+   new_lsp_response(185, 15, %*[{
       "uri": "file://" & expand_filename(src5_path),
       "range": {
          "start": {"line": 3, "character": 5},
-         "end" : {"line": 3, "character": 5}
+         "end" : {"line": 3, "character": 10}
       }
    }])
 )
@@ -897,11 +897,11 @@ run_test("textDocument/declaration: module port lookup, implicit port reference 
          "character": 14
       }
    }),
-   new_lsp_response(184, 15, %*[{
+   new_lsp_response(185, 15, %*[{
       "uri": "file://" & expand_filename(src5_path),
       "range": {
          "start": {"line": 4, "character": 4},
-         "end" : {"line": 4, "character": 4}
+         "end" : {"line": 4, "character": 10}
       }
    }])
 )
@@ -920,7 +920,7 @@ run_test("textDocument/declaration: module port lookup, implicit port reference 
       "uri": "file://" & expand_filename(src5_path),
       "range": {
          "start": {"line": 4, "character": 12},
-         "end" : {"line": 4, "character": 12}
+         "end" : {"line": 4, "character": 19}
       }
    }])
 )
@@ -939,7 +939,7 @@ run_test("textDocument/declaration: module parameter port lookup (1)",
       "uri": "file://" & expand_filename(src5_path),
       "range": {
          "start": {"line": 1, "character": 14},
-         "end" : {"line": 1, "character": 14}
+         "end" : {"line": 1, "character": 17}
       }
    }])
 )
@@ -958,7 +958,7 @@ run_test("textDocument/declaration: module parameter port lookup (2)",
       "uri": "file://" & expand_filename(src5_path),
       "range": {
          "start": {"line": 1, "character": 33},
-         "end" : {"line": 1, "character": 33}
+         "end" : {"line": 1, "character": 36}
       }
    }])
 )
@@ -977,7 +977,7 @@ run_test("textDocument/declaration: module parameter value",
       "uri": "file://" & expand_filename(src4_path),
       "range": {
          "start": {"line": 10, "character": 25},
-         "end" : {"line": 10, "character": 25}
+         "end" : {"line": 10, "character": 28}
       }
    }])
 )
