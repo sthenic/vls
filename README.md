@@ -33,7 +33,7 @@ This tool is a Verilog IEEE 1364-2005 [language server](https://microsoft.github
 - [ ] textDocument/hover
 - [ ] textDocument/signatureHelp
 - [x] textDocument/declaration
-- [ ] textDocument/definition
+- [x] textDocument/definition
 - [x] textDocument/references
 - [ ] textDocument/documentHighlight
 - [ ] textDocument/rename
@@ -124,9 +124,6 @@ https://github.com/hekwall/nvim-lsp
 
     lua require 'nvim_lsp'.vls.setup {}
 
-## Documentation
-Coming soon.
-
 ## Version numbers
 Releases follow [semantic versioning](https://semver.org/) to determine how the version number is incremented. If the specification is ever broken by a release, this will be documented in the changelog.
 
@@ -140,3 +137,4 @@ This tool is free software released under the [MIT license](https://opensource.o
 
 * [Nim's standard library](https://github.com/nim-lang/Nim)
 * [`vparse`](https://github.com/sthenic/vparse)
+* [`vltoml`](https://github.com/sthenic/vltoml)
