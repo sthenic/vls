@@ -563,3 +563,20 @@ proc find_references*(unit: SourceUnit, line, col: int, include_declaration: boo
       raise new_analyze_error("Failed to find the declaration of identifier '$1'.", identifier.identifier.s)
 
    result = find_references(unit, declaration_context, identifier.identifier, include_declaration)
+
+
+proc find_token_at(unit: SourceUnit, line, col: int) =
+   var lexer: Lexer
+   let cache = new_ident_cache()
+   let fs = new_file_stream(unit.filename)
+   if is_nil(fs):
+      raise new_analyze_error("Failed to open file '$1'.", unit.filename)
+
+   open_lexer(lexer, cache, fs, unit.filename, 1)
+   var tok: Token
+   get_token(lexer, tok)
+   while tok.kind != TkEndOfFile:
+      log.debug("Got token $1", pretty(tok))
+      get_token(lexer, tok)
+   close_lexer(lexer)
+   close(fs)
