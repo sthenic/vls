@@ -560,6 +560,6 @@ proc find_references*(unit: SourceUnit, line, col: int, include_declaration: boo
 
    let (declaration, declaration_context) = find_declaration(identifier_context, identifier.identifier)
    if is_nil(declaration):
-      raise new_analyze_error("Failed to find the declaration of identifier '$1'.", identifier.s)
+      raise new_analyze_error("Failed to find the declaration of identifier '$1'.", identifier.identifier.s)
 
    result = find_references(unit, declaration_context, identifier.identifier, include_declaration)

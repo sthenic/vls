@@ -611,6 +611,23 @@ run_test("textDocument/references: integer in local scope (w/ declaration)",
 )
 
 
+run_test("textDocument/references: undeclared)",
+   new_lsp_request(0, "textDocument/references", %*{
+      "textDocument": {
+         "uri": "file://" & expand_filename(src3_path),
+      },
+      "position": {
+         "line": 48,
+         "character": 24
+      },
+      "context": {
+         "includeDeclaration": true
+      }
+   }),
+   new_lsp_response(38, 0, new_jnull())
+)
+
+
 # Shut down the server.
 shutdown(ifs, ofs)
 
