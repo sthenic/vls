@@ -71,7 +71,7 @@ run_test("textDocument/references: port (1)",
          "includeDeclaration": false
       }
    }),
-   new_lsp_response(435 + src2_path_len, 0, %*[
+   new_lsp_response(323 + 3 * src2_path_len, 0, %*[
    {
       "uri": "file://" & expand_filename(src2_path),
       "range": {
@@ -110,7 +110,7 @@ run_test("textDocument/references: port (2)",
          "includeDeclaration": false
       }
    }),
-   new_lsp_response(283 + src2_path_len, 0, %*[
+   new_lsp_response(227 + 2 * src2_path_len, 0, %*[
    {
       "uri": "file://" & expand_filename(src2_path),
       "range": {
@@ -142,7 +142,7 @@ run_test("textDocument/references: port (3) w/ declaration",
          "includeDeclaration": true
       }
    }),
-   new_lsp_response(433 + src2_path_len, 0, %*[
+   new_lsp_response(321 + 3 * src2_path_len, 0, %*[
    {
       "uri": "file://" & expand_filename(src2_path),
       "range": {
@@ -172,6 +172,7 @@ const src3_path = "./src/src3.v"
 const src3_header_path = "./src/src3.vh"
 const src3_text = static_read(src3_path)
 let src3_path_len = len(expand_filename(src3_path))
+let src3_header_path_len = len(expand_filename(src3_header_path))
 send(ifs, new_lsp_notification("textDocument/didOpen", %*{
    "textDocument": {
       "uri": "file://" & expand_filename(src3_path),
@@ -195,7 +196,7 @@ run_test("textDocument/references: reg (also used as macro argument)",
          "includeDeclaration": false
       }
    }),
-   new_lsp_response(738 + src3_path_len, 0, %*[
+   new_lsp_response(514 + 5 * src3_path_len, 0, %*[
    {
       "uri": "file://" & expand_filename(src3_path),
       "range": {
@@ -248,7 +249,7 @@ run_test("textDocument/references: reg (also used as macro argument) w/ declarat
          "includeDeclaration": true
       }
    }),
-   new_lsp_response(889 + src3_path_len, 0, %*[
+   new_lsp_response(609 + 6 * src3_path_len, 0, %*[
    {
       "uri": "file://" & expand_filename(src3_path),
       "range": {
@@ -308,7 +309,7 @@ run_test("textDocument/references: reg (also used as an argument in a nested mac
          "includeDeclaration": false
       }
    }),
-   new_lsp_response(587 + src3_path_len, 0, %*[
+   new_lsp_response(419 + 4 * src3_path_len, 0, %*[
    {
       "uri": "file://" & expand_filename(src3_path),
       "range": {
@@ -354,7 +355,7 @@ run_test("textDocument/references: reg (also used as an argument in a nested mac
          "includeDeclaration": false
       }
    }),
-   new_lsp_response(891 + src3_path_len, 0, %*[
+   new_lsp_response(611 + 6 * src3_path_len, 0, %*[
    {
       "uri": "file://" & expand_filename(src3_path),
       "range": {
@@ -414,7 +415,7 @@ run_test("textDocument/references: macro usage (1)",
          "includeDeclaration": false
       }
    }),
-   new_lsp_response(283 + src3_path_len, 0, %*[
+   new_lsp_response(227 + 2 * src3_path_len, 0, %*[
    {
       "uri": "file://" & expand_filename(src3_path),
       "range": {
@@ -446,7 +447,7 @@ run_test("textDocument/references: macro usage (2)",
          "includeDeclaration": false
       }
    }),
-   new_lsp_response(893 + src3_path_len, 0, %*[
+   new_lsp_response(611 + 4 * src3_path_len + 2 * src3_header_path_len, 0, %*[
    {
       "uri": "file://" & expand_filename(src3_path),
       "range": {
@@ -531,7 +532,7 @@ run_test("textDocument/references: integer in local scope",
          "includeDeclaration": false
       }
    }),
-   new_lsp_response(587 + src3_path_len, 0, %*[
+   new_lsp_response(419 + 4 * src3_path_len, 0, %*[
    {
       "uri": "file://" & expand_filename(src3_path),
       "range": {
@@ -577,7 +578,7 @@ run_test("textDocument/references: integer in local scope (w/ declaration)",
          "includeDeclaration": true
       }
    }),
-   new_lsp_response(739 + src3_path_len, 0, %*[
+   new_lsp_response(515 + 5 * src3_path_len, 0, %*[
    {
       "uri": "file://" & expand_filename(src3_path),
       "range": {

@@ -42,6 +42,7 @@ Test suite: syntax
 
 const src0_path = "./src/src0.v"
 const src0_text = static_read(src0_path)
+let src0_path_len = len(expand_filename(src0_path))
 run_test("textDocument/didOpen: src0.v",
    new_lsp_notification("textDocument/didOpen", %*{
       "textDocument": {
@@ -51,7 +52,7 @@ run_test("textDocument/didOpen: src0.v",
          "text": src0_text
       }
    }),
-   new_lsp_notification(289, "textDocument/publishDiagnostics", %*{
+   new_lsp_notification(233 + src0_path_len, "textDocument/publishDiagnostics", %*{
       "uri": "file://" & expand_filename(src0_path),
       "diagnostics": [
          new_lsp_diagnostic(new_lsp_position(0, 0), new_lsp_position(0, 0), ERROR,
@@ -64,6 +65,7 @@ run_test("textDocument/didOpen: src0.v",
 
 const src1_path = "./src/src1.v"
 const src1_text = static_read(src1_path)
+let src1_path_len = len(expand_filename(src1_path))
 run_test("textDocument/didOpen: src1.v",
    new_lsp_notification("textDocument/didOpen", %*{
       "textDocument": {
@@ -73,7 +75,7 @@ run_test("textDocument/didOpen: src1.v",
          "text": src1_text
       }
    }),
-   new_lsp_notification(733, "textDocument/publishDiagnostics", %*{
+   new_lsp_notification(677 + src1_path_len, "textDocument/publishDiagnostics", %*{
       "uri": "file://" & expand_filename(src1_path),
       "diagnostics": [
          new_lsp_diagnostic(new_lsp_position(3, 0), new_lsp_position(3, 0), ERROR,
