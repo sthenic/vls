@@ -136,7 +136,8 @@ proc initialize(s: var LspServer, msg: LspMessage) =
          "textDocumentSync": 1,
          "declarationProvider": true,
          "definitionProvider": true,
-         "referencesProvider": true
+         "referencesProvider": true,
+         "completionProvider": {}
       }
       send(s, new_lsp_response(msg.id, result))
       s.is_initialized = true
@@ -182,6 +183,22 @@ proc references(s: LspServer, msg: LspMessage) =
       send(s, new_lsp_response(msg.id, RPC_INTERNAL_ERROR, format("File '$1' is not in the index.", uri), nil))
 
 
+proc completion(s: LspServer, msg: LspMessage) =
+   let line = get_int(msg.parameters["position"]["line"])
+   let col = get_int(msg.parameters["position"]["character"])
+   let uri = decode_url(get_str(msg.parameters["textDocument"]["uri"]))
+   # FIXME: Ignore the completion context for now.
+   if has_key(s.source_units, uri):
+      try:
+         let completion_items = find_completions(s.source_units[uri], line + 1, col)
+         log.debug("Done!")
+         send(s, new_lsp_response(msg.id, %completion_items))
+      except AnalyzeError:
+         send(s, new_lsp_response(msg.id, new_jnull()))
+   else:
+      send(s, new_lsp_response(msg.id, RPC_INTERNAL_ERROR, format("File '$1' is not in the index.", uri), nil))
+
+
 proc handle_request(s: var LspServer, msg: LspMessage) =
    # If the server is shut down we respond to every request with an error.
    # Otherwise, unless the server is initialized, we only respond to the
@@ -207,6 +224,8 @@ proc handle_request(s: var LspServer, msg: LspMessage) =
       declaration(s, msg)
    of "textDocument/references":
       references(s, msg)
+   of "textDocument/completion":
+      completion(s, msg)
    else:
       let str = format("Unsupported method '$1'.", msg.m)
       send(s, new_lsp_response(msg.id, RPC_INVALID_REQUEST, str, nil))

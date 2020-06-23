@@ -565,18 +565,27 @@ proc find_references*(unit: SourceUnit, line, col: int, include_declaration: boo
    result = find_references(unit, declaration_context, identifier.identifier, include_declaration)
 
 
-proc find_token_at(unit: SourceUnit, line, col: int) =
+proc find_token_at(unit: SourceUnit, line, col: int): Token =
+   init(result)
    var lexer: Lexer
    let cache = new_ident_cache()
    let fs = new_file_stream(unit.filename)
    if is_nil(fs):
       raise new_analyze_error("Failed to open file '$1'.", unit.filename)
 
+   let loc = new_location(1, line, col)
    open_lexer(lexer, cache, fs, unit.filename, 1)
    var tok: Token
    get_token(lexer, tok)
    while tok.kind != TkEndOfFile:
-      log.debug("Got token $1", pretty(tok))
+      if not is_nil(tok.identifier) and in_bounds(loc, tok.loc, len(tok.identifier.s)):
+         log.debug("Got token in bounds: $1", pretty(tok))
+         result = tok
+         break
       get_token(lexer, tok)
    close_lexer(lexer)
    close(fs)
+
+
+proc find_completions*(unit: SourceUnit, line, col: int): seq[LspCompletionItem] =
+   let tok = find_token_at(unit, line, col)

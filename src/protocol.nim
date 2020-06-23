@@ -80,6 +80,10 @@ type
       severity*: LspSeverity
       message*: string
 
+   LspCompletionItem* = object
+      label*: string
+      detail*: string
+
 
 const
    INDENT = 2
@@ -152,6 +156,13 @@ proc `%`*(l: LspLocation): JsonNode =
    result = %*{
       "uri": l.uri,
       "range": l.rng
+   }
+
+
+proc `%`*(ci: LspCompletionItem): JsonNode =
+   result = %*{
+      "label": ci.label,
+      "detail": ci.detail
    }
 
 
