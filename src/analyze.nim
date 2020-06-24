@@ -335,6 +335,63 @@ proc find_declaration(context: AstContext, identifier: PIdentifier): tuple[n: PN
                   return
 
 
+proc find_all_declarations(n: PNode): seq[PNode] =
+   case n.kind
+   of NkPortDecl:
+      let id = find_first(n, NkPortIdentifier)
+      if not is_nil(id):
+         add(result, id)
+
+   of NkTaskDecl, NkFunctionDecl, NkGenvarDecl:
+      let id = find_first(n, NkIdentifier)
+      if not is_nil(id):
+         add(result, id)
+
+   of NkRegDecl, NkIntegerDecl, NkRealDecl, NkRealtimeDecl, NkTimeDecl, NkNetDecl, NkEventDecl:
+      for s in n.sons:
+         case s.kind
+         of NkArrayIdentifer, NkAssignment:
+            let id = find_first(s, NkIdentifier)
+            if not is_nil(id):
+               add(result, id)
+         of NkIdentifier:
+            add(result, s)
+            break
+         else:
+            discard
+
+   of NkParameterDecl, NkLocalparamDecl:
+      for s in walk_sons(n, NkParamAssignment):
+         let id = find_first(s, NkParameterIdentifier)
+         if not is_nil(id):
+            add(result, id)
+
+   of NkSpecparamDecl:
+      for s in walk_sons(n, NkAssignment):
+         let id = find_first(s, NkIdentifier)
+         if not is_nil(id):
+            add(result, id)
+
+   of NkModuleDecl:
+      let id = find_first(n, NkModuleIdentifier)
+      if not is_nil(id):
+         add(result, id)
+
+   of PrimitiveTypes + {NkDefparamDecl}:
+      discard
+
+   else:
+      for s in n.sons:
+         add(result, find_all_declarations(s))
+
+
+proc find_all_declarations(context: AstContext): seq[PNode] =
+   for context_item in context:
+      if context_item.n.kind notin PrimitiveTypes:
+         for pos in 0..<context_item.pos:
+            add(result, find_all_declarations(context_item.n.sons[pos]))
+
+
 proc find_module_declaration(unit: SourceUnit, identifier: PIdentifier): LspLocation =
    for filename, module in walk_module_declarations(unit.configuration.include_paths):
       for s in module.sons:
@@ -565,10 +622,9 @@ proc find_references*(unit: SourceUnit, line, col: int, include_declaration: boo
    result = find_references(unit, declaration_context, identifier.identifier, include_declaration)
 
 
-proc find_token_at(unit: SourceUnit, line, col: int): Token =
+proc find_token_at(unit: SourceUnit, line, col: int, cache: IdentifierCache): Token =
    init(result)
    var lexer: Lexer
-   let cache = new_ident_cache()
    let fs = new_file_stream(unit.filename)
    if is_nil(fs):
       raise new_analyze_error("Failed to open file '$1'.", unit.filename)
@@ -578,7 +634,10 @@ proc find_token_at(unit: SourceUnit, line, col: int): Token =
    var tok: Token
    get_token(lexer, tok)
    while tok.kind != TkEndOfFile:
-      if not is_nil(tok.identifier) and in_bounds(loc, tok.loc, len(tok.identifier.s)):
+      # We pretend the token length is one character longer than it is in order
+      # to allow completion when the cursor (input location) is placed after the
+      # last character.
+      if not is_nil(tok.identifier) and in_bounds(loc, tok.loc, len(tok.identifier.s) + 1):
          log.debug("Got token in bounds: $1", pretty(tok))
          result = tok
          break
@@ -588,4 +647,28 @@ proc find_token_at(unit: SourceUnit, line, col: int): Token =
 
 
 proc find_completions*(unit: SourceUnit, line, col: int): seq[LspCompletionItem] =
-   let tok = find_token_at(unit, line, col)
+   # We can be faced with one of two situations: either
+   #   1. the AST is intact at least up until the target location; or
+   #   2. the AST is broken and attempting to find an identifier at the target
+   #      location will not be successful.
+   # The ideal case is (1) because we can construct a more accurate list of
+   # completion items if we know the context AST. However, if we're faced with
+   # (2), we still want to return something. We run the lexer to manually
+   # tokenize the file and attempt to find an identifier at the target location
+   let loc = new_location(1, line, col)
+   var context: AstContext
+   let identifier = find_identifier_physical(unit.graph, loc, context)
+   if not is_nil(identifier):
+      log.debug("Found identifier in context: $1", identifier.identifier.s)
+      let declarations = find_all_declarations(context)
+      for d in declarations:
+         log.debug("Found decl. $1.", d.identifier.s)
+   else:
+      log.debug("Looking up a token instead")
+      let cache = new_ident_cache()
+      let tok = find_token_at(unit, line, col, cache)
+      if tok.kind == TkInvalid:
+         raise new_analyze_error("Failed to find a token at the target location.")
+      else:
+         log.debug("Found a token $1", tok.identifier.s))
+
