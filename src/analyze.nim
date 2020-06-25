@@ -185,12 +185,16 @@ proc check_syntax*(unit: SourceUnit): seq[LspDiagnostic] =
    result = check_syntax(unit.graph.root_node, unit.graph.locations)
 
 
-proc find_identifier(n: PNode, loc: Location, context: var AstContext): PNode =
+proc find_identifier(n: PNode, loc: Location, context: var AstContext,
+                     end_cursor: bool = false): PNode =
    case n.kind
    of IdentifierTypes:
       # If the node is an identifier type, check if the location is pointing to
-      # anywhere within the identifier. Otherwise, we skip it.
-      if in_bounds(loc, n.loc, len(n.identifier.s)):
+      # anywhere within the identifier. Otherwise, we skip it. If end_cursor is
+      # true, we make the identifier appear to be one character longer than its
+      # natural length.
+      let length = if end_cursor: len(n.identifier.s) + 1 else: len(n.identifier.s)
+      if in_bounds(loc, n.loc, length):
          result = n
       else:
          result = nil
@@ -201,7 +205,7 @@ proc find_identifier(n: PNode, loc: Location, context: var AstContext): PNode =
       #        depending on the location of the first node within?
       for i, s in n.sons:
          add(context, i, n)
-         result = find_identifier(s, loc, context)
+         result = find_identifier(s, loc, context, end_cursor)
          if not is_nil(result):
             return
          discard pop(context)
@@ -214,7 +218,8 @@ proc unroll_location(macro_maps: seq[MacroMap], loc: var Location) =
             loc = new_location(-(i + 1), j, 0)
 
 
-proc find_identifier_physical(g: Graph, loc: Location, context: var AstContext): PNode =
+proc find_identifier_physical(g: Graph, loc: Location, context: var AstContext,
+                              end_cursor: bool = false): PNode =
    ## Find the identifier at the physical location ``loc``, i.e. ``loc.file`` is
    ## expected to not point at a macro entry.
    var lookup_loc = loc
@@ -239,7 +244,7 @@ proc find_identifier_physical(g: Graph, loc: Location, context: var AstContext):
       unroll_location(g.locations.macro_maps, lookup_loc)
 
    # Make the lookup.
-   result = find_identifier(g.root_node, lookup_loc, context)
+   result = find_identifier(g.root_node, lookup_loc, context, end_cursor)
 
    # If we made the lookup using a virtual location, we have to be ready to roll
    # back the lookup result if it turns out that the input location points
@@ -638,12 +643,23 @@ proc find_token_at(unit: SourceUnit, line, col: int, cache: IdentifierCache): To
       # to allow completion when the cursor (input location) is placed after the
       # last character.
       if not is_nil(tok.identifier) and in_bounds(loc, tok.loc, len(tok.identifier.s) + 1):
-         log.debug("Got token in bounds: $1", pretty(tok))
          result = tok
          break
       get_token(lexer, tok)
    close_lexer(lexer)
    close(fs)
+
+
+iterator walk_nodes_starting_with(nodes: openarray[PNode], prefix: string): PNode =
+   for n in nodes:
+      if n.kind in IdentifierTypes and starts_with(n.identifier.s, prefix):
+         yield n
+
+
+iterator walk_identifiers_starting_with(cache: IdentifierCache, prefix: string): PIdentifier =
+   for id in walk_identifiers(cache):
+      if starts_with(id.s, prefix):
+         yield id
 
 
 proc find_completions*(unit: SourceUnit, line, col: int): seq[LspCompletionItem] =
@@ -657,18 +673,17 @@ proc find_completions*(unit: SourceUnit, line, col: int): seq[LspCompletionItem]
    # tokenize the file and attempt to find an identifier at the target location
    let loc = new_location(1, line, col)
    var context: AstContext
-   let identifier = find_identifier_physical(unit.graph, loc, context)
+   let identifier = find_identifier_physical(unit.graph, loc, context, end_cursor = true)
    if not is_nil(identifier):
-      log.debug("Found identifier in context: $1", identifier.identifier.s)
-      let declarations = find_all_declarations(context)
-      for d in declarations:
-         log.debug("Found decl. $1.", d.identifier.s)
+      let prefix = substr(identifier.identifier.s, 0, col - identifier.loc.col - 1)
+      for n in walk_nodes_starting_with(find_all_declarations(context), prefix):
+         add(result, new_lsp_completion_item(n.identifier.s))
    else:
-      log.debug("Looking up a token instead")
       let cache = new_ident_cache()
       let tok = find_token_at(unit, line, col, cache)
       if tok.kind == TkInvalid:
          raise new_analyze_error("Failed to find a token at the target location.")
       else:
-         log.debug("Found a token $1", tok.identifier.s))
-
+         let prefix = substr(tok.identifier.s, 0, col - tok.loc.col - 1)
+         for id in walk_identifiers_starting_with(cache, prefix):
+            add(result, new_lsp_completion_item(id.s))

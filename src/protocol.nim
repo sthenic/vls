@@ -82,7 +82,6 @@ type
 
    LspCompletionItem* = object
       label*: string
-      detail*: string
 
 
 const
@@ -130,6 +129,10 @@ proc new_lsp_diagnostic*(start, stop: LspPosition, severity: LspSeverity,
    result.message = message
 
 
+proc new_lsp_completion_item*(label: string): LspCompletionItem =
+   result.label = label
+
+
 proc `%`*(p: LspPosition): JsonNode =
    result = %*{
       "line": p.line,
@@ -162,7 +165,6 @@ proc `%`*(l: LspLocation): JsonNode =
 proc `%`*(ci: LspCompletionItem): JsonNode =
    result = %*{
       "label": ci.label,
-      "detail": ci.detail
    }
 
 
