@@ -57,17 +57,116 @@ Test suite: completion
 ----------------------""")
 
 
-run_test("textDocument/completion",
+run_test("textDocument/completion: c(lk_i)",
    new_lsp_request(0, "textDocument/completion", %*{
       "textDocument": {
          "uri": "file://" & expand_filename(src3_path),
       },
       "position": {
          "line": 17,
-         "character": 23
+         "character": 22
       }
    }),
-   new_lsp_response(36, 0, %*[])
+   new_lsp_response(53, 0, %*[
+      {"label": "clk_i"}
+   ])
+)
+
+
+run_test("textDocument/completion: WIDTH",
+   new_lsp_request(0, "textDocument/completion", %*{
+      "textDocument": {
+         "uri": "file://" & expand_filename(src3_path),
+      },
+      "position": {
+         "line": 15,
+         "character": 13
+      }
+   }),
+   new_lsp_response(83, 0, %*[
+      {"label": "WIDTH"},
+      {"label": "WIDTH_FROM_HEADER"}
+   ])
+)
+
+
+run_test("textDocument/completion: WIDTH_",
+   new_lsp_request(0, "textDocument/completion", %*{
+      "textDocument": {
+         "uri": "file://" & expand_filename(src3_path),
+      },
+      "position": {
+         "line": 15,
+         "character": 15
+      }
+   }),
+   new_lsp_response(65, 0, %*[
+      {"label": "WIDTH_FROM_HEADER"}
+   ])
+)
+
+
+run_test("textDocument/completion: macro argument (1)",
+   new_lsp_request(0, "textDocument/completion", %*{
+      "textDocument": {
+         "uri": "file://" & expand_filename(src3_path),
+      },
+      "position": {
+         "line": 18,
+         "character": 27
+      }
+   }),
+   new_lsp_response(54, 0, %*[
+      {"label": "my_reg"}
+   ])
+)
+
+
+run_test("textDocument/completion: macro argument (2)",
+   new_lsp_request(0, "textDocument/completion", %*{
+      "textDocument": {
+         "uri": "file://" & expand_filename(src3_path),
+      },
+      "position": {
+         "line": 53,
+         "character": 30
+      }
+   }),
+   new_lsp_response(57, 0, %*[
+      {"label": "wider_reg"}
+   ])
+)
+
+
+run_test("textDocument/completion: macro name (1)",
+   new_lsp_request(0, "textDocument/completion", %*{
+      "textDocument": {
+         "uri": "file://" & expand_filename(src3_path),
+      },
+      "position": {
+         "line": 18,
+         "character": 21
+      }
+   }),
+   new_lsp_response(51, 0, %*[
+      {"label": "AND"}
+   ])
+)
+
+
+run_test("textDocument/completion: macro name (2)",
+   new_lsp_request(0, "textDocument/completion", %*{
+      "textDocument": {
+         "uri": "file://" & expand_filename(src3_path),
+      },
+      "position": {
+         "line": 45,
+         "character": 28
+      }
+   }),
+   new_lsp_response(61, 0, %*[
+      {"label": "AND_WITH_ZERO"}
+   ])
 )
 
 # Shut down the server.
