@@ -29,7 +29,7 @@ This tool is a Verilog IEEE 1364-2005 [language server](https://microsoft.github
 - [ ] textDocument/didSave
 
 ### Language features
-- [ ] textDocument/completion
+- [x] textDocument/completion
 - [ ] textDocument/hover
 - [ ] textDocument/signatureHelp
 - [x] textDocument/declaration
