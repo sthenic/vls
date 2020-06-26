@@ -378,9 +378,11 @@ proc find_all_declarations(n: PNode): seq[PNode] =
             add(result, id)
 
    of NkModuleDecl:
-      let id = find_first(n, NkModuleIdentifier)
-      if not is_nil(id):
-         add(result, id)
+      let idx = find_first_index(n, NkModuleIdentifier)
+      if idx > -1:
+         add(result, n.sons[idx])
+      for s in walk_sons(n, idx + 1):
+         add(result, find_all_declarations(s))
 
    of PrimitiveTypes + {NkDefparamDecl}:
       discard
@@ -688,3 +690,37 @@ proc find_completions*(unit: SourceUnit, line, col: int): seq[LspCompletionItem]
          let prefix = substr(tok.identifier.s, 0, loc.col - tok.loc.col - 1)
          for id in walk_identifiers_starting_with(cache, prefix):
             add(result, new_lsp_completion_item(id.s))
+
+
+proc find_all_module_instantiations(n: PNode): seq[PNode] =
+   case n.kind
+   of PrimitiveTypes:
+      discard
+   of NkModuleInstantiation:
+      let id = find_first(n, NkIdentifier)
+      if not is_nil(id):
+         add(result, id)
+   else:
+      for s in n.sons:
+         add(result, find_all_module_instantiations(s))
+
+
+proc find_symbols*(unit: SourceUnit): seq[LspSymbolInformation] =
+   # Add an entry for each declaration in the AST.
+   for n in find_all_declarations(unit.graph.root_node):
+      # Filter out declarations not in the current file.
+      if n.loc.file != 1:
+         continue
+      let loc = new_lsp_location(construct_uri(unit.filename),
+                                 int(n.loc.line - 1),
+                                 int(n.loc.col), len(n.identifier.s))
+      add(result, new_lsp_symbol_information(n.identifier.s, LspSkVariable, loc))
+
+   # Add an entry for each module instantiation in the AST.
+   for n in find_all_module_instantiations(unit.graph.root_node):
+      if n.loc.file != 1:
+         continue
+      let loc = new_lsp_location(construct_uri(unit.filename),
+                                 int(n.loc.line - 1),
+                                 int(n.loc.col), len(n.identifier.s))
+      add(result, new_lsp_symbol_information(n.identifier.s, LspSkModule, loc))

@@ -137,7 +137,8 @@ proc initialize(s: var LspServer, msg: LspMessage) =
          "declarationProvider": true,
          "definitionProvider": true,
          "referencesProvider": true,
-         "completionProvider": {}
+         "completionProvider": {},
+         "documentSymbolProvider": true
       }
       send(s, new_lsp_response(msg.id, result))
       s.is_initialized = true
@@ -198,6 +199,18 @@ proc completion(s: LspServer, msg: LspMessage) =
       send(s, new_lsp_response(msg.id, RPC_INTERNAL_ERROR, format("File '$1' is not in the index.", uri), nil))
 
 
+proc document_symbol(s: LspServer, msg: LspMessage) =
+   let uri = decode_url(get_str(msg.parameters["textDocument"]["uri"]))
+   if has_key(s.source_units, uri):
+      try:
+         let symbols = find_symbols(s.source_units[uri])
+         send(s, new_lsp_response(msg.id, %symbols))
+      except AnalyzeError:
+         send(s, new_lsp_response(msg.id, new_jnull()))
+   else:
+      send(s, new_lsp_response(msg.id, RPC_INTERNAL_ERROR, format("File '$1' is not in the index.", uri), nil))
+
+
 proc handle_request(s: var LspServer, msg: LspMessage) =
    # If the server is shut down we respond to every request with an error.
    # Otherwise, unless the server is initialized, we only respond to the
@@ -225,6 +238,8 @@ proc handle_request(s: var LspServer, msg: LspMessage) =
       references(s, msg)
    of "textDocument/completion":
       completion(s, msg)
+   of "textDocument/documentSymbol":
+      document_symbol(s, msg)
    else:
       let str = format("Unsupported method '$1'.", msg.m)
       send(s, new_lsp_response(msg.id, RPC_INVALID_REQUEST, str, nil))
