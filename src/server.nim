@@ -191,7 +191,6 @@ proc completion(s: LspServer, msg: LspMessage) =
    if has_key(s.source_units, uri):
       try:
          let completion_items = find_completions(s.source_units[uri], line + 1, col)
-         log.debug("Done!")
          send(s, new_lsp_response(msg.id, %completion_items))
       except AnalyzeError:
          send(s, new_lsp_response(msg.id, new_jnull()))

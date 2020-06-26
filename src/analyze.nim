@@ -676,7 +676,7 @@ proc find_completions*(unit: SourceUnit, line, col: int): seq[LspCompletionItem]
    var context: AstContext
    let identifier = find_identifier_physical(unit.graph, loc, context, end_cursor = true)
    if not is_nil(identifier):
-      let prefix = substr(identifier.identifier.s, 0, col - identifier.loc.col - 1)
+      let prefix = substr(identifier.identifier.s, 0, loc.col - identifier.loc.col - 1)
       for n in walk_nodes_starting_with(find_all_declarations(context), prefix):
          add(result, new_lsp_completion_item(n.identifier.s))
    else:
@@ -685,6 +685,6 @@ proc find_completions*(unit: SourceUnit, line, col: int): seq[LspCompletionItem]
       if tok.kind == TkInvalid:
          raise new_analyze_error("Failed to find a token at the target location.")
       else:
-         let prefix = substr(tok.identifier.s, 0, col - tok.loc.col - 1)
+         let prefix = substr(tok.identifier.s, 0, loc.col - tok.loc.col - 1)
          for id in walk_identifiers_starting_with(cache, prefix):
             add(result, new_lsp_completion_item(id.s))
