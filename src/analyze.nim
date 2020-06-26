@@ -530,6 +530,55 @@ proc find_external_declaration(unit: SourceUnit, context: AstContext, identifier
       raise new_analyze_error("Invalid context for an external declaration lookup.")
 
 
+proc get_include_file(unit: SourceUnit, filename: string): string =
+   let path_relative_parent_dir = parent_dir(unit.filename) / filename
+   if file_exists(path_relative_parent_dir):
+      return path_relative_parent_dir
+   else:
+      for dir in unit.configuration.include_paths:
+         let tmp = dir / filename
+         if file_exists(tmp):
+            return tmp
+
+
+proc find_include_directive(unit: SourceUnit, loc: Location): LspLocation =
+   let fs = new_file_stream(unit.filename)
+   if is_nil(fs):
+      raise new_analyze_error("Failed to open file '$1'.", unit.filename)
+
+   let cache = new_ident_cache()
+   var lexer: Lexer
+   open_lexer(lexer, cache, fs, unit.filename, 1)
+   var tok: Token
+   var tok_prev: Token
+   init(tok_prev)
+   get_token(lexer, tok)
+   while tok.kind != TkEndOfFile:
+      # If the target location points to the string argument of an include
+      # directory, we construct an LSP location pointing to the target file if
+      # it exists on the current path. We have to add two to the length since
+      # the actual string literal token is enclosed in two double quotes (").
+      if (
+         tok.kind == TkStrLit and
+         in_bounds(loc, tok.loc, len(tok.literal) + 2) and
+         tok_prev.kind == TkDirective and
+         tok_prev.identifier.s == "include"
+      ):
+         let filename = get_include_file(unit, tok.literal)
+         if len(filename) > 0:
+            close_lexer(lexer)
+            close(fs)
+            return new_lsp_location(construct_uri(filename), 0, 0, 0)
+         else:
+            break
+
+      tok_prev = tok
+      get_token(lexer, tok)
+   close_lexer(lexer)
+   close(fs)
+   raise new_analyze_error("Failed to find an include directive at the target location.")
+
+
 proc find_declaration*(unit: SourceUnit, line, col: int): LspLocation =
    ## Find where the identifier at (``line``, ``col``) is declared. This proc
    ## returns an LSP locations if successful. Otherwise, it raises an AnalyzeError.
@@ -552,7 +601,7 @@ proc find_declaration*(unit: SourceUnit, line, col: int): LspLocation =
    init(context, 32)
    let identifier = find_identifier_physical(g, loc, context)
    if is_nil(identifier):
-      raise new_analyze_error("Failed to find an identifer at the target location.")
+      return find_include_directive(unit, loc)
 
    # We have to determine if we should look for an internal (in the context) or
    # an external declaration. In the case of the latter, we only support lookup

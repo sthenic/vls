@@ -387,6 +387,7 @@ const src3_path = "./src/src3.v"
 const src3_header_path = "./src/src3.vh"
 const src3_text = static_read(src3_path)
 let src3_path_len = len(expand_filename(src3_path))
+let src3_header_path_len = len(expand_filename(src3_header_path))
 send(ifs, new_lsp_notification("textDocument/didOpen", %*{
    "textDocument": {
       "uri": "file://" & expand_filename(src3_path),
@@ -407,7 +408,7 @@ run_test("textDocument/declaration: localparam from include file (overlapping)",
          "character": 12
       }
    }),
-   new_lsp_response(131 + src3_path_len, 15, %*[{
+   new_lsp_response(130 + src3_header_path_len, 15, %*[{
       "uri": "file://" & expand_filename(src3_header_path),
       "range": {
          "start": {"line": 4, "character": 11},
@@ -737,7 +738,7 @@ run_test("textDocument/declaration: macro lookup, backtick",
          "character": 18
       }
    }),
-   new_lsp_response(130 + src3_path_len, 15, %*[{
+   new_lsp_response(129 + src3_header_path_len, 15, %*[{
       "uri": "file://" & expand_filename(src3_header_path),
       "range": {
          "start": {"line": 2, "character": 8},
@@ -756,7 +757,7 @@ run_test("textDocument/declaration: macro lookup, last character",
          "character": 21
       }
    }),
-   new_lsp_response(130 + src3_path_len, 15, %*[{
+   new_lsp_response(129 + src3_header_path_len, 15, %*[{
       "uri": "file://" & expand_filename(src3_header_path),
       "range": {
          "start": {"line": 2, "character": 8},
@@ -775,7 +776,7 @@ run_test("textDocument/declaration: macro lookup, in the middle",
          "character": 32
       }
    }),
-   new_lsp_response(132 + src3_path_len, 15, %*[{
+   new_lsp_response(131 + src3_header_path_len, 15, %*[{
       "uri": "file://" & expand_filename(src3_header_path),
       "range": {
          "start": {"line": 17, "character": 8},
@@ -986,6 +987,44 @@ run_test("textDocument/declaration: module parameter value",
       "range": {
          "start": {"line": 10, "character": 25},
          "end" : {"line": 10, "character": 28}
+      }
+   }])
+)
+
+run_test("textDocument/declaration: goto include file",
+   new_lsp_request(15, "textDocument/declaration", %*{
+      "textDocument": {
+         "uri": "file://" & expand_filename(src3_path),
+      },
+      "position": {
+         "line": 13,
+         "character": 16
+      }
+   }),
+   new_lsp_response(128 + src3_header_path_len, 15, %*[{
+      "uri": "file://" & expand_filename(src3_header_path),
+      "range": {
+         "start": {"line": 0, "character": 0},
+         "end" : {"line": 0, "character": 0}
+      }
+   }])
+)
+
+run_test("textDocument/declaration: goto include file (last quote)",
+   new_lsp_request(15, "textDocument/declaration", %*{
+      "textDocument": {
+         "uri": "file://" & expand_filename(src3_path),
+      },
+      "position": {
+         "line": 13,
+         "character": 21
+      }
+   }),
+   new_lsp_response(128 + src3_header_path_len, 15, %*[{
+      "uri": "file://" & expand_filename(src3_header_path),
+      "range": {
+         "start": {"line": 0, "character": 0},
+         "end" : {"line": 0, "character": 0}
       }
    }])
 )
