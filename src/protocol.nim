@@ -83,6 +83,39 @@ type
    LspCompletionItem* = object
       label*: string
 
+   LspSymbolKind* = enum
+      LspSkFile = 1
+      LspSkModule = 2
+      LspSkNamespace = 3
+      LspSkPackage = 4
+      LspSkClass = 5
+      LspSkMethod = 6
+      LspSkProperty = 7
+      LspSkField = 8
+      LspSkConstructor = 9
+      LspSkEnum = 10
+      LspSkInterface = 11
+      LspSkFunction = 12
+      LspSkVariable = 13
+      LspSkConstant = 14
+      LspSkString = 15
+      LspSkNumber = 16
+      LspSkBoolean = 17
+      LspSkArray = 18
+      LspSkObject = 19
+      LspSkKey = 20
+      LspSkNull = 21
+      LspSkEnumMember = 22
+      LspSkStruct = 23
+      LspSkEvent = 24
+      LspSkOperator = 25
+      LspSkTypeParameter = 26
+
+   LspSymbolInformation* = object
+      name*: string
+      kind*: LspSymbolKind
+      location*: LspLocation
+
 
 const
    INDENT = 2
@@ -133,6 +166,12 @@ proc new_lsp_completion_item*(label: string): LspCompletionItem =
    result.label = label
 
 
+proc new_lsp_symbol_information*(name: string, kind: LspSymbolKind, loc: LspLocation): LspSymbolInformation =
+   result.name = name
+   result.kind = kind
+   result.location = loc
+
+
 proc `%`*(p: LspPosition): JsonNode =
    result = %*{
       "line": p.line,
@@ -165,6 +204,14 @@ proc `%`*(l: LspLocation): JsonNode =
 proc `%`*(ci: LspCompletionItem): JsonNode =
    result = %*{
       "label": ci.label,
+   }
+
+
+proc `%`*(si: LspSymbolInformation): JsonNode =
+   result = %*{
+      "name": si.name,
+      "kind": int(si.kind),
+      "location": %si.location
    }
 
 
