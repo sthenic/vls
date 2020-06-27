@@ -201,8 +201,8 @@ proc find_identifier(n: PNode, loc: Location, context: var AstContext,
    of PrimitiveTypes - IdentifierTypes:
       result = nil
    else:
-      # FIXME: Perhaps we can improve the search here? Skipping entire subtrees
-      #        depending on the location of the first node within?
+      # TODO: Perhaps we can improve the search here? Skipping entire subtrees
+      #       depending on the location of the first node within?
       for i, s in n.sons:
          add(context, i, n)
          result = find_identifier(s, loc, context, end_cursor)
@@ -722,7 +722,7 @@ proc find_completions*(unit: SourceUnit, line, col: int): seq[LspCompletionItem]
    # completion items if we know the context AST. However, if we're faced with
    # (2), we still want to return something. We run the lexer to manually
    # tokenize the file and attempt to find an identifier at the target location
-   # FIXME: We should really add some fuzzy matching.
+   # TODO: We should perhaps add some fuzzy matching?
    let loc = new_location(1, line, col)
    var context: AstContext
    let identifier = find_identifier_physical(unit.graph, loc, context, end_cursor = true)

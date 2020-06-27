@@ -129,7 +129,6 @@ proc initialize(s: var LspServer, msg: LspMessage) =
       var result = new_jobject()
       result["serverInfo"] = %*{
          "name": "vls",
-         # FIXME: Read this from a shared static location.
          "version": VERSION
       }
       result["capabilities"] = %*{
@@ -232,7 +231,7 @@ proc handle_request(s: var LspServer, msg: LspMessage) =
    of "textDocument/declaration":
       declaration(s, msg)
    of "textDocument/definition":
-      # FIXME: Figure out if this is good enough.
+      # TODO: Figure out if this is good enough.
       declaration(s, msg)
    of "textDocument/references":
       references(s, msg)
