@@ -640,7 +640,6 @@ proc find_references(unit: SourceUnit, context: AstContextItem, identifier: PIde
             loc = to_physical(unit.graph.locations.macro_maps, n.loc)
 
          let uri = construct_uri(unit.graph.locations.file_maps[loc.file - 1].filename)
-         log.debug("foo")
          add(result, new_lsp_location(uri, int(loc.line - 1), int(loc.col), len(n.identifier.s)))
 
 
