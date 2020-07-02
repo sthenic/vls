@@ -631,6 +631,79 @@ run_test("textDocument/references: undeclared)",
 )
 
 
+run_test("textDocument/references: module port (1)",
+   new_lsp_request(0, "textDocument/references", %*{
+      "textDocument": {
+         "uri": "file://" & expand_filename(src3_path),
+      },
+      "position": {
+         "line": 24,
+         "character": 37
+      },
+      "context": {
+         "includeDeclaration": true
+      }
+   }),
+   new_lsp_response(38, 0, new_jnull())
+)
+
+
+run_test("textDocument/references: module port connection",
+   new_lsp_request(0, "textDocument/references", %*{
+      "textDocument": {
+         "uri": "file://" & expand_filename(src3_path),
+      },
+      "position": {
+         "line": 24,
+         "character": 44
+      },
+      "context": {
+         "includeDeclaration": true
+      }
+   }),
+   new_lsp_response(321 + 3 * src3_path_len, 0, %*[
+   {
+      "uri": "file://" & expand_filename(src3_path),
+      "range": {
+         "start": {"line": 3, "character": 15},
+         "end" : {"line": 3, "character": 20}
+      }
+   },
+   {
+      "uri": "file://" & expand_filename(src3_path),
+      "range": {
+         "start": {"line": 17, "character": 21},
+         "end" : {"line": 17, "character": 26}
+      }
+   },
+   {
+      "uri": "file://" & expand_filename(src3_path),
+      "range": {
+         "start": {"line": 24, "character": 41},
+         "end" : {"line": 24, "character": 46}
+      }
+   },
+   ])
+)
+
+
+run_test("textDocument/references: module port (2)",
+   new_lsp_request(0, "textDocument/references", %*{
+      "textDocument": {
+         "uri": "file://" & expand_filename(src3_path),
+      },
+      "position": {
+         "line": 25,
+         "character": 11
+      },
+      "context": {
+         "includeDeclaration": true
+      }
+   }),
+   new_lsp_response(38, 0, new_jnull())
+)
+
+
 # Shut down the server.
 shutdown(ifs, ofs)
 

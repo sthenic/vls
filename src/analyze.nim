@@ -670,6 +670,14 @@ proc find_references*(unit: SourceUnit, line, col: int, include_declaration: boo
    if is_nil(identifier):
       raise new_analyze_error("Failed to find an identifer at the target location.")
 
+   # We have to revert the identifier match if it turns out it's the first
+   # identifier in a port connection node. That's the port name, so there
+   # shouldn't be any references reported in that case.
+   if len(identifier_context) > 0:
+      let c = identifier_context[^1]
+      if c.n.kind == NkPortConnection and c.pos == find_first_index(c.n, NkIdentifier):
+         raise new_analyze_error("Failed to find an identifer at the target location.")
+
    let (declaration, declaration_context) = find_declaration(identifier_context, identifier.identifier)
    if is_nil(declaration):
       raise new_analyze_error("Failed to find the declaration of identifier '$1'.", identifier.identifier.s)
