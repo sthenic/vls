@@ -1,6 +1,6 @@
 [![NIM](https://img.shields.io/badge/Nim-1.2.0-orange.svg?style=flat-square)](https://nim-lang.org)
 [![LICENSE](https://img.shields.io/badge/license-MIT-blue.svg?style=flat-square)](https://opensource.org/licenses/MIT)
-![Build & Test](https://github.com/sthenic/vls/workflows/Build%20%26%20Test/badge.svg)
+![tests](https://github.com/sthenic/vls/workflows/tests/badge.svg)
 
 # vls
 This tool is a Verilog IEEE 1364-2005 [language server](https://microsoft.github.io/language-server-protocol/) written in [Nim](https://nim-lang.org). The parsing is handled by [`vparse`](https://github.com/sthenic/vparse).
