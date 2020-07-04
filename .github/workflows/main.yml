@@ -6,7 +6,8 @@ jobs:
 
     steps:
     # Check out the repository under $GITHUB_WORKSPACE.
-    - uses: actions/checkout@v2
+    - name: Check out repository
+      uses: actions/checkout@v2
 
     - name: Cache choosenim
       id: cache-choosenim
@@ -26,5 +27,18 @@ jobs:
       with:
         nim-version: '1.2.0'
 
-    - run: nimble build -y
-    - run: nimble test -y
+    - name: Check out vparse
+      uses: actions/checkout@v2
+      with:
+        repository: 'sthenic/vparse'
+
+    - name: Install vparse
+      run: |
+        cd $GITHUB_WORKSPACE/vparse
+        nimble install -y
+
+    - name: Build
+      run: nimble build -y
+
+    - name: Test
+      run: nimble test -y
