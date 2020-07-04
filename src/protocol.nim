@@ -261,6 +261,58 @@ proc `%`*(msg: LspMessage): JsonNode =
       raise new_lsp_value_error("Unexpected LSP message kind '$1'.", msg.kind)
 
 
+proc unordered_compare*(x, y: JsonNode): bool =
+   # Helper proc to compare two JSON nodes from an LSP message. Arrays are compared
+   # without regard to the order of the elements.
+   if x.kind != y.kind:
+      return false
+
+   case x.kind
+   of JObject:
+      for k, v in pairs(x):
+         if not has_key(y, k) or y[k].kind != v.kind or not unordered_compare(v, y[k]):
+            return false
+      return true
+   of JArray:
+      if len(x) != len(y):
+         return false
+
+      var skip_idx: seq[int]
+      for i in 0..<len(x):
+         var found = false
+         for j in 0..<len(y):
+            if j in skip_idx:
+               continue
+            elif unordered_compare(x[i], y[j]):
+               found = true
+               add(skip_idx, j)
+               break
+         if not found:
+            return false
+      return true
+   else:
+      # Compare the values.
+      return x == y
+
+
+proc unordered_compare*(x, y: LspMessage): bool =
+   # Used by the test framework.
+   if x.kind != y.kind:
+      return false
+   if x.length != y.length:
+      return false
+
+   if x.kind == MkResponseSuccess:
+      if x.id != y.id:
+         return false
+      if x.result != nil and y.result != nil:
+         return unordered_compare(x.result, y.result)
+      else:
+         return false
+   else:
+      return false
+
+
 proc detailed_compare(x, y: JsonNode, label: string, indent: int = 0) =
    # Helper proc to compare two JSON nodes from an LSP message.
    if x.kind != y.kind:

@@ -49,6 +49,28 @@ template run_test(title: string, stimuli, reference: LspMessage) =
       detailed_compare(response, reference)
 
 
+template run_test_unordered_compare(title: string, stimuli, reference: LspMessage) =
+   # This test template only supports requests where the 'result' field is
+   # a JSON array. The elements in this array are compared without regard to
+   # their order.
+   send(ifs, stimuli)
+   let response =
+      try:
+         recv(ofs)
+      except Exception as e:
+         raise e
+
+   if unordered_compare(response, reference):
+      styledWriteLine(stdout, styleBright, fgGreen, "[✓] ",
+                     fgWhite, "Test '",  title, "'")
+      inc(nof_passed)
+   else:
+      styledWriteLine(stdout, styleBright, fgRed, "[✗] ",
+                     fgWhite, "Test '",  title, "'")
+      inc(nof_failed)
+      detailed_compare(response, reference)
+
+
 # Test suite title
 styledWriteLine(stdout, styleBright,
 """
@@ -170,7 +192,7 @@ run_test("textDocument/completion: macro name (2)",
 )
 
 
-run_test("textDocument/completion: include directive, browse path (1)",
+run_test_unordered_compare("textDocument/completion: include directive, browse path (1)",
    new_lsp_request(0, "textDocument/completion", %*{
       "textDocument": {
          "uri": "file://" & expand_filename(src3_path),
@@ -182,17 +204,17 @@ run_test("textDocument/completion: include directive, browse path (1)",
    }),
    new_lsp_response(169, 0, %*[
       {"label": "src0.v"},
-      {"label": "src5.v"},
-      {"label": "src2.v"},
-      {"label": "src3.vh"},
       {"label": "src1.v"},
+      {"label": "src2.v"},
       {"label": "src3.v"},
+      {"label": "src3.vh"},
       {"label": "src4.v"},
+      {"label": "src5.v"},
    ])
 )
 
 
-run_test("textDocument/completion: include directive, browse path (2)",
+run_test_unordered_compare("textDocument/completion: include directive, browse path (2)",
    new_lsp_request(0, "textDocument/completion", %*{
       "textDocument": {
          "uri": "file://" & expand_filename(src3_path),
@@ -203,14 +225,14 @@ run_test("textDocument/completion: include directive, browse path (2)",
       }
    }),
    new_lsp_response(190, 0, %*[
-      {"label": "src0.v"},
-      {"label": "src5.v"},
-      {"label": "src2.v"},
       {"label": "include/"},
-      {"label": "src3.vh"},
+      {"label": "src0.v"},
       {"label": "src1.v"},
+      {"label": "src2.v"},
       {"label": "src3.v"},
+      {"label": "src3.vh"},
       {"label": "src4.v"},
+      {"label": "src5.v"},
    ])
 )
 
