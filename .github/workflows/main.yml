@@ -16,6 +16,7 @@ jobs:
       with:
         repository: 'sthenic/vparse'
         path: vparse
+        token: ${{ secrets.VPARSE_TOKEN }}
 
     - name: Cache choosenim
       id: cache-choosenim
