@@ -542,13 +542,13 @@ proc get_include_file(unit: SourceUnit, filename: string): string =
 
 
 proc find_include_directive(unit: SourceUnit, loc: Location): LspLocation =
-   let fs = new_file_stream(unit.filename)
-   if is_nil(fs):
-      raise new_analyze_error("Failed to open file '$1'.", unit.filename)
+   let ss = new_string_stream(unit.text)
+   if is_nil(ss):
+      raise new_analyze_error("Failed to create a stream for file '$1'.", unit.filename)
 
    let cache = new_ident_cache()
    var lexer: Lexer
-   open_lexer(lexer, cache, fs, unit.filename, 1)
+   open_lexer(lexer, cache, ss, unit.filename, 1)
    var tok: Token
    var tok_prev: Token
    init(tok_prev)
@@ -567,7 +567,7 @@ proc find_include_directive(unit: SourceUnit, loc: Location): LspLocation =
          let filename = get_include_file(unit, tok.literal)
          if len(filename) > 0:
             close_lexer(lexer)
-            close(fs)
+            close(ss)
             return new_lsp_location(construct_uri(filename), 0, 0, 0)
          else:
             break
@@ -575,7 +575,7 @@ proc find_include_directive(unit: SourceUnit, loc: Location): LspLocation =
       tok_prev = tok
       get_token(lexer, tok)
    close_lexer(lexer)
-   close(fs)
+   close(ss)
    raise new_analyze_error("Failed to find an include directive at the target location.")
 
 
@@ -703,13 +703,13 @@ proc find_completable_token_at(unit: SourceUnit, loc: Location, cache: Identifie
       tok_prev.kind == TkDirective and
       tok_prev.identifier.s == "include"
 
-   let fs = new_file_stream(unit.filename)
-   if is_nil(fs):
-      raise new_analyze_error("Failed to open file '$1'.", unit.filename)
+   let ss = new_string_stream(unit.text)
+   if is_nil(ss):
+      raise new_analyze_error("Failed to create a stream for file '$1'.", unit.filename)
 
    init(result)
    var lexer: Lexer
-   open_lexer(lexer, cache, fs, unit.filename, 1)
+   open_lexer(lexer, cache, ss, unit.filename, 1)
    var tok: Token
    var tok_prev: Token
    init(tok_prev)
@@ -721,7 +721,7 @@ proc find_completable_token_at(unit: SourceUnit, loc: Location, cache: Identifie
       tok_prev = tok
       get_token(lexer, tok)
    close_lexer(lexer)
-   close(fs)
+   close(ss)
 
 
 iterator walk_nodes_starting_with(nodes: openarray[PNode], prefix: string): PNode =

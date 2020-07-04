@@ -10,6 +10,7 @@ type
       cache*: IdentifierCache
       graph*: Graph
       configuration*: Configuration
+      text*: string
 
 
 proc get_configuration(source_filename: string): Configuration =
@@ -32,6 +33,7 @@ proc open*(unit: var SourceUnit, filename, text: string) =
    unit.configuration = get_configuration(filename)
    unit.cache = new_ident_cache()
    unit.filename = filename
+   unit.text = text
    let ss = new_string_stream(text)
    open_graph(unit.graph, unit.cache, ss, filename,
               unit.configuration.include_paths, unit.configuration.defines)
