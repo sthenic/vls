@@ -169,6 +169,51 @@ run_test("textDocument/completion: macro name (2)",
    ])
 )
 
+
+run_test("textDocument/completion: include directive, browse path (1)",
+   new_lsp_request(0, "textDocument/completion", %*{
+      "textDocument": {
+         "uri": "file://" & expand_filename(src3_path),
+      },
+      "position": {
+         "line": 13,
+         "character": 15
+      }
+   }),
+   new_lsp_response(169, 0, %*[
+      {"label": "src0.v"},
+      {"label": "src5.v"},
+      {"label": "src2.v"},
+      {"label": "src3.vh"},
+      {"label": "src1.v"},
+      {"label": "src3.v"},
+      {"label": "src4.v"},
+   ])
+)
+
+
+run_test("textDocument/completion: include directive, browse path (2)",
+   new_lsp_request(0, "textDocument/completion", %*{
+      "textDocument": {
+         "uri": "file://" & expand_filename(src3_path),
+      },
+      "position": {
+         "line": 13,
+         "character": 14
+      }
+   }),
+   new_lsp_response(190, 0, %*[
+      {"label": "src0.v"},
+      {"label": "src5.v"},
+      {"label": "src2.v"},
+      {"label": "include/"},
+      {"label": "src3.vh"},
+      {"label": "src1.v"},
+      {"label": "src3.v"},
+      {"label": "src4.v"},
+   ])
+)
+
 # Shut down the server.
 shutdown(ifs, ofs)
 

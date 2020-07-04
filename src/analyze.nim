@@ -596,7 +596,9 @@ proc find_declaration*(unit: SourceUnit, line, col: int): LspLocation =
 
    # We begin by finding the identifier at the input position, keeping in mind
    # that the position doesn't have point to the start of the token. The return
-   # value is nil if there's no identifier at the target location.
+   # value is nil if there's no identifier at the target location. In that case,
+   # we check if the location points to the string literal in an include
+   # directive. If it's a valid path, we return the location to that file.
    var context: AstContext
    init(context, 32)
    let identifier = find_identifier_physical(g, loc, context)
@@ -685,24 +687,38 @@ proc find_references*(unit: SourceUnit, line, col: int, include_declaration: boo
    result = find_references(unit, declaration_context, identifier.identifier, include_declaration)
 
 
-proc find_token_at(unit: SourceUnit, line, col: int, cache: IdentifierCache): Token =
-   init(result)
-   var lexer: Lexer
+proc find_completable_token_at(unit: SourceUnit, loc: Location, cache: IdentifierCache): Token =
+   # Completable tokens are identifiers and string literals that are arguments
+   # to an include directive. In the case of the former, we have to pretend
+   # that the token length is one character longer than it is in reality to
+   # allow completion when the cursor (input location) is placed after the
+   # last character. In the case of the latter, we have to add two to the
+   # length since the actual string literal token is enclosed in two double
+   # quotes (").
+   template is_completable_identifier(tok: Token, loc: Location): bool =
+      not is_nil(tok.identifier) and in_bounds(loc, tok.loc, len(tok.identifier.s) + 1)
+   template is_completable_string_literal(tok, tok_prev: Token, loc: Location): bool =
+      tok.kind == TkStrLit and
+      in_bounds(loc, tok.loc, len(tok.literal) + 2) and
+      tok_prev.kind == TkDirective and
+      tok_prev.identifier.s == "include"
+
    let fs = new_file_stream(unit.filename)
    if is_nil(fs):
       raise new_analyze_error("Failed to open file '$1'.", unit.filename)
 
-   let loc = new_location(1, line, col)
+   init(result)
+   var lexer: Lexer
    open_lexer(lexer, cache, fs, unit.filename, 1)
    var tok: Token
+   var tok_prev: Token
+   init(tok_prev)
    get_token(lexer, tok)
    while tok.kind != TkEndOfFile:
-      # We pretend the token length is one character longer than it is in order
-      # to allow completion when the cursor (input location) is placed after the
-      # last character.
-      if not is_nil(tok.identifier) and in_bounds(loc, tok.loc, len(tok.identifier.s) + 1):
+      if is_completable_identifier(tok, loc) or is_completable_string_literal(tok, tok_prev, loc):
          result = tok
          break
+      tok_prev = tok
       get_token(lexer, tok)
    close_lexer(lexer)
    close(fs)
@@ -718,6 +734,34 @@ iterator walk_identifiers_starting_with(cache: IdentifierCache, prefix: string):
    for id in walk_identifiers(cache):
       if starts_with(id.s, prefix):
          yield id
+
+
+iterator walk_include_paths_starting_with(unit: SourceUnit, prefix: string): string =
+   const EXTENSIONS = [".vh", ".v"]
+   # We don't want to report duplicates, so if the source file's parent directory
+   # (always on the include path) already exists, we don't add it again.
+   var include_paths = unit.configuration.include_paths
+   let parent_dir = parent_dir(unit.filename)
+   if parent_dir notin include_paths:
+      add(include_paths, parent_dir)
+
+   if is_absolute(prefix):
+      # FIXME: Implement
+      discard
+   else:
+      let (head, tail) = split_path(prefix)
+      for dir in include_paths:
+         let ldir = dir / head
+         for (kind, path) in walk_dir(ldir):
+            case kind
+            of pcFile, pcLinkToFile:
+               let (_, name, ext) = split_file(path)
+               if ext in EXTENSIONS and starts_with(name, tail):
+                  yield name & ext
+            of pcDir, pcLinkToDir:
+               let last_dir = last_path_part(path)
+               if starts_with(last_dir, tail):
+                  yield(last_dir & "/")
 
 
 proc find_completions*(unit: SourceUnit, line, col: int): seq[LspCompletionItem] =
@@ -739,13 +783,19 @@ proc find_completions*(unit: SourceUnit, line, col: int): seq[LspCompletionItem]
          add(result, new_lsp_completion_item(n.identifier.s))
    else:
       let cache = new_ident_cache()
-      let tok = find_token_at(unit, line, col, cache)
-      if tok.kind == TkInvalid:
-         raise new_analyze_error("Failed to find a token at the target location.")
-      else:
+      let tok = find_completable_token_at(unit, loc, cache)
+      case tok.kind
+      of TkSymbol, TkDirective:
          let prefix = substr(tok.identifier.s, 0, loc.col - tok.loc.col - 1)
          for id in walk_identifiers_starting_with(cache, prefix):
             add(result, new_lsp_completion_item(id.s))
+      of TkStrLit:
+         let prefix = substr(tok.literal, 0, loc.col - tok.loc.col - 2)
+         for path in walk_include_paths_starting_with(unit, prefix):
+            add(result, new_lsp_completion_item(path))
+         log.debug("Found include string '$1', $2.", prefix, loc.col - tok.loc.col - 2)
+      else:
+         raise new_analyze_error("Failed to find a token at the target location.")
 
 
 proc find_all_module_instantiations(n: PNode): seq[PNode] =
