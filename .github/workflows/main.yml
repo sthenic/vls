@@ -18,6 +18,13 @@ jobs:
         path: vparse
         token: ${{ secrets.VPARSE_TOKEN }}
 
+    - name: Checkout vltoml
+      uses: actions/checkout@v2
+      with:
+        repository: 'sthenic/vltoml'
+        path: vltoml
+        token: ${{ secrets.VPARSE_TOKEN }}
+
     - name: Cache choosenim
       id: cache-choosenim
       uses: actions/cache@v2
@@ -36,10 +43,14 @@ jobs:
       with:
         nim-version: '1.2.0'
 
-    - name: Install vparse
+    - name: Install vparse and vltoml
       run: |
-        cd vparse
+        pushd vparse
         nimble install -y
+        popd
+        pushd vltoml
+        nimble install -y
+        popd
 
     - name: Build
       run: |
