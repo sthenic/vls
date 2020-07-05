@@ -154,60 +154,51 @@ proc shutdown(s: var LspServer, msg: LspMessage) =
    send(s, new_lsp_response(msg.id, new_jnull()))
 
 
+template analyze_text_document(s: LspServer, msg: LspMessage, uri, body: untyped) =
+   try:
+      let uri = decode_url(validate_string(msg.parameters, ["textDocument", "uri"]))
+      if has_key(s.source_units, uri):
+         try:
+            body
+         except AnalyzeError:
+            send(s, new_lsp_response(msg.id, new_jnull()))
+      else:
+         send(s, new_lsp_response(msg.id, RPC_INTERNAL_ERROR, format("File '$1' is not in the index.", uri), nil))
+   except LspParseError as e:
+      send(s, new_lsp_response(msg.id, RPC_PARSE_ERROR, e.msg, nil))
+
+
+template analyze_text_document_position(s: LspServer, msg: LspMessage, uri, line, col, body: untyped) =
+   analyze_text_document(s, msg, uri):
+      let line = validate_int(msg.parameters, ["position", "line"])
+      let col = validate_int(msg.parameters, ["position", "character"])
+      body
+
+
 proc declaration(s: LspServer, msg: LspMessage) =
-   let line = get_int(msg.parameters["position"]["line"])
-   let col = get_int(msg.parameters["position"]["character"])
-   let uri = decode_url(get_str(msg.parameters["textDocument"]["uri"]))
-   if has_key(s.source_units, uri):
-      try:
-         let location = find_declaration(s.source_units[uri], line + 1, col)
-         send(s, new_lsp_response(msg.id, %[location]))
-      except AnalyzeError:
-         send(s, new_lsp_response(msg.id, new_jnull()))
-   else:
-      send(s, new_lsp_response(msg.id, RPC_INTERNAL_ERROR, format("File '$1' is not in the index.", uri), nil))
+   analyze_text_document_position(s, msg, uri, line, col):
+      let location = find_declaration(s.source_units[uri], line + 1, col)
+      send(s, new_lsp_response(msg.id, %[location]))
 
 
 proc references(s: LspServer, msg: LspMessage) =
-   let line = get_int(msg.parameters["position"]["line"])
-   let col = get_int(msg.parameters["position"]["character"])
-   let uri = decode_url(get_str(msg.parameters["textDocument"]["uri"]))
-   let include_declaration = get_bool(msg.parameters["context"]["includeDeclaration"])
-   if has_key(s.source_units, uri):
-      try:
-         let locations = find_references(s.source_units[uri], line + 1, col, include_declaration)
-         send(s, new_lsp_response(msg.id, %locations))
-      except AnalyzeError:
-         send(s, new_lsp_response(msg.id, new_jnull()))
-   else:
-      send(s, new_lsp_response(msg.id, RPC_INTERNAL_ERROR, format("File '$1' is not in the index.", uri), nil))
+   analyze_text_document_position(s, msg, uri, line, col):
+      let include_declaration = validate_bool(msg.parameters, ["context", "includeDeclaration"])
+      let locations = find_references(s.source_units[uri], line + 1, col, include_declaration)
+      send(s, new_lsp_response(msg.id, %locations))
 
 
 proc completion(s: LspServer, msg: LspMessage) =
-   let line = get_int(msg.parameters["position"]["line"])
-   let col = get_int(msg.parameters["position"]["character"])
-   let uri = decode_url(get_str(msg.parameters["textDocument"]["uri"]))
-   # FIXME: Ignore the completion context for now.
-   if has_key(s.source_units, uri):
-      try:
-         let completion_items = find_completions(s.source_units[uri], line + 1, col)
-         send(s, new_lsp_response(msg.id, %completion_items))
-      except AnalyzeError:
-         send(s, new_lsp_response(msg.id, new_jnull()))
-   else:
-      send(s, new_lsp_response(msg.id, RPC_INTERNAL_ERROR, format("File '$1' is not in the index.", uri), nil))
+   analyze_text_document_position(s, msg, uri, line, col):
+      # FIXME: Ignore the completion context for now.
+      let completion_items = find_completions(s.source_units[uri], line + 1, col)
+      send(s, new_lsp_response(msg.id, %completion_items))
 
 
 proc document_symbol(s: LspServer, msg: LspMessage) =
-   let uri = decode_url(get_str(msg.parameters["textDocument"]["uri"]))
-   if has_key(s.source_units, uri):
-      try:
-         let symbols = find_symbols(s.source_units[uri])
-         send(s, new_lsp_response(msg.id, %symbols))
-      except AnalyzeError:
-         send(s, new_lsp_response(msg.id, new_jnull()))
-   else:
-      send(s, new_lsp_response(msg.id, RPC_INTERNAL_ERROR, format("File '$1' is not in the index.", uri), nil))
+   analyze_text_document(s, msg, uri):
+      let symbols = find_symbols(s.source_units[uri])
+      send(s, new_lsp_response(msg.id, %symbols))
 
 
 proc handle_request(s: var LspServer, msg: LspMessage) =

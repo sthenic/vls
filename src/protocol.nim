@@ -668,3 +668,43 @@ proc send*(s: Stream, msg: LspMessage) =
    log.debug("Sending message:\r\n" & message)
    write(s, message)
    flush(s)
+
+
+proc descend_object*(n: JsonNode, keys: openarray[string]): tuple[n: JsonNode, key: string] =
+   ## Descend into a nested JSON object using ``keys``. In the case of an error, an
+   ## ``LspParseError`` exception is raised.
+   result = (n, "root")
+   for key in keys:
+      if (result.n.kind != JObject):
+         raise new_lsp_parse_error("Expected a JSON object as value to '$1'.", result.key)
+      elif not has_key(result.n, key):
+         raise new_lsp_parse_error("No '$1' key found in '$2' object.", key, result.key)
+      else:
+         result = (result.n[key], key)
+
+
+proc validate_string*(n: JsonNode, keys: openarray[string]): string =
+   ## Descend into a nested JSON object using ``keys`, expecting a string value
+   ## at the end. In the case of an error, an ``LspParseError`` exception is raised.
+   let (ln, key) = descend_object(n, keys)
+   if ln.kind != JString:
+      raise new_lsp_parse_error("Invalid string for '$1'.", key)
+   result = get_str(ln)
+
+
+proc validate_int*(n: JsonNode, keys: openarray[string]): int =
+   ## Descend into a nested JSON object using ``keys`, expecting an integer value
+   ## at the end. In the case of an error, an ``LspParseError`` exception is raised.
+   let (ln, key) = descend_object(n, keys)
+   if ln.kind != JInt:
+      raise new_lsp_parse_error("Invalid integer for '$1'.", key)
+   result = get_int(ln)
+
+
+proc validate_bool*(n: JsonNode, keys: openarray[string]): bool =
+   ## Descend into a nested JSON object using ``keys`, expecting a boolean value
+   ## at the end. In the case of an error, an ``LspParseError`` exception is raised.
+   let (ln, key) = descend_object(n, keys)
+   if ln.kind != JBool:
+      raise new_lsp_parse_error("Invalid boolean for '$1'.", key)
+   result = get_bool(ln)
