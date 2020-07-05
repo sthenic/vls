@@ -116,6 +116,15 @@ type
       kind*: LspSymbolKind
       location*: LspLocation
 
+   LspTextEdit* = object
+      range*: LspRange
+      text*: string
+
+   LspTextDocumentEdit* = object
+      version*: int
+      uri*: string
+      edits*: seq[LspTextEdit]
+
 
 const
    INDENT = 2
@@ -172,6 +181,18 @@ proc new_lsp_symbol_information*(name: string, kind: LspSymbolKind, loc: LspLoca
    result.location = loc
 
 
+proc new_lsp_text_edit*(start, stop: LspPosition, text: string): LspTextEdit =
+   result.range = LspRange(start: start, stop: stop)
+   result.text = text
+
+
+proc new_lsp_text_document_edit*(uri: string, edits: openarray[LspTextEdit]): LspTextDocumentEdit =
+   result.uri = uri
+   result.version = -1
+   set_len(result.edits, 0)
+   add(result.edits, edits)
+
+
 proc `%`*(p: LspPosition): JsonNode =
    result = %*{
       "line": p.line,
@@ -212,6 +233,23 @@ proc `%`*(si: LspSymbolInformation): JsonNode =
       "name": si.name,
       "kind": int(si.kind),
       "location": %si.location
+   }
+
+
+proc `%`*(o: LspTextEdit): JsonNode =
+   result = %*{
+      "range": o.range,
+      "newText": o.text
+   }
+
+
+proc `%`*(o: LspTextDocumentEdit): JsonNode =
+   result = %*{
+      "textDocument": {
+         "version": new_jnull(),
+         "uri": o.uri
+      },
+      "edits": o.edits
    }
 
 

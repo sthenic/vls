@@ -8,3 +8,4 @@ tests/features/tdeclaration
 tests/features/treferences
 tests/features/tcompletion
 tests/features/tdocument_symbol
+tests/features/trename

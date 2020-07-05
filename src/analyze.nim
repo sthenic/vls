@@ -646,10 +646,11 @@ proc find_references(unit: SourceUnit, context: AstContextItem, identifier: PIde
 
 
 proc find_references*(unit: SourceUnit, line, col: int, include_declaration: bool): seq[LspLocation] =
-   let g = unit.graph
-
+   # FIXME: Currently not supporting listing macro usages when the definition location
+   #        is targeted.
    # Before we can assume that the input location is pointing to an identifier,
    # we have to deal with the possibility that it's pointing to a macro.
+   let g = unit.graph
    let loc = new_location(1, line, col)
    for map in g.locations.macro_maps:
       # +1 is to compensate for the expansion location starting at the backtick.
@@ -688,7 +689,7 @@ proc find_references*(unit: SourceUnit, line, col: int, include_declaration: boo
 
 
 proc find_completable_token_at(unit: SourceUnit, loc: Location, cache: IdentifierCache): Token =
-   # Completable tokens are identifiers and string literals that are arguments
+   # Completable tokens are identifiers, and string literals that are arguments
    # to an include directive. In the case of the former, we have to pretend
    # that the token length is one character longer than it is in reality to
    # allow completion when the cursor (input location) is placed after the
@@ -830,3 +831,15 @@ proc find_symbols*(unit: SourceUnit): seq[LspSymbolInformation] =
                                  int(n.loc.line - 1),
                                  int(n.loc.col), len(n.identifier.s))
       add(result, new_lsp_symbol_information(n.identifier.s, LspSkModule, loc))
+
+
+proc rename_symbol*(unit: SourceUnit, line, col: int, new_name: string): seq[LspTextDocumentEdit] =
+   # Renaming a symbol is the same as first finding all references (including the declaration)
+   # and constructing the text edits describing the changes based on that.
+   for loc in find_references(unit, line, col, true):
+      # FIXME: Handle macros. Due to macro expansion, it's possible for the same identifier
+      #        to show up many times. We have to protect against this since overlapping
+      #        edits are not allowed. Additionally, we have to add the backtick (`) or
+      #        offset the edit by one character for all the expansion.
+      let text_edit = new_lsp_text_edit(loc.range.start, loc.range.stop, new_name)
+      add(result, new_lsp_text_document_edit(loc.uri, [text_edit]))

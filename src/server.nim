@@ -137,7 +137,8 @@ proc initialize(s: var LspServer, msg: LspMessage) =
          "definitionProvider": true,
          "referencesProvider": true,
          "completionProvider": {},
-         "documentSymbolProvider": true
+         "documentSymbolProvider": true,
+         "renameProvider": true
       }
       send(s, new_lsp_response(msg.id, result))
       s.is_initialized = true
@@ -201,6 +202,13 @@ proc document_symbol(s: LspServer, msg: LspMessage) =
       send(s, new_lsp_response(msg.id, %symbols))
 
 
+proc rename(s: LspServer, msg: LspMessage) =
+   analyze_text_document_position(s, msg, uri, line, col):
+      let new_name = validate_string(msg.parameters, ["newName"])
+      let text_document_edits = rename_symbol(s.source_units[uri], line + 1, col, new_name)
+      send(s, new_lsp_response(msg.id, %*{"documentChanges": text_document_edits}))
+
+
 proc handle_request(s: var LspServer, msg: LspMessage) =
    # If the server is shut down we respond to every request with an error.
    # Otherwise, unless the server is initialized, we only respond to the
@@ -230,6 +238,8 @@ proc handle_request(s: var LspServer, msg: LspMessage) =
       completion(s, msg)
    of "textDocument/documentSymbol":
       document_symbol(s, msg)
+   of "textDocument/rename":
+      rename(s, msg)
    else:
       let str = format("Unsupported method '$1'.", msg.m)
       send(s, new_lsp_response(msg.id, RPC_INVALID_REQUEST, str, nil))
