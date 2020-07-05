@@ -67,7 +67,7 @@ type
 
    LspLocation* = object
       uri*: string
-      rng*: LspRange
+      range*: LspRange
 
    LspSeverity* = enum
       ERROR = 1
@@ -76,7 +76,7 @@ type
       HINT = 4
 
    LspDiagnostic* = object
-      rng*: LspRange
+      range*: LspRange
       severity*: LspSeverity
       message*: string
 
@@ -152,12 +152,12 @@ proc new_lsp_location*(uri: string, line, col, len: int): LspLocation =
    let start = new_lsp_position(line, col)
    let stop = new_lsp_position(line, col + len)
    result.uri = uri
-   result.rng = LspRange(start: start, stop: stop)
+   result.range = LspRange(start: start, stop: stop)
 
 
 proc new_lsp_diagnostic*(start, stop: LspPosition, severity: LspSeverity,
                          message: string): LspDiagnostic =
-   result.rng = LspRange(start: start, stop: stop)
+   result.range = LspRange(start: start, stop: stop)
    result.severity = severity
    result.message = message
 
@@ -188,7 +188,7 @@ proc `%`*(r: LspRange): JsonNode =
 
 proc `%`*(d: LspDiagnostic): JsonNode =
    result = %*{
-      "range": d.rng,
+      "range": d.range,
       "severity": int(d.severity),
       "message": d.message
    }
@@ -197,7 +197,7 @@ proc `%`*(d: LspDiagnostic): JsonNode =
 proc `%`*(l: LspLocation): JsonNode =
    result = %*{
       "uri": l.uri,
-      "range": l.rng
+      "range": l.range
    }
 
 
