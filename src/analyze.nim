@@ -634,15 +634,18 @@ proc find_references(n: PNode, identifier: PIdentifier): seq[PNode] =
 proc find_references(unit: SourceUnit, context: AstContextItem, identifier: PIdentifier,
                      include_declaration: bool): seq[LspLocation] =
    let start = if include_declaration: context.pos else: context.pos + 1
+   var seen_locations = new_seq_of_cap[Location](32)
    for i in countup(start, high(context.n.sons)):
       for n in find_references(context.n.sons[i], identifier):
          var loc = n.loc
          # Translate virtual locations into physical locations.
          if n.loc.file < 0:
             loc = to_physical(unit.graph.locations.macro_maps, n.loc)
-
-         let uri = construct_uri(unit.graph.locations.file_maps[loc.file - 1].filename)
-         add(result, new_lsp_location(uri, int(loc.line - 1), int(loc.col), len(n.identifier.s)))
+         # Only add the location if we haven't seen it before.
+         if loc notin seen_locations:
+            let uri = construct_uri(unit.graph.locations.file_maps[loc.file - 1].filename)
+            add(result, new_lsp_location(uri, int(loc.line - 1), int(loc.col), len(n.identifier.s)))
+            add(seen_locations, loc)
 
 
 proc find_references*(unit: SourceUnit, line, col: int, include_declaration: bool): seq[LspLocation] =

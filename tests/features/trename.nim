@@ -198,6 +198,114 @@ run_test("textDocument/rename: parameter defined in another file",
 # )
 
 
+run_test("textDocument/rename: wire used as macro argument",
+   new_lsp_request(0, "textDocument/rename", %*{
+      "textDocument": {
+         "uri": "file://" & expand_filename(src3_path),
+      },
+      "position": {
+         "line": 18,
+         "character": 32
+      },
+      "newName": "new_one"
+   }),
+   new_lsp_response(1015 + 6 * src3_path_len, 0, %*{
+      "documentChanges": [
+         {
+            "textDocument": {
+               "uri": "file://" & expand_filename(src3_path),
+               "version": new_jnull()
+            },
+            "edits": [
+               {
+                  "range": {
+                     "start": {"line": 12, "character": 28},
+                     "end" : {"line": 12, "character": 31}
+                  },
+                  "newText": "new_one"
+               }
+            ]
+         },
+         {
+            "textDocument": {
+               "uri": "file://" & expand_filename(src3_path),
+               "version": new_jnull()
+            },
+            "edits": [
+               {
+                  "range": {
+                     "start": {"line": 18, "character": 31},
+                     "end" : {"line": 18, "character": 34}
+                  },
+                  "newText": "new_one"
+               }
+            ]
+         },
+         {
+            "textDocument": {
+               "uri": "file://" & expand_filename(src3_path),
+               "version": new_jnull()
+            },
+            "edits": [
+               {
+                  "range": {
+                     "start": {"line": 51, "character": 28},
+                     "end" : {"line": 51, "character": 31}
+                  },
+                  "newText": "new_one"
+               }
+            ]
+         },
+         {
+            "textDocument": {
+               "uri": "file://" & expand_filename(src3_path),
+               "version": new_jnull()
+            },
+            "edits": [
+               {
+                  "range": {
+                     "start": {"line": 52, "character": 31},
+                     "end" : {"line": 52, "character": 34}
+                  },
+                  "newText": "new_one"
+               }
+            ]
+         },
+         {
+            "textDocument": {
+               "uri": "file://" & expand_filename(src3_path),
+               "version": new_jnull()
+            },
+            "edits": [
+               {
+                  "range": {
+                     "start": {"line": 57, "character": 21},
+                     "end" : {"line": 57, "character": 24}
+                  },
+                  "newText": "new_one"
+               }
+            ]
+         },
+         {
+            "textDocument": {
+               "uri": "file://" & expand_filename(src3_path),
+               "version": new_jnull()
+            },
+            "edits": [
+               {
+                  "range": {
+                     "start": {"line": 59, "character": 16},
+                     "end" : {"line": 59, "character": 19}
+                  },
+                  "newText": "new_one"
+               }
+            ]
+         }
+      ]
+   })
+)
+
+
 # Shut down the server.
 shutdown(ifs, ofs)
 

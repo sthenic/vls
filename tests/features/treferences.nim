@@ -351,7 +351,7 @@ run_test("textDocument/references: reg (also used as an argument in a nested mac
          "includeDeclaration": false
       }
    }),
-   new_lsp_response(611 + 6 * src3_path_len, 0, %*[
+   new_lsp_response(515 + 5 * src3_path_len, 0, %*[
    {
       "uri": "file://" & expand_filename(src3_path),
       "range": {
@@ -378,13 +378,6 @@ run_test("textDocument/references: reg (also used as an argument in a nested mac
       "range": {
          "start": {"line": 57, "character": 21},
          "end" : {"line": 57, "character": 24}
-      }
-   },
-   {
-      "uri": "file://" & expand_filename(src3_path),
-      "range": {
-         "start": {"line": 59, "character": 16},
-         "end" : {"line": 59, "character": 19}
       }
    },
    {
