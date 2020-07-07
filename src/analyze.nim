@@ -275,6 +275,7 @@ proc find_declaration(n: PNode, identifier: PIdentifier): PNode =
             let id = find_first(s, NkIdentifier)
             if not is_nil(id) and id.identifier.s == identifier.s:
                result = id
+               break
          of NkIdentifier:
             if s.identifier.s == identifier.s:
                result = s
@@ -289,6 +290,7 @@ proc find_declaration(n: PNode, identifier: PIdentifier): PNode =
          let id = find_first(s, NkParameterIdentifier)
          if not is_nil(id) and id.identifier.s == identifier.s:
             result = id
+            break
 
    of NkSpecparamDecl:
       # When we find a NkAssignment node, the first son is expected to be the
@@ -297,6 +299,7 @@ proc find_declaration(n: PNode, identifier: PIdentifier): PNode =
          let id = find_first(s, NkIdentifier)
          if not is_nil(id) and id.identifier.s == identifier.s:
             result = id
+            break
 
    of NkModuleDecl:
       # This path is never taken since a the lookup of a module declaration is
@@ -845,9 +848,5 @@ proc rename_symbol*(unit: SourceUnit, line, col: int, new_name: string): seq[Lsp
    # Renaming a symbol is the same as first finding all references (including the declaration)
    # and constructing the text edits describing the changes based on that.
    for loc in find_references(unit, line, col, true):
-      # FIXME: Handle macros. Due to macro expansion, it's possible for the same identifier
-      #        to show up many times. We have to protect against this since overlapping
-      #        edits are not allowed. Additionally, we have to add the backtick (`) or
-      #        offset the edit by one character for all the expansion.
       let text_edit = new_lsp_text_edit(loc.range.start, loc.range.stop, new_name)
       add(result, new_lsp_text_document_edit(loc.uri, [text_edit]))
