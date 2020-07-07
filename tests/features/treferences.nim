@@ -423,6 +423,45 @@ run_test("textDocument/references: macro usage (1)",
 )
 
 
+run_test("textDocument/references: macro usage (1) w/ declaration",
+   new_lsp_request(0, "textDocument/references", %*{
+      "textDocument": {
+         "uri": "file://" & expand_filename(src3_path),
+      },
+      "position": {
+         "line": 60,
+         "character": 22
+      },
+      "context": {
+         "includeDeclaration": true
+      }
+   }),
+   new_lsp_response(323 + 3 * src3_path_len, 0, %*[
+   {
+      "uri": "file://" & expand_filename(src3_path),
+      "range": {
+         "start": {"line": 59, "character": 12},
+         "end" : {"line": 59, "character": 15}
+      }
+   },
+   {
+      "uri": "file://" & expand_filename(src3_path),
+      "range": {
+         "start": {"line": 60, "character": 21},
+         "end" : {"line": 60, "character": 25}
+      }
+   },
+   {
+      "uri": "file://" & expand_filename(src3_path),
+      "range": {
+         "start": {"line": 61, "character": 24},
+         "end" : {"line": 61, "character": 28}
+      }
+   }
+   ])
+)
+
+
 run_test("textDocument/references: macro usage (2)",
    new_lsp_request(0, "textDocument/references", %*{
       "textDocument": {
@@ -483,6 +522,73 @@ run_test("textDocument/references: macro usage (2)",
 )
 
 
+run_test("textDocument/references: macro usage (2) w/ declaration",
+   new_lsp_request(0, "textDocument/references", %*{
+      "textDocument": {
+         "uri": "file://" & expand_filename(src3_path),
+      },
+      "position": {
+         "line": 52,
+         "character": 19
+      },
+      "context": {
+         "includeDeclaration": true
+      }
+   }),
+   new_lsp_response(704 + 4 * src3_path_len + 3 * src3_header_path_len, 0, %*[
+   {
+      "uri": "file://" & expand_filename(src3_header_path),
+      "range": {
+         "start": {"line": 2, "character": 8},
+         "end" : {"line": 2, "character": 11}
+      }
+   },
+   {
+      "uri": "file://" & expand_filename(src3_path),
+      "range": {
+         "start": {"line": 18, "character": 18},
+         "end" : {"line": 18, "character": 22}
+      }
+   },
+   {
+      "uri": "file://" & expand_filename(src3_header_path),
+      "range": {
+         "start": {"line": 17, "character": 25},
+         "end" : {"line": 17, "character": 29}
+      }
+   },
+   {
+      "uri": "file://" & expand_filename(src3_header_path),
+      "range": {
+         "start": {"line": 17, "character": 25},
+         "end" : {"line": 17, "character": 29}
+      }
+   },
+   {
+      "uri": "file://" & expand_filename(src3_path),
+      "range": {
+         "start": {"line": 51, "character": 15},
+         "end" : {"line": 51, "character": 19}
+      }
+   },
+   {
+      "uri": "file://" & expand_filename(src3_path),
+      "range": {
+         "start": {"line": 51, "character": 36},
+         "end" : {"line": 51, "character": 40}
+      }
+   },
+   {
+      "uri": "file://" & expand_filename(src3_path),
+      "range": {
+         "start": {"line": 52, "character": 16},
+         "end" : {"line": 52, "character": 20}
+      }
+   }
+   ])
+)
+
+
 run_test("textDocument/references: macro usage (3), redefined",
    new_lsp_request(0, "textDocument/references", %*{
       "textDocument": {
@@ -497,6 +603,38 @@ run_test("textDocument/references: macro usage (3), redefined",
       }
    }),
    new_lsp_response(131 + src3_path_len, 0, %*[
+   {
+      "uri": "file://" & expand_filename(src3_path),
+      "range": {
+         "start": {"line": 57, "character": 16},
+         "end" : {"line": 57, "character": 20}
+      }
+   }
+   ])
+)
+
+
+run_test("textDocument/references: macro usage (3), redefined w/ declaration",
+   new_lsp_request(0, "textDocument/references", %*{
+      "textDocument": {
+         "uri": "file://" & expand_filename(src3_path),
+      },
+      "position": {
+         "line": 57,
+         "character": 17
+      },
+      "context": {
+         "includeDeclaration": true
+      }
+   }),
+   new_lsp_response(227 + 2 * src3_path_len, 0, %*[
+   {
+      "uri": "file://" & expand_filename(src3_path),
+      "range": {
+         "start": {"line": 56, "character": 12},
+         "end" : {"line": 56, "character": 15}
+      }
+   },
    {
       "uri": "file://" & expand_filename(src3_path),
       "range": {
