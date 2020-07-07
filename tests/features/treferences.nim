@@ -462,6 +462,45 @@ run_test("textDocument/references: macro usage (1) w/ declaration",
 )
 
 
+run_test("textDocument/references: macro definition (1) w/ declaration",
+   new_lsp_request(0, "textDocument/references", %*{
+      "textDocument": {
+         "uri": "file://" & expand_filename(src3_path),
+      },
+      "position": {
+         "line": 59,
+         "character": 14
+      },
+      "context": {
+         "includeDeclaration": true
+      }
+   }),
+   new_lsp_response(323 + 3 * src3_path_len, 0, %*[
+   {
+      "uri": "file://" & expand_filename(src3_path),
+      "range": {
+         "start": {"line": 59, "character": 12},
+         "end" : {"line": 59, "character": 15}
+      }
+   },
+   {
+      "uri": "file://" & expand_filename(src3_path),
+      "range": {
+         "start": {"line": 60, "character": 21},
+         "end" : {"line": 60, "character": 25}
+      }
+   },
+   {
+      "uri": "file://" & expand_filename(src3_path),
+      "range": {
+         "start": {"line": 61, "character": 24},
+         "end" : {"line": 61, "character": 28}
+      }
+   }
+   ])
+)
+
+
 run_test("textDocument/references: macro usage (2)",
    new_lsp_request(0, "textDocument/references", %*{
       "textDocument": {

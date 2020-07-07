@@ -657,7 +657,7 @@ proc find_references*(unit: SourceUnit, line, col: int, include_declaration: boo
    let loc = new_location(1, line, col)
    for map in g.locations.macro_maps:
       # +1 is to compensate for the expansion location starting at the backtick.
-      if in_bounds(loc, map.expansion_loc, len(map.name) + 1):
+      if in_bounds(loc, map.define_loc, len(map.name)) or in_bounds(loc, map.expansion_loc, len(map.name) + 1):
          # If we find a match, loop through the macro maps again, looking for all maps that use the
          # same macro definition as the one we just found.
          if include_declaration:
