@@ -408,14 +408,14 @@ run_test("textDocument/references: macro usage (1)",
    {
       "uri": "file://" & expand_filename(src3_path),
       "range": {
-         "start": {"line": 60, "character": 21},
+         "start": {"line": 60, "character": 22},
          "end" : {"line": 60, "character": 25}
       }
    },
    {
       "uri": "file://" & expand_filename(src3_path),
       "range": {
-         "start": {"line": 61, "character": 24},
+         "start": {"line": 61, "character": 25},
          "end" : {"line": 61, "character": 28}
       }
    }
@@ -447,14 +447,14 @@ run_test("textDocument/references: macro usage (1) w/ declaration",
    {
       "uri": "file://" & expand_filename(src3_path),
       "range": {
-         "start": {"line": 60, "character": 21},
+         "start": {"line": 60, "character": 22},
          "end" : {"line": 60, "character": 25}
       }
    },
    {
       "uri": "file://" & expand_filename(src3_path),
       "range": {
-         "start": {"line": 61, "character": 24},
+         "start": {"line": 61, "character": 25},
          "end" : {"line": 61, "character": 28}
       }
    }
@@ -486,14 +486,14 @@ run_test("textDocument/references: macro definition (1) w/ declaration",
    {
       "uri": "file://" & expand_filename(src3_path),
       "range": {
-         "start": {"line": 60, "character": 21},
+         "start": {"line": 60, "character": 22},
          "end" : {"line": 60, "character": 25}
       }
    },
    {
       "uri": "file://" & expand_filename(src3_path),
       "range": {
-         "start": {"line": 61, "character": 24},
+         "start": {"line": 61, "character": 25},
          "end" : {"line": 61, "character": 28}
       }
    }
@@ -518,35 +518,35 @@ run_test("textDocument/references: macro usage (2)",
    {
       "uri": "file://" & expand_filename(src3_path),
       "range": {
-         "start": {"line": 18, "character": 18},
+         "start": {"line": 18, "character": 19},
          "end" : {"line": 18, "character": 22}
       }
    },
    {
       "uri": "file://" & expand_filename(src3_header_path),
       "range": {
-         "start": {"line": 17, "character": 25},
+         "start": {"line": 17, "character": 26},
          "end" : {"line": 17, "character": 29}
       }
    },
    {
       "uri": "file://" & expand_filename(src3_path),
       "range": {
-         "start": {"line": 51, "character": 15},
+         "start": {"line": 51, "character": 16},
          "end" : {"line": 51, "character": 19}
       }
    },
    {
       "uri": "file://" & expand_filename(src3_path),
       "range": {
-         "start": {"line": 51, "character": 36},
+         "start": {"line": 51, "character": 37},
          "end" : {"line": 51, "character": 40}
       }
    },
    {
       "uri": "file://" & expand_filename(src3_path),
       "range": {
-         "start": {"line": 52, "character": 16},
+         "start": {"line": 52, "character": 17},
          "end" : {"line": 52, "character": 20}
       }
    }
@@ -578,35 +578,35 @@ run_test("textDocument/references: macro usage (2) w/ declaration",
    {
       "uri": "file://" & expand_filename(src3_path),
       "range": {
-         "start": {"line": 18, "character": 18},
+         "start": {"line": 18, "character": 19},
          "end" : {"line": 18, "character": 22}
       }
    },
    {
       "uri": "file://" & expand_filename(src3_header_path),
       "range": {
-         "start": {"line": 17, "character": 25},
+         "start": {"line": 17, "character": 26},
          "end" : {"line": 17, "character": 29}
       }
    },
    {
       "uri": "file://" & expand_filename(src3_path),
       "range": {
-         "start": {"line": 51, "character": 15},
+         "start": {"line": 51, "character": 16},
          "end" : {"line": 51, "character": 19}
       }
    },
    {
       "uri": "file://" & expand_filename(src3_path),
       "range": {
-         "start": {"line": 51, "character": 36},
+         "start": {"line": 51, "character": 37},
          "end" : {"line": 51, "character": 40}
       }
    },
    {
       "uri": "file://" & expand_filename(src3_path),
       "range": {
-         "start": {"line": 52, "character": 16},
+         "start": {"line": 52, "character": 17},
          "end" : {"line": 52, "character": 20}
       }
    }
@@ -631,7 +631,7 @@ run_test("textDocument/references: macro usage (3), redefined",
    {
       "uri": "file://" & expand_filename(src3_path),
       "range": {
-         "start": {"line": 57, "character": 16},
+         "start": {"line": 57, "character": 17},
          "end" : {"line": 57, "character": 20}
       }
    }
@@ -663,7 +663,7 @@ run_test("textDocument/references: macro usage (3), redefined w/ declaration",
    {
       "uri": "file://" & expand_filename(src3_path),
       "range": {
-         "start": {"line": 57, "character": 16},
+         "start": {"line": 57, "character": 17},
          "end" : {"line": 57, "character": 20}
       }
    }

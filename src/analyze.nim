@@ -649,8 +649,6 @@ proc find_references(unit: SourceUnit, context: AstContextItem, identifier: PIde
 
 
 proc find_references*(unit: SourceUnit, line, col: int, include_declaration: bool): seq[LspLocation] =
-   # FIXME: Currently not supporting listing macro usages when the definition location
-   #        is targeted.
    # Before we can assume that the input location is pointing to an identifier,
    # we have to deal with the possibility that it's pointing to a macro.
    let g = unit.graph
@@ -658,8 +656,8 @@ proc find_references*(unit: SourceUnit, line, col: int, include_declaration: boo
    for map in g.locations.macro_maps:
       # +1 is to compensate for the expansion location starting at the backtick.
       if in_bounds(loc, map.define_loc, len(map.name)) or in_bounds(loc, map.expansion_loc, len(map.name) + 1):
-         # If we find a match, loop through the macro maps again, looking for all maps that use the
-         # same macro definition as the one we just found.
+         # If we find a match, loop through the macro maps again, looking for all
+         # maps that use the same macro definition as the one we just found.
          if include_declaration:
             let uri = construct_uri(g.locations.file_maps[map.define_loc.file - 1].filename)
             add(result, new_lsp_location(uri, int(map.define_loc.line - 1), int(map.define_loc.col),
@@ -673,7 +671,7 @@ proc find_references*(unit: SourceUnit, line, col: int, include_declaration: boo
                if expansion_loc notin seen_locations:
                   let uri = construct_uri(g.locations.file_maps[expansion_loc.file - 1].filename)
                   add(result, new_lsp_location(uri, int(expansion_loc.line - 1),
-                                               int(expansion_loc.col), len(m.name) + 1))
+                                               int(expansion_loc.col) + 1, len(m.name)))
                   add(seen_locations, expansion_loc)
          return
 

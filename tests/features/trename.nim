@@ -168,34 +168,160 @@ run_test("textDocument/rename: parameter defined in another file",
 )
 
 
-# run_test("textDocument/rename: macro targeted at expansion location",
-#    new_lsp_request(0, "textDocument/rename", %*{
-#       "textDocument": {
-#          "uri": "file://" & expand_filename(src3_path),
-#       },
-#       "position": {
-#          "line": 52,
-#          "character": 19
-#       },
-#       "newName": "NEW_AND"
-#    }),
-#    new_lsp_response(51, 0, new_jnull())
-# )
+run_test("textDocument/rename: macro targeted at expansion location",
+   new_lsp_request(0, "textDocument/rename", %*{
+      "textDocument": {
+         "uri": "file://" & expand_filename(src3_path),
+      },
+      "position": {
+         "line": 52,
+         "character": 16
+      },
+      "newName": "NEW_AND"
+   }),
+   new_lsp_response(1012 + 2 * src3_header_path_len + 4 * src3_path_len, 0, %*{
+      "documentChanges": [
+         {
+            "textDocument": {
+               "version": new_jnull(),
+               "uri": "file://" & expand_filename(src3_header_path)
+            },
+            "edits": [
+               {
+                  "range": {
+                     "start": {"line": 2, "character": 8},
+                     "end": {"line": 2, "character": 11}
+                  },
+                  "newText": "NEW_AND"
+               }
+            ]
+         },
+         {
+            "textDocument": {
+               "version": new_jnull(),
+               "uri": "file://" & expand_filename(src3_path)
+            },
+            "edits": [
+               {
+                  "range": {
+                     "start": {"line": 18, "character": 19},
+                     "end": {"line": 18, "character": 22}
+                  },
+                  "newText": "NEW_AND"
+               }
+            ]
+         },
+         {
+            "textDocument": {
+               "version": new_jnull(),
+               "uri": "file://" & expand_filename(src3_header_path)
+            },
+            "edits": [
+               {
+                  "range": {
+                     "start": {"line": 17, "character": 26},
+                     "end": {"line": 17, "character": 29}
+                  },
+                  "newText": "NEW_AND"
+               }
+            ]
+         },
+         {
+            "textDocument": {
+               "version": new_jnull(),
+               "uri": "file://" & expand_filename(src3_path)
+            },
+            "edits": [
+               {
+                  "range": {
+                     "start": {"line": 51, "character": 16},
+                     "end": {"line": 51, "character": 19}
+                  },
+                  "newText": "NEW_AND"
+               }
+            ]
+         },
+         {
+            "textDocument": {
+               "version": new_jnull(),
+               "uri": "file://" & expand_filename(src3_path)
+            },
+            "edits": [
+               {
+                  "range": {
+                     "start": {"line": 51, "character": 37},
+                     "end": {"line": 51, "character": 40}
+                  },
+                  "newText": "NEW_AND"
+               }
+            ]
+         },
+         {
+            "textDocument": {
+               "version": new_jnull(),
+               "uri": "file://" & expand_filename(src3_path)
+            },
+            "edits": [
+               {
+                  "range": {
+                     "start": {"line": 52, "character": 17},
+                     "end": {"line": 52, "character": 20}
+                  },
+                  "newText": "NEW_AND"
+               }
+            ]
+         }
+      ]
+   })
+)
 
 
-# run_test("textDocument/rename: macro targeted at definition location",
-#    new_lsp_request(0, "textDocument/rename", %*{
-#       "textDocument": {
-#          "uri": "file://" & expand_filename(src3_path),
-#       },
-#       "position": {
-#          "line": 56,
-#          "character": 13
-#       },
-#       "newName": "NEW_AND"
-#    }),
-#    new_lsp_response(51, 0, new_jnull())
-# )
+run_test("textDocument/rename: macro targeted at definition location",
+   new_lsp_request(0, "textDocument/rename", %*{
+      "textDocument": {
+         "uri": "file://" & expand_filename(src3_path),
+      },
+      "position": {
+         "line": 56,
+         "character": 13
+      },
+      "newName": "NEW_AND"
+   }),
+   new_lsp_response(375 + 2 * src3_path_len, 0, %*{
+      "documentChanges": [
+         {
+            "textDocument": {
+               "version": new_jnull(),
+               "uri": "file://" & expand_filename(src3_path)
+            },
+            "edits": [
+               {
+                  "range": {
+                     "start": {"line": 56, "character": 12},
+                     "end": {"line": 56, "character": 15}
+                  },
+                  "newText": "NEW_AND"
+               }
+            ]
+         },
+         {
+            "textDocument": {
+               "version": new_jnull(),
+               "uri": "file://" & expand_filename(src3_path)
+            },
+            "edits": [
+               {
+                  "range": {
+                     "start": {"line": 57, "character": 17},
+                     "end": {"line": 57, "character": 20}
+                  },
+                  "newText": "NEW_AND"
+               }
+            ]
+         }
+      ]
+   })
+)
 
 
 run_test("textDocument/rename: wire used as macro argument",
