@@ -475,19 +475,12 @@ run_test("textDocument/references: macro usage (2)",
          "includeDeclaration": false
       }
    }),
-   new_lsp_response(611 + 4 * src3_path_len + 2 * src3_header_path_len, 0, %*[
+   new_lsp_response(515 + 4 * src3_path_len + src3_header_path_len, 0, %*[
    {
       "uri": "file://" & expand_filename(src3_path),
       "range": {
          "start": {"line": 18, "character": 18},
          "end" : {"line": 18, "character": 22}
-      }
-   },
-   {
-      "uri": "file://" & expand_filename(src3_header_path),
-      "range": {
-         "start": {"line": 17, "character": 25},
-         "end" : {"line": 17, "character": 29}
       }
    },
    {
@@ -535,7 +528,7 @@ run_test("textDocument/references: macro usage (2) w/ declaration",
          "includeDeclaration": true
       }
    }),
-   new_lsp_response(704 + 4 * src3_path_len + 3 * src3_header_path_len, 0, %*[
+   new_lsp_response(608 + 4 * src3_path_len + 2 * src3_header_path_len, 0, %*[
    {
       "uri": "file://" & expand_filename(src3_header_path),
       "range": {
@@ -548,13 +541,6 @@ run_test("textDocument/references: macro usage (2) w/ declaration",
       "range": {
          "start": {"line": 18, "character": 18},
          "end" : {"line": 18, "character": 22}
-      }
-   },
-   {
-      "uri": "file://" & expand_filename(src3_header_path),
-      "range": {
-         "start": {"line": 17, "character": 25},
-         "end" : {"line": 17, "character": 29}
       }
    },
    {

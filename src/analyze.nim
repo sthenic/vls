@@ -657,7 +657,6 @@ proc find_references*(unit: SourceUnit, line, col: int, include_declaration: boo
    let loc = new_location(1, line, col)
    for map in g.locations.macro_maps:
       # +1 is to compensate for the expansion location starting at the backtick.
-      # FIXME: Avoid adding duplicates.
       if in_bounds(loc, map.expansion_loc, len(map.name) + 1):
          # If we find a match, loop through the macro maps again, looking for all maps that use the
          # same macro definition as the one we just found.
@@ -665,14 +664,17 @@ proc find_references*(unit: SourceUnit, line, col: int, include_declaration: boo
             let uri = construct_uri(g.locations.file_maps[map.define_loc.file - 1].filename)
             add(result, new_lsp_location(uri, int(map.define_loc.line - 1), int(map.define_loc.col),
                                          len(map.name)))
+         var seen_locations = new_seq_of_cap[Location](32)
          for m in g.locations.macro_maps:
             if m.define_loc == map.define_loc:
                var expansion_loc = m.expansion_loc
                if expansion_loc.file < 0:
                   expansion_loc = to_physical(g.locations.macro_maps, expansion_loc)
-               let uri = construct_uri(g.locations.file_maps[expansion_loc.file - 1].filename)
-               add(result, new_lsp_location(uri, int(expansion_loc.line - 1),
-                                            int(expansion_loc.col), len(m.name) + 1))
+               if expansion_loc notin seen_locations:
+                  let uri = construct_uri(g.locations.file_maps[expansion_loc.file - 1].filename)
+                  add(result, new_lsp_location(uri, int(expansion_loc.line - 1),
+                                               int(expansion_loc.col), len(m.name) + 1))
+                  add(seen_locations, expansion_loc)
          return
 
    var identifier_context: AstContext
