@@ -125,6 +125,15 @@ type
       uri*: string
       edits*: seq[LspTextEdit]
 
+   LspDocumentHighlightKind* = enum
+      LspHkText = 1
+      LspHkRead = 2
+      LspHkWrite = 3
+
+   LspDocumentHighlight* = object
+      range*: LspRange
+      kind*: LspDocumentHighlightKind
+
 
 const
    INDENT = 2
@@ -193,6 +202,11 @@ proc new_lsp_text_document_edit*(uri: string, edits: openarray[LspTextEdit]): Ls
    add(result.edits, edits)
 
 
+proc new_lsp_document_highlight*(start, stop: LspPosition, kind: LspDocumentHighlightKind): LspDocumentHighlight =
+   result.range = LspRange(start: start, stop: stop)
+   result.kind = kind
+
+
 proc `%`*(p: LspPosition): JsonNode =
    result = %*{
       "line": p.line,
@@ -250,6 +264,13 @@ proc `%`*(o: LspTextDocumentEdit): JsonNode =
          "uri": o.uri
       },
       "edits": o.edits
+   }
+
+
+proc `%`*(o: LspDocumentHighlight): JsonNode =
+   result = %*{
+      "range": o.range,
+      "kind": int(o.kind)
    }
 
 

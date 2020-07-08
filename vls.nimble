@@ -39,3 +39,4 @@ task featuretests, "Run the language feature test suite":
       exec("nim c --hints:off -r tcompletion")
       exec("nim c --hints:off -r tdocument_symbol")
       exec("nim c --hints:off -r trename")
+      exec("nim c --hints:off -r tdocument_highlight")

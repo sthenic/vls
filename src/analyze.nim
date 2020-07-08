@@ -850,3 +850,13 @@ proc rename_symbol*(unit: SourceUnit, line, col: int, new_name: string): seq[Lsp
    for loc in find_references(unit, line, col, true):
       let text_edit = new_lsp_text_edit(loc.range.start, loc.range.stop, new_name)
       add(result, new_lsp_text_document_edit(loc.uri, [text_edit]))
+
+
+proc document_highlight*(unit: SourceUnit, line, col: int): seq[LspDocumentHighlight] =
+   ## Highlight all references to the symbol at the target position.
+   let uri = construct_uri(unit.filename)
+   for loc in find_references(unit, line, col, true):
+      # Ensure that only references from the current file show up in the output.
+      if loc.uri != uri:
+         continue
+      add(result, new_lsp_document_highlight(loc.range.start, loc.range.stop, LspHkText))

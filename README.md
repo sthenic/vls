@@ -36,7 +36,7 @@ This tool is a Verilog IEEE 1364-2005 [language server](https://microsoft.github
 - [x] textDocument/declaration
 - [x] textDocument/definition
 - [x] textDocument/references
-- [ ] textDocument/documentHighlight
+- [x] textDocument/documentHighlight
 - [x] textDocument/documentSymbol
 - [x] textDocument/rename
 - [ ] textDocument/prepareRename
