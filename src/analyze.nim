@@ -8,14 +8,6 @@ import ./source_unit
 import ./log
 
 type
-   # An AST context item represents a specific node and its position in the
-   # parent node's list of sons.
-   AstContextItem = object
-      pos: int
-      n: PNode
-
-   AstContext = seq[AstContextItem]
-
    AnalyzeError* = object of ValueError
 
 
@@ -26,19 +18,6 @@ const
 proc new_analyze_error(msg: string, args: varargs[string, `$`]): ref AnalyzeError =
    new result
    result.msg = format(msg, args)
-
-
-proc init(c: var AstContext, len: int) =
-   c = new_seq_of_cap[AstContextItem](len)
-
-
-proc add(c: var AstContext, pos: int, n: PNode) =
-   add(c, AstContextItem(pos: pos, n: n))
-
-
-proc in_bounds(x, y: Location, len: int): bool =
-   result = x.file == y.file and x.line == y.line and
-            x.col >= y.col and x.col <= (y.col + len - 1)
 
 
 iterator walk_verilog_files(dir: string): string {.inline.} =
@@ -72,22 +51,32 @@ iterator walk_module_declarations(include_paths: seq[string]): tuple[filename: s
             yield (filename, module)
 
 
-iterator walk_ports(n: PNode): PNode {.inline.} =
-   if n.kind == NkModuleDecl:
-      for s in n.sons:
-         if s.kind in {NkListOfPortDeclarations, NkListOfPorts}:
-            for p in s.sons:
-               if p.kind in {NkPortDecl, NkPort}:
-                  yield p
+iterator walk_include_paths_starting_with(unit: SourceUnit, prefix: string): string {.inline.} =
+   const EXTENSIONS = [".vh", ".v"]
+   # We don't want to report duplicates, so if the source file's parent directory
+   # (always on the include path) already exists, we don't add it again.
+   var include_paths = unit.configuration.include_paths
+   let parent_dir = parent_dir(unit.filename)
+   if parent_dir notin include_paths:
+      add(include_paths, parent_dir)
 
-
-iterator walk_parameter_ports(n: PNode): PNode {.inline.} =
-   if n.kind == NkModuleDecl:
-      for s in n.sons:
-         if s.kind == NkModuleParameterPortList:
-            for p in s.sons:
-               if p.kind == NkParameterDecl:
-                  yield p
+   if is_absolute(prefix):
+      # FIXME: Implement
+      discard
+   else:
+      let (head, tail) = split_path(prefix)
+      for dir in include_paths:
+         let ldir = dir / head
+         for (kind, path) in walk_dir(ldir):
+            case kind
+            of pcFile, pcLinkToFile:
+               let (_, name, ext) = split_file(path)
+               if ext in EXTENSIONS and starts_with(name, tail):
+                  yield name & ext
+            of pcDir, pcLinkToDir:
+               let last_dir = last_path_part(path)
+               if starts_with(last_dir, tail):
+                  yield(last_dir & "/")
 
 
 proc check_syntax(n: PNode, locs: PLocations): seq[LspDiagnostic] =
@@ -183,223 +172,6 @@ proc check_syntax(n: PNode, locs: PLocations): seq[LspDiagnostic] =
 
 proc check_syntax*(unit: SourceUnit): seq[LspDiagnostic] =
    result = check_syntax(unit.graph.root_node, unit.graph.locations)
-
-
-proc find_identifier(n: PNode, loc: Location, context: var AstContext,
-                     end_cursor: bool = false): PNode =
-   case n.kind
-   of IdentifierTypes:
-      # If the node is an identifier type, check if the location is pointing to
-      # anywhere within the identifier. Otherwise, we skip it. If end_cursor is
-      # true, we make the identifier appear to be one character longer than its
-      # natural length.
-      let length = if end_cursor: len(n.identifier.s) + 1 else: len(n.identifier.s)
-      if in_bounds(loc, n.loc, length):
-         result = n
-      else:
-         result = nil
-   of PrimitiveTypes - IdentifierTypes:
-      result = nil
-   else:
-      # TODO: Perhaps we can improve the search here? Skipping entire subtrees
-      #       depending on the location of the first node within?
-      for i, s in n.sons:
-         add(context, i, n)
-         result = find_identifier(s, loc, context, end_cursor)
-         if not is_nil(result):
-            return
-         discard pop(context)
-
-
-proc unroll_location(macro_maps: seq[MacroMap], loc: var Location) =
-   for i, map in macro_maps:
-      for j, lpair in map.locations:
-         if loc == lpair.x:
-            loc = new_location(-(i + 1), j, 0)
-
-
-proc find_identifier_physical(g: Graph, loc: Location, context: var AstContext,
-                              end_cursor: bool = false): PNode =
-   ## Find the identifier at the physical location ``loc``, i.e. ``loc.file`` is
-   ## expected to not point at a macro entry.
-   var lookup_loc = loc
-   var start_col = 0
-   for i, map in g.locations.macro_maps:
-      for j, lpair in map.locations:
-         # The macro map's location database only stores the locations of the
-         # first character in the token and not the length of the token. Given
-         # that the location we're given as an input argument may point to
-         # anywhere within the token, we have to guess what to translate the
-         # physical location to.
-         if loc.file == lpair.x.file and loc.line == lpair.x.line and loc.col >= lpair.x.col:
-            lookup_loc = new_location(-(i + 1), j, 0)
-            start_col = lpair.x.col
-
-         # We don't break out of the loops since a better location may present
-         # itself by looking at later macro maps. The macro maps are organized
-         # in the order they appear in the source file, i.e. left to right, top
-         # to bottom.
-
-   if lookup_loc.file < 0:
-      unroll_location(g.locations.macro_maps, lookup_loc)
-
-   # Make the lookup.
-   result = find_identifier(g.root_node, lookup_loc, context, end_cursor)
-
-   # If we made the lookup using a virtual location, we have to be ready to roll
-   # back the lookup result if it turns out that the input location points
-   # beyond the identifier.
-   if not is_nil(result) and lookup_loc.file < 0 and loc.col > (start_col + len(result.identifier.s) - 1):
-      result = nil
-
-
-proc find_declaration(n: PNode, identifier: PIdentifier): PNode =
-   # We have to hande each type of declaration node individually in order to
-   # find the correct identifier node.
-   result = nil
-   case n.kind
-   of NkPortDecl:
-      let id = find_first(n, NkPortIdentifier)
-      if not is_nil(id) and id.identifier.s == identifier.s:
-         result = id
-
-   of NkTaskDecl, NkFunctionDecl, NkGenvarDecl:
-      let id = find_first(n, NkIdentifier)
-      if not is_nil(id) and id.identifier.s == identifier.s:
-         result = id
-
-   of NkRegDecl, NkIntegerDecl, NkRealDecl, NkRealtimeDecl, NkTimeDecl, NkNetDecl, NkEventDecl:
-      for s in n.sons:
-         case s.kind
-         of NkArrayIdentifer, NkAssignment:
-            let id = find_first(s, NkIdentifier)
-            if not is_nil(id) and id.identifier.s == identifier.s:
-               result = id
-               break
-         of NkIdentifier:
-            if s.identifier.s == identifier.s:
-               result = s
-               break
-         else:
-            discard
-
-   of NkParameterDecl, NkLocalparamDecl:
-      # When we find a NkParamAssignment node, the first son is expected to be
-      # the identifier.
-      for s in walk_sons(n, NkParamAssignment):
-         let id = find_first(s, NkParameterIdentifier)
-         if not is_nil(id) and id.identifier.s == identifier.s:
-            result = id
-            break
-
-   of NkSpecparamDecl:
-      # When we find a NkAssignment node, the first son is expected to be the
-      # identifier.
-      for s in walk_sons(n, NkAssignment):
-         let id = find_first(s, NkIdentifier)
-         if not is_nil(id) and id.identifier.s == identifier.s:
-            result = id
-            break
-
-   of NkModuleDecl:
-      # This path is never taken since a the lookup of a module declaration is
-      # handled by find_module_declaration() which performs a lookup.
-      let id = find_first(n, NkModuleIdentifier)
-      if not is_nil(id) and id.identifier.s == identifier.s:
-         result = id
-
-   of PrimitiveTypes + {NkDefparamDecl}:
-      # Defparam declarations specifically targets an existing parameter and
-      # changes its value. Looking up a declaration should never lead to this
-      # node.
-      discard
-
-   else:
-      for s in n.sons:
-         result = find_declaration(s, identifier)
-         if not is_nil(result):
-            break
-
-
-proc find_declaration(context: AstContext, identifier: PIdentifier): tuple[n: PNode, context: AstContextItem] =
-   # Traverse the context bottom-up, descending into any declaration nodes we
-   # find along the way.
-   result.n = nil
-   for i in countdown(high(context), 0):
-      let context_item = context[i]
-      if context_item.n.kind notin PrimitiveTypes:
-         for pos in countdown(context_item.pos, 0):
-            let s = context_item.n.sons[pos]
-            if s.kind in DeclarationTypes - {NkDefparamDecl}:
-               result.n = find_declaration(s, identifier)
-               if not is_nil(result.n):
-                  if context_item.n.kind in {NkModuleParameterPortList, NkListOfPortDeclarations, NkListOfPorts}:
-                     # If the declaration was enclosed in any of the list types,
-                     # its scope stretches from the parent node and onwards.
-                     result.context = context[i-1]
-                  else:
-                     result.context.pos = pos
-                     result.context.n = context[i].n
-                  return
-
-
-proc find_all_declarations(n: PNode): seq[PNode] =
-   case n.kind
-   of NkPortDecl:
-      let id = find_first(n, NkPortIdentifier)
-      if not is_nil(id):
-         add(result, id)
-
-   of NkTaskDecl, NkFunctionDecl, NkGenvarDecl:
-      let id = find_first(n, NkIdentifier)
-      if not is_nil(id):
-         add(result, id)
-
-   of NkRegDecl, NkIntegerDecl, NkRealDecl, NkRealtimeDecl, NkTimeDecl, NkNetDecl, NkEventDecl:
-      for s in n.sons:
-         case s.kind
-         of NkArrayIdentifer, NkAssignment:
-            let id = find_first(s, NkIdentifier)
-            if not is_nil(id):
-               add(result, id)
-         of NkIdentifier:
-            add(result, s)
-            break
-         else:
-            discard
-
-   of NkParameterDecl, NkLocalparamDecl:
-      for s in walk_sons(n, NkParamAssignment):
-         let id = find_first(s, NkParameterIdentifier)
-         if not is_nil(id):
-            add(result, id)
-
-   of NkSpecparamDecl:
-      for s in walk_sons(n, NkAssignment):
-         let id = find_first(s, NkIdentifier)
-         if not is_nil(id):
-            add(result, id)
-
-   of NkModuleDecl:
-      let idx = find_first_index(n, NkModuleIdentifier)
-      if idx > -1:
-         add(result, n.sons[idx])
-      for s in walk_sons(n, idx + 1):
-         add(result, find_all_declarations(s))
-
-   of PrimitiveTypes + {NkDefparamDecl}:
-      discard
-
-   else:
-      for s in n.sons:
-         add(result, find_all_declarations(s))
-
-
-proc find_all_declarations(context: AstContext): seq[PNode] =
-   for context_item in context:
-      if context_item.n.kind notin PrimitiveTypes:
-         for pos in 0..<context_item.pos:
-            add(result, find_all_declarations(context_item.n.sons[pos]))
 
 
 proc find_module_declaration(unit: SourceUnit, identifier: PIdentifier): LspLocation =
@@ -503,7 +275,7 @@ proc is_external_identifier(context: AstContext): bool =
 
 proc find_internal_declaration(unit: SourceUnit, context: AstContext, identifier: PIdentifier): LspLocation =
    log.debug("Looking up an internal declaration for '$1'.", identifier.s)
-   let (n, _) = find_declaration(context, identifier)
+   let (n, _) = find_declaration(context, identifier, true)
    if not is_nil(n):
       let uri = construct_uri(unit.graph.locations.file_maps[n.loc.file - 1].filename)
       result = new_lsp_location(uri, int(n.loc.line - 1), int(n.loc.col), len(n.identifier.s))
@@ -604,7 +376,7 @@ proc find_declaration*(unit: SourceUnit, line, col: int): LspLocation =
    # directive. If it's a valid path, we return the location to that file.
    var context: AstContext
    init(context, 32)
-   let identifier = find_identifier_physical(g, loc, context)
+   let identifier = find_identifier_physical(g.root_node, g.locations, loc, context)
    if is_nil(identifier):
       return find_include_directive(unit, loc)
 
@@ -617,23 +389,6 @@ proc find_declaration*(unit: SourceUnit, line, col: int): LspLocation =
       result = find_internal_declaration(unit, context, identifier.identifier)
 
 
-proc find_references(n: PNode, identifier: PIdentifier): seq[PNode] =
-   case n.kind
-   of IdentifierTypes:
-      if n.identifier.s == identifier.s:
-         add(result, n)
-   of PrimitiveTypes - IdentifierTypes:
-      discard
-   of NkPortConnection:
-      # For port connections, we have to skip the first identifier since that's
-      # the name of the port.
-      for s in walk_sons(n, find_first_index(n, NkIdentifier) + 1):
-         add(result, find_references(s, identifier))
-   else:
-      for s in n.sons:
-         add(result, find_references(s, identifier))
-
-
 proc find_references(unit: SourceUnit, context: AstContextItem, identifier: PIdentifier,
                      include_declaration: bool): seq[LspLocation] =
    let start = if include_declaration: context.pos else: context.pos + 1
@@ -643,7 +398,7 @@ proc find_references(unit: SourceUnit, context: AstContextItem, identifier: PIde
          var loc = n.loc
          # Translate virtual locations into physical locations.
          if n.loc.file < 0:
-            loc = to_physical(unit.graph.locations.macro_maps, n.loc)
+            loc = to_physical(unit.graph.locations, n.loc)
          # Only add the location if we haven't seen it before.
          if loc notin seen_locations:
             let uri = construct_uri(unit.graph.locations.file_maps[loc.file - 1].filename)
@@ -670,7 +425,7 @@ proc find_references*(unit: SourceUnit, line, col: int, include_declaration: boo
             if m.define_loc == map.define_loc:
                var expansion_loc = m.expansion_loc
                if expansion_loc.file < 0:
-                  expansion_loc = to_physical(g.locations.macro_maps, expansion_loc)
+                  expansion_loc = to_physical(g.locations, expansion_loc)
                if expansion_loc notin seen_locations:
                   let uri = construct_uri(g.locations.file_maps[expansion_loc.file - 1].filename)
                   add(result, new_lsp_location(uri, int(expansion_loc.line - 1),
@@ -680,7 +435,7 @@ proc find_references*(unit: SourceUnit, line, col: int, include_declaration: boo
 
    var identifier_context: AstContext
    init(identifier_context, 32)
-   let identifier = find_identifier_physical(g, loc, identifier_context)
+   let identifier = find_identifier_physical(g.root_node, g.locations, loc, identifier_context)
    if is_nil(identifier):
       raise new_analyze_error("Failed to find an identifer at the target location.")
 
@@ -692,7 +447,7 @@ proc find_references*(unit: SourceUnit, line, col: int, include_declaration: boo
       if c.n.kind == NkPortConnection and c.pos == find_first_index(c.n, NkIdentifier):
          raise new_analyze_error("Failed to find an identifer at the target location.")
 
-   let (declaration, declaration_context) = find_declaration(identifier_context, identifier.identifier)
+   let (declaration, declaration_context) = find_declaration(identifier_context, identifier.identifier, true)
    if is_nil(declaration):
       raise new_analyze_error("Failed to find the declaration of identifier '$1'.", identifier.identifier.s)
 
@@ -736,46 +491,6 @@ proc find_completable_token_at(unit: SourceUnit, loc: Location, cache: Identifie
    close(ss)
 
 
-iterator walk_nodes_starting_with(nodes: openarray[PNode], prefix: string): PNode =
-   for n in nodes:
-      if n.kind in IdentifierTypes and starts_with(n.identifier.s, prefix):
-         yield n
-
-
-iterator walk_identifiers_starting_with(cache: IdentifierCache, prefix: string): PIdentifier =
-   for id in walk_identifiers(cache):
-      if starts_with(id.s, prefix):
-         yield id
-
-
-iterator walk_include_paths_starting_with(unit: SourceUnit, prefix: string): string =
-   const EXTENSIONS = [".vh", ".v"]
-   # We don't want to report duplicates, so if the source file's parent directory
-   # (always on the include path) already exists, we don't add it again.
-   var include_paths = unit.configuration.include_paths
-   let parent_dir = parent_dir(unit.filename)
-   if parent_dir notin include_paths:
-      add(include_paths, parent_dir)
-
-   if is_absolute(prefix):
-      # FIXME: Implement
-      discard
-   else:
-      let (head, tail) = split_path(prefix)
-      for dir in include_paths:
-         let ldir = dir / head
-         for (kind, path) in walk_dir(ldir):
-            case kind
-            of pcFile, pcLinkToFile:
-               let (_, name, ext) = split_file(path)
-               if ext in EXTENSIONS and starts_with(name, tail):
-                  yield name & ext
-            of pcDir, pcLinkToDir:
-               let last_dir = last_path_part(path)
-               if starts_with(last_dir, tail):
-                  yield(last_dir & "/")
-
-
 proc find_completions*(unit: SourceUnit, line, col: int): seq[LspCompletionItem] =
    # We can be faced with one of two situations: either
    #   1. the AST is intact at least up until the target location; or
@@ -788,10 +503,11 @@ proc find_completions*(unit: SourceUnit, line, col: int): seq[LspCompletionItem]
    # TODO: We should perhaps add some fuzzy matching?
    let loc = new_location(1, line, col)
    var context: AstContext
-   let identifier = find_identifier_physical(unit.graph, loc, context, end_cursor = true)
+   let identifier = find_identifier_physical(unit.graph.root_node, unit.graph.locations,
+                                             loc, context, added_length = 1)
    if not is_nil(identifier):
       let prefix = substr(identifier.identifier.s, 0, loc.col - identifier.loc.col - 1)
-      for n in walk_nodes_starting_with(find_all_declarations(context), prefix):
+      for n in walk_nodes_starting_with(find_all_declarations(context, true), prefix):
          add(result, new_lsp_completion_item(n.identifier.s))
    else:
       let cache = new_ident_cache()
@@ -810,22 +526,9 @@ proc find_completions*(unit: SourceUnit, line, col: int): seq[LspCompletionItem]
          raise new_analyze_error("Failed to find a token at the target location.")
 
 
-proc find_all_module_instantiations(n: PNode): seq[PNode] =
-   case n.kind
-   of PrimitiveTypes:
-      discard
-   of NkModuleInstantiation:
-      let id = find_first(n, NkIdentifier)
-      if not is_nil(id):
-         add(result, id)
-   else:
-      for s in n.sons:
-         add(result, find_all_module_instantiations(s))
-
-
 proc find_symbols*(unit: SourceUnit): seq[LspSymbolInformation] =
    # Add an entry for each declaration in the AST.
-   for n in find_all_declarations(unit.graph.root_node):
+   for n in find_all_declarations(unit.graph.root_node, true):
       # Filter out declarations not in the current file.
       if n.loc.file != 1:
          continue
