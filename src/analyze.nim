@@ -577,8 +577,14 @@ proc hover*(unit: SourceUnit, line, col: int): LspHover =
    for map in g.locations.macro_maps:
       # +1 is to compensate for the expansion location starting at the backtick.
       if in_bounds(loc, map.expansion_loc, len(map.name) + 1):
-         # FIXME: Implement
-         raise new_analyze_error("Hover is not implemented for macro expansions.")
+         # TODO: We don't have access to the replacement list from the macro map
+         #       so we can't recreate the macro declaration unless that changes.
+         if len(map.comment) > 0:
+            return new_lsp_hover(int(map.expansion_loc.line - 1), int(map.expansion_loc.col),
+                                 len(map.name) + 1, LspMkMarkdown, map.comment)
+         else:
+            raise new_analyze_error("Failed to find hover information for the macro expansion " &
+                                    "at the target location.")
 
    var context: AstContext
    init(context, 32)
@@ -602,6 +608,10 @@ proc hover*(unit: SourceUnit, line, col: int): LspHover =
       var markdown = ""
       let comment = find_first(declaration, NkComment)
       if not is_nil(comment):
+         # TODO: We potentially need to figure out if the whitespace following a
+         #       newline needs some manipulation to render the markdown
+         #       properly. In the worst case, the comment may need to inform us
+         #       of the comment's indentation so we can subtrace accordingly.
          add(markdown, comment.s & "\n\n")
       add(markdown, format("```verilog\n$1\n```", $declaration))
       result = new_lsp_hover(int(highlight_location.line - 1), int(highlight_location.col),

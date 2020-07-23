@@ -25,7 +25,7 @@ module module3 #(
         (* some_attr = "true" *) .clk_i (clk_i),
         .data_o (from_module4)
     );
-
+    /* This is the docstring for `a_common_wire`. */
     wire a_common_wire;
     generate
         if (WIDTH == 8) begin

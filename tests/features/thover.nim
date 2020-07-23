@@ -21,7 +21,6 @@ initialize(ifs, ofs)
 # Open the file "./src/src3.v", expecting no parsing errors.
 const src3_path = "./src/src3.v"
 const src3_text = static_read(src3_path)
-let src3_path_len = len(expand_filename(src3_path))
 send(ifs, new_lsp_notification("textDocument/didOpen", %*{
    "textDocument": {
       "uri": "file://" & expand_filename(src3_path),
@@ -155,6 +154,29 @@ run_test("textDocument/hover: expanded macro in declaration",
 ```verilog
 wire baz = (my_reg & one) || (wider_reg[0] & wider_reg[1])
 ```"""
+      }
+   })
+)
+
+
+run_test("textDocument/hover: macro at expansion location",
+   new_lsp_request(15, "textDocument/hover", %*{
+      "textDocument": {
+         "uri": "file://" & expand_filename(src3_path),
+      },
+      "position": {
+         "line": 45,
+         "character": 25
+      }
+   }),
+   new_lsp_response(189, 15, %*{
+      "range": {
+         "start": {"line": 45, "character": 23},
+         "end" : {"line": 45, "character": 37}
+      },
+      "contents": {
+         "kind": "markdown",
+         "value": "Logic AND between `x` and `1'b0`."
       }
    })
 )
