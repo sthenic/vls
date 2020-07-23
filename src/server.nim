@@ -139,7 +139,8 @@ proc initialize(s: var LspServer, msg: LspMessage) =
          "completionProvider": {},
          "documentSymbolProvider": true,
          "renameProvider": true,
-         "documentHighlightProvider": true
+         "documentHighlightProvider": true,
+         "hoverProvider": true
       }
       send(s, new_lsp_response(msg.id, result))
       s.is_initialized = true
@@ -216,6 +217,12 @@ proc document_highlight(s: LspServer, msg: LspMessage) =
       send(s, new_lsp_response(msg.id, %highlights))
 
 
+proc hover(s: LspServer, msg: LspMessage) =
+   analyze_text_document_position(s, msg, uri, line, col):
+      let hover = hover(s.source_units[uri], line + 1, col)
+      send(s, new_lsp_response(msg.id, %hover))
+
+
 proc handle_request(s: var LspServer, msg: LspMessage) =
    # If the server is shut down we respond to every request with an error.
    # Otherwise, unless the server is initialized, we only respond to the
@@ -249,6 +256,8 @@ proc handle_request(s: var LspServer, msg: LspMessage) =
       rename(s, msg)
    of "textDocument/documentHighlight":
       document_highlight(s, msg)
+   of "textDocument/hover":
+      hover(s, msg)
    else:
       let str = format("Unsupported method '$1'.", msg.m)
       send(s, new_lsp_response(msg.id, RPC_INVALID_REQUEST, str, nil))

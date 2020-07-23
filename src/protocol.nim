@@ -134,6 +134,18 @@ type
       range*: LspRange
       kind*: LspDocumentHighlightKind
 
+   LspMarkupKind* = enum
+      LspMkPlainText
+      LspMkMarkdown
+
+   LspMarkupContent* = object
+      kind*: LspMarkupKind
+      value*: string
+
+   LspHover* = object
+      contents*: LspMarkupContent
+      range*: LspRange
+
 
 const
    INDENT = 2
@@ -207,6 +219,13 @@ proc new_lsp_document_highlight*(start, stop: LspPosition, kind: LspDocumentHigh
    result.kind = kind
 
 
+proc new_lsp_hover*(line, col, len: int, kind: LspMarkupKind, contents: string): LspHover =
+   let start = new_lsp_position(line, col)
+   let stop = new_lsp_position(line, col + len)
+   result.range = LspRange(start: start, stop: stop)
+   result.contents = LspMarkupContent(kind: kind, value: contents)
+
+
 proc `%`*(p: LspPosition): JsonNode =
    result = %*{
       "line": p.line,
@@ -271,6 +290,20 @@ proc `%`*(o: LspDocumentHighlight): JsonNode =
    result = %*{
       "range": o.range,
       "kind": int(o.kind)
+   }
+
+
+proc `%`*(o: LspMarkupContent): JsonNode =
+   result = %*{
+      "kind": if o.kind == LspMkPlainText: "plaintext" else: "markdown",
+      "value": o.value
+   }
+
+
+proc `%`*(o: LspHover): JsonNode =
+   result = %*{
+      "range": o.range,
+      "contents": o.contents
    }
 
 

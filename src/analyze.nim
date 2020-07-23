@@ -563,3 +563,42 @@ proc document_highlight*(unit: SourceUnit, line, col: int): seq[LspDocumentHighl
       if loc.uri != uri:
          continue
       add(result, new_lsp_document_highlight(loc.range.start, loc.range.stop, LspHkText))
+
+
+proc hover*(unit: SourceUnit, line, col: int): LspHover =
+   ## Hover over the identifier at (``line``, ``col``), returning a markdown
+   ## string with the identifier's declaration and any attached docstring, if
+   ## that's available. If the operation fails an AnalyzeError is raised.
+   let g = unit.graph
+
+   # Before we can assume that the input location is pointing to an identifier,
+   # we have to deal with the possibility that it's pointing to a macro.
+   let loc = new_location(1, line, col)
+   for map in g.locations.macro_maps:
+      # +1 is to compensate for the expansion location starting at the backtick.
+      if in_bounds(loc, map.expansion_loc, len(map.name) + 1):
+         # FIXME: Implement
+         raise new_analyze_error("Hover is not implemented for macro expansions.")
+
+   var context: AstContext
+   init(context, 32)
+   let identifier = find_identifier_physical(g.root_node, g.locations, loc, context)
+   if is_nil(identifier):
+      raise new_analyze_error("Failed to find an identifer at the target location.")
+
+   let highlight_location = if identifier.loc.file < 0:
+      to_physical(unit.graph.locations, identifier.loc)
+   else:
+      identifier.loc
+
+   if is_external_identifier(context):
+      # FIXME: Implement
+      raise new_analyze_error("Hover is not implemented for external identifiers.")
+   else:
+      let (declaration, _) = find_declaration(context, identifier.identifier, false)
+      if is_nil(declaration):
+         raise new_analyze_error("Failed to find the declaration of identifier '$1'.", identifier.identifier.s)
+
+      let declaration_markdown = format("```verilog\n$1\n```", $declaration)
+      result = new_lsp_hover(int(highlight_location.line - 1), int(highlight_location.col),
+                             len(identifier.identifier.s), LspMkMarkdown, $declaration_markdown)
