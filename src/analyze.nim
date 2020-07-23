@@ -567,8 +567,8 @@ proc document_highlight*(unit: SourceUnit, line, col: int): seq[LspDocumentHighl
 
 proc hover*(unit: SourceUnit, line, col: int): LspHover =
    ## Hover over the identifier at (``line``, ``col``), returning a markdown
-   ## string with the identifier's declaration and any attached docstring, if
-   ## that's available. If the operation fails an AnalyzeError is raised.
+   ## string with the identifier's declaration and any attached docstring. If the
+   ## operation fails an AnalyzeError is raised.
    let g = unit.graph
 
    # Before we can assume that the input location is pointing to an identifier,
@@ -599,6 +599,10 @@ proc hover*(unit: SourceUnit, line, col: int): LspHover =
       if is_nil(declaration):
          raise new_analyze_error("Failed to find the declaration of identifier '$1'.", identifier.identifier.s)
 
-      let declaration_markdown = format("```verilog\n$1\n```", $declaration)
+      var markdown = ""
+      let comment = find_first(declaration, NkComment)
+      if not is_nil(comment):
+         add(markdown, comment.s & "\n\n")
+      add(markdown, format("```verilog\n$1\n```", $declaration))
       result = new_lsp_hover(int(highlight_location.line - 1), int(highlight_location.col),
-                             len(identifier.identifier.s), LspMkMarkdown, $declaration_markdown)
+                             len(identifier.identifier.s), LspMkMarkdown, markdown)

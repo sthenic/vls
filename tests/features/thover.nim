@@ -116,7 +116,7 @@ run_test("textDocument/hover: identifier in macro",
          "character": 44
       }
    }),
-   new_lsp_response(191, 15, %*{
+   new_lsp_response(237, 15, %*{
       "range": {
          "start": {"line": 37, "character": 38},
          "end" : {"line": 37, "character": 51}
@@ -124,6 +124,8 @@ run_test("textDocument/hover: identifier in macro",
       "contents": {
          "kind": "markdown",
          "value": """
+This is the docstring for `a_common_wire`.
+
 ```verilog
 wire a_common_wire
 ```"""
