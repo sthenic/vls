@@ -183,7 +183,14 @@ proc find_module_declaration(unit: SourceUnit, identifier: PIdentifier): LspLoca
    raise new_analyze_error("Failed to find the declaration of module '$1'.", identifier.s)
 
 
-proc find_module_port_declaration(unit: SourceUnit, module_id, port_id: PIdentifier): LspLocation =
+proc find_external_module_port_declaration(unit: SourceUnit, module_id, port_id: PIdentifier,
+                                           select_identifier: bool = false): tuple[n: PNode, filename: string] =
+   template return_when_found(filename: string, declaration, identifier: PNode) =
+      if select_identifier:
+         return (identifier, filename)
+      else:
+         return (declaration, filename)
+
    for filename, module in walk_module_declarations(unit.configuration.include_paths):
       let id = find_first(module, NkModuleIdentifier)
       if is_nil(id) or id.identifier.s != module_id.s:
@@ -195,36 +202,28 @@ proc find_module_port_declaration(unit: SourceUnit, module_id, port_id: PIdentif
          of NkPortDecl:
             let id = find_first(port, NkPortIdentifier)
             if not is_nil(id) and id.identifier.s == port_id.s:
-               return new_lsp_location(construct_uri(filename),
-                                       int(id.loc.line - 1),
-                                       int(id.loc.col),
-                                       len(id.identifier.s))
+               return_when_found(filename, port, id)
          of NkPort:
             # If we find a port identifier as the first node, that's the
             # name that this port is known by from the outside. Otherwise,
             # we're looking for the first identifier in a port reference.
             let id = find_first(port, NkPortIdentifier)
             if not is_nil(id) and id.identifier.s == port_id.s:
-               return new_lsp_location(construct_uri(filename),
-                                       int(id.loc.line - 1),
-                                       int(id.loc.col),
-                                       len(id.identifier.s))
+               return_when_found(filename, port, id)
             else:
                let port_ref = find_first(port, NkPortReference)
                if not is_nil(port_ref):
                   let id = find_first(port_ref, NkPortIdentifier)
                   if not is_nil(id) and id.identifier.s == port_id.s:
-                     return new_lsp_location(construct_uri(filename),
-                                             int(id.loc.line - 1),
-                                             int(id.loc.col),
-                                             len(id.identifier.s))
+                     return_when_found(filename, port, id)
          else:
             discard
 
    raise new_analyze_error("Failed to find the declaration of port '$1'.", port_id.s)
 
 
-proc find_module_parameter_port_declaration(unit: SourceUnit, module_id, parameter_id: PIdentifier): LspLocation =
+proc find_external_module_parameter_port_declaration(unit: SourceUnit, module_id, parameter_id: PIdentifier,
+                                                     select_identifier: bool = false): tuple[n: PNode, filename: string] =
    for filename, module in walk_module_declarations(unit.configuration.include_paths):
       let id = find_first(module, NkModuleIdentifier)
       if is_nil(id) or id.identifier.s != module_id.s:
@@ -235,8 +234,10 @@ proc find_module_parameter_port_declaration(unit: SourceUnit, module_id, paramet
          if not is_nil(assignment):
             let id = find_first(assignment, NkParameterIdentifier)
             if not is_nil(id) and id.identifier.s == parameter_id.s:
-               return new_lsp_location(construct_uri(filename), int(id.loc.line - 1),
-                                       int(id.loc.col), len(id.identifier.s))
+               if select_identifier:
+                  return (id, filename)
+               else:
+                  return (parameter, filename)
 
    raise new_analyze_error("Failed to find the declaration of parameter port '$1'.", parameter_id.s)
 
@@ -293,14 +294,24 @@ proc find_external_declaration(unit: SourceUnit, context: AstContext, identifier
       # the lookup.
       let module = find_first(context[^3].n, IdentifierTypes)
       if not is_nil(module):
-         result = find_module_port_declaration(unit, module.identifier, identifier)
+         let (id, filename) = find_external_module_port_declaration(
+            unit, module.identifier, identifier, true
+         )
+         result = new_lsp_location(
+            construct_uri(filename), int(id.loc.line - 1), int(id.loc.col), len(id.identifier.s)
+         )
    of NkAssignment:
       # When this proc is called, it's already been established that an
-      # assignment node implies that we should look for an external port
-      # declaration. But before we can do that, we need the module name.
+      # assignment node implies that we should look for an external parameter
+      # port declaration. But before we can do that, we need the module name.
       let module = find_first(context[^3].n, IdentifierTypes)
       if not is_nil(module):
-         result = find_module_parameter_port_declaration(unit, module.identifier, identifier)
+         let (id, filename) = find_external_module_parameter_port_declaration(
+            unit, module.identifier, identifier, true
+         )
+         result = new_lsp_location(
+            construct_uri(filename), int(id.loc.line - 1), int(id.loc.col), len(id.identifier.s)
+         )
    else:
       raise new_analyze_error("Invalid context for an external declaration lookup.")
 
@@ -565,6 +576,60 @@ proc document_highlight*(unit: SourceUnit, line, col: int): seq[LspDocumentHighl
       add(result, new_lsp_document_highlight(loc.range.start, loc.range.stop, LspHkText))
 
 
+proc construct_hover(n: PNode, highlight_location: Location, highlight_length: int): LspHover =
+   ## Construct the LSP hover information given the node ``n`` and the highlight
+   ## range specified by ``highlight_location`` and ``highlight_length``.
+   var markdown = ""
+   let comment = find_first(n, NkComment)
+   if not is_nil(comment):
+      # TODO: We potentially need to figure out if the whitespace following a
+      #       newline needs some manipulation to render the markdown
+      #       properly. In the worst case, the comment may need to inform us
+      #       of the comment's indentation so we can subtrace accordingly.
+      add(markdown, comment.s & "\n\n")
+   add(markdown, format("```verilog\n$1\n```", $n))
+   log.debug("Markdown is '$1'", markdown)
+   result = new_lsp_hover(int(highlight_location.line - 1),
+                          int(highlight_location.col),
+                          highlight_length,
+                          LspMkMarkdown,
+                          markdown)
+
+
+proc find_external_hover(unit: SourceUnit, context: AstContext, identifier: PIdentifier,
+                         highlight_location: Location): LspHover =
+   case context[^1].n.kind
+   of NkModuleInstantiation:
+      # FIXME: Implement
+      raise new_analyze_error("Not implemented.")
+   of NkPortConnection:
+      let module = find_first(context[^3].n, IdentifierTypes)
+      if not is_nil(module):
+         let (declaration, _) = find_external_module_port_declaration(
+            unit, module.identifier, identifier, false
+         )
+         log.debug("External hover for $1", pretty(declaration))
+         log.debug("Stringify: '$1'", $declaration)
+         result = construct_hover(declaration, highlight_location, len(identifier.s))
+   of NkAssignment:
+      let module = find_first(context[^3].n, IdentifierTypes)
+      if not is_nil(module):
+         let (declaration, _) = find_external_module_parameter_port_declaration(
+            unit, module.identifier, identifier, false
+         )
+         result = construct_hover(declaration, highlight_location, len(identifier.s))
+   else:
+      raise new_analyze_error("Invalid context for an external declaration lookup.")
+
+
+proc find_internal_hover(unit: SourceUnit, context: AstContext, identifier: PIdentifier,
+                         highlight_location: Location): LspHover =
+   let (declaration, _) = find_declaration(context, identifier, false)
+   if is_nil(declaration):
+      raise new_analyze_error("Failed to find the declaration of identifier '$1'.", identifier.s)
+   result = construct_hover(declaration, highlight_location, len(identifier.s))
+
+
 proc hover*(unit: SourceUnit, line, col: int): LspHover =
    ## Hover over the identifier at (``line``, ``col``), returning a markdown
    ## string with the identifier's declaration and any attached docstring. If the
@@ -598,21 +663,6 @@ proc hover*(unit: SourceUnit, line, col: int): LspHover =
       identifier.loc
 
    if is_external_identifier(context):
-      # FIXME: Implement
-      raise new_analyze_error("Hover is not implemented for external identifiers.")
+      result = find_external_hover(unit, context, identifier.identifier, highlight_location)
    else:
-      let (declaration, _) = find_declaration(context, identifier.identifier, false)
-      if is_nil(declaration):
-         raise new_analyze_error("Failed to find the declaration of identifier '$1'.", identifier.identifier.s)
-
-      var markdown = ""
-      let comment = find_first(declaration, NkComment)
-      if not is_nil(comment):
-         # TODO: We potentially need to figure out if the whitespace following a
-         #       newline needs some manipulation to render the markdown
-         #       properly. In the worst case, the comment may need to inform us
-         #       of the comment's indentation so we can subtrace accordingly.
-         add(markdown, comment.s & "\n\n")
-      add(markdown, format("```verilog\n$1\n```", $declaration))
-      result = new_lsp_hover(int(highlight_location.line - 1), int(highlight_location.col),
-                             len(identifier.identifier.s), LspMkMarkdown, markdown)
+      result = find_internal_hover(unit, context, identifier.identifier, highlight_location)

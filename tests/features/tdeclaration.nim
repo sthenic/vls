@@ -879,7 +879,7 @@ run_test("textDocument/declaration: module port lookup, explicit port reference"
          "uri": "file://" & expand_filename(src4_path),
       },
       "position": {
-         "line": 15,
+         "line": 16,
          "character": 10
       }
    }),
@@ -898,7 +898,7 @@ run_test("textDocument/declaration: module port lookup, implicit port reference 
          "uri": "file://" & expand_filename(src4_path),
       },
       "position": {
-         "line": 16,
+         "line": 17,
          "character": 14
       }
    }),
@@ -917,7 +917,7 @@ run_test("textDocument/declaration: module port lookup, implicit port reference 
          "uri": "file://" & expand_filename(src4_path),
       },
       "position": {
-         "line": 17,
+         "line": 18,
          "character": 9
       }
    }),
@@ -936,7 +936,7 @@ run_test("textDocument/declaration: module parameter port lookup (1)",
          "uri": "file://" & expand_filename(src4_path),
       },
       "position": {
-         "line": 13,
+         "line": 14,
          "character": 10
       }
    }),
@@ -955,7 +955,7 @@ run_test("textDocument/declaration: module parameter port lookup (2)",
          "uri": "file://" & expand_filename(src4_path),
       },
       "position": {
-         "line": 13,
+         "line": 14,
          "character": 21
       }
    }),
@@ -974,15 +974,15 @@ run_test("textDocument/declaration: module parameter value",
          "uri": "file://" & expand_filename(src4_path),
       },
       "position": {
-         "line": 13,
+         "line": 14,
          "character": 26
       }
    }),
    new_lsp_response(132 + src5_path_len, 15, %*[{
       "uri": "file://" & expand_filename(src4_path),
       "range": {
-         "start": {"line": 10, "character": 25},
-         "end" : {"line": 10, "character": 28}
+         "start": {"line": 11, "character": 25},
+         "end" : {"line": 11, "character": 28}
       }
    }])
 )

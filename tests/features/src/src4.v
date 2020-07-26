@@ -1,5 +1,6 @@
 (* some_attr = "true" *) module module4 (
     (* another_attr = "false" *) input wire clk_i,
+    /* The 1-bit data output port. */
     output wire data_o
 );
 

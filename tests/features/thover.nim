@@ -182,6 +182,152 @@ run_test("textDocument/hover: macro at expansion location",
 )
 
 
+run_test("textDocument/hover: port of external module (1)",
+   new_lsp_request(15, "textDocument/hover", %*{
+      "textDocument": {
+         "uri": "file://" & expand_filename(src3_path),
+      },
+      "position": {
+         "line": 25,
+         "character": 12
+      }
+   }),
+   new_lsp_response(221, 15, %*{
+      "range": {
+         "start": {"line": 25, "character": 9},
+         "end" : {"line": 25, "character": 15}
+      },
+      "contents": {
+         "kind": "markdown",
+         "value": """
+The 1-bit data output port.
+
+```verilog
+output wire data_o
+```"""
+      }
+   })
+)
+
+
+run_test("textDocument/hover: port of external module (2)",
+   new_lsp_request(15, "textDocument/hover", %*{
+      "textDocument": {
+         "uri": "file://" & expand_filename(src3_path),
+      },
+      "position": {
+         "line": 24,
+         "character": 34
+      }
+   }),
+   new_lsp_response(220, 15, %*{
+      "range": {
+         "start": {"line": 24, "character": 34},
+         "end" : {"line": 24, "character": 39}
+      },
+      "contents": {
+         "kind": "markdown",
+         "value": """
+```verilog
+(* another_attr = "false" *) input wire clk_i
+```"""
+      }
+   })
+)
+
+
+# Open the file "./src/src4.v", expecting no parsing errors.
+const src4_path = "./src/src4.v"
+const src4_text = static_read(src4_path)
+send(ifs, new_lsp_notification("textDocument/didOpen", %*{
+   "textDocument": {
+      "uri": "file://" & expand_filename(src4_path),
+      "languageId": "verilog",
+      "version": 0,
+      "text": src4_text
+   }
+}))
+assert len(recv(ofs).parameters["diagnostics"]) == 0
+
+
+run_test("textDocument/hover: parameter port of external module",
+   new_lsp_request(15, "textDocument/hover", %*{
+      "textDocument": {
+         "uri": "file://" & expand_filename(src4_path),
+      },
+      "position": {
+         "line": 14,
+         "character": 10
+      }
+   }),
+   new_lsp_response(189, 15, %*{
+      "range": {
+         "start": {"line": 14, "character": 9},
+         "end" : {"line": 14, "character": 12}
+      },
+      "contents": {
+         "kind": "markdown",
+         "value": """
+```verilog
+parameter FOO = 0
+```"""
+      }
+   })
+)
+
+
+run_test("textDocument/hover: port of external module, list of ports (1)",
+   new_lsp_request(15, "textDocument/hover", %*{
+      "textDocument": {
+         "uri": "file://" & expand_filename(src4_path),
+      },
+      "position": {
+         "line": 16,
+         "character": 9
+      }
+   }),
+   new_lsp_response(189, 15, %*{
+      "range": {
+         "start": {"line": 16, "character": 9},
+         "end" : {"line": 16, "character": 14}
+      },
+      "contents": {
+         "kind": "markdown",
+         "value": """
+```verilog
+.clk_i(clk_local)
+```"""
+      }
+   })
+)
+
+
+run_test("textDocument/hover: port of external module, list of ports (2)",
+   new_lsp_request(15, "textDocument/hover", %*{
+      "textDocument": {
+         "uri": "file://" & expand_filename(src4_path),
+      },
+      "position": {
+         "line": 17,
+         "character": 9
+      }
+   }),
+   new_lsp_response(178, 15, %*{
+      "range": {
+         "start": {"line": 17, "character": 9},
+         "end" : {"line": 17, "character": 15}
+      },
+      "contents": {
+         "kind": "markdown",
+         "value": """
+```verilog
+data_o
+```"""
+      }
+   })
+)
+
+
 # Shut down the server.
 shutdown(ifs, ofs)
 

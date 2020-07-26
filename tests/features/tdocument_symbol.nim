@@ -105,11 +105,11 @@ run_test("textDocument/documentSymbol",
          "uri": "file://" & expand_filename(src4_path),
          "range": {
             "start": {
-               "line": 2,
+               "line": 3,
                "character": 16
             },
             "end": {
-               "line": 2,
+               "line": 3,
                "character": 22
             }
          }
@@ -122,11 +122,11 @@ run_test("textDocument/documentSymbol",
          "uri": "file://" & expand_filename(src4_path),
          "range": {
             "start": {
-               "line": 5,
+               "line": 6,
                "character": 8
             },
             "end": {
-               "line": 5,
+               "line": 6,
                "character": 11
             }
          }
@@ -139,11 +139,11 @@ run_test("textDocument/documentSymbol",
          "uri": "file://" & expand_filename(src4_path),
          "range": {
             "start": {
-               "line": 10,
+               "line": 11,
                "character": 15
             },
             "end": {
-               "line": 10,
+               "line": 11,
                "character": 18
             }
          }
@@ -156,11 +156,11 @@ run_test("textDocument/documentSymbol",
          "uri": "file://" & expand_filename(src4_path),
          "range": {
             "start": {
-               "line": 10,
+               "line": 11,
                "character": 25
             },
             "end": {
-               "line": 10,
+               "line": 11,
                "character": 28
             }
          }
@@ -173,11 +173,11 @@ run_test("textDocument/documentSymbol",
          "uri": "file://" & expand_filename(src4_path),
          "range": {
             "start": {
-               "line": 11,
+               "line": 12,
                "character": 15
             },
             "end": {
-               "line": 11,
+               "line": 12,
                "character": 18
             }
          }
@@ -190,11 +190,11 @@ run_test("textDocument/documentSymbol",
          "uri": "file://" & expand_filename(src4_path),
          "range": {
             "start": {
-               "line": 12,
+               "line": 13,
                "character": 4
             },
             "end": {
-               "line": 12,
+               "line": 13,
                "character": 11
             }
          }
