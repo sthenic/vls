@@ -328,6 +328,76 @@ data_o
 )
 
 
+# Open the file "./src/src2.v", expecting no parsing errors.
+const src2_path = "./src/src2.v"
+const src2_text = static_read(src2_path)
+send(ifs, new_lsp_notification("textDocument/didOpen", %*{
+   "textDocument": {
+      "uri": "file://" & expand_filename(src2_path),
+      "languageId": "verilog",
+      "version": 0,
+      "text": src2_text
+   }
+}))
+assert len(recv(ofs).parameters["diagnostics"]) == 0
+
+
+run_test("textDocument/hover: function",
+   new_lsp_request(15, "textDocument/hover", %*{
+      "textDocument": {
+         "uri": "file://" & expand_filename(src2_path),
+      },
+      "position": {
+         "line": 50,
+         "character": 22
+      }
+   }),
+   new_lsp_response(234, 15, %*{
+      "range": {
+         "start": {"line": 50, "character": 22},
+         "end" : {"line": 50, "character": 29}
+      },
+      "contents": {
+         "kind": "markdown",
+         "value": """
+Docstring to function `add_one`.
+
+```verilog
+function add_one(input a)
+```"""
+      }
+   })
+)
+
+
+run_test("textDocument/hover: task`",
+   new_lsp_request(15, "textDocument/hover", %*{
+      "textDocument": {
+         "uri": "file://" & expand_filename(src2_path),
+      },
+      "position": {
+         "line": 44,
+         "character": 20
+      }
+   }),
+   new_lsp_response(225, 15, %*{
+      "range": {
+         "start": {"line": 44, "character": 8},
+         "end" : {"line": 44, "character": 21}
+      },
+      "contents": {
+         "kind": "markdown",
+         "value": """
+Docstring to `an_empty_task`.
+
+```verilog
+task an_empty_task()
+```"""
+      }
+   })
+)
+
+
 # Shut down the server.
 shutdown(ifs, ofs)
 

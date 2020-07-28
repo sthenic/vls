@@ -32,11 +32,11 @@ module mymodule #(
     end
 
     assign my_wire = reg_default;
-
+    /* Docstring to `an_empty_task`. */
     task an_empty_task;
         reg_no_default <= 1'b0;
     endtask
-
+    /* Docstring to function `add_one`. */
     function add_one(input a);
         add_one = a + 1;
     endfunction
