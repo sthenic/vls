@@ -378,6 +378,27 @@ run_test("textDocument/declaration: module",
    }])
 )
 
+
+run_test("textDocument/declaration: function parameter",
+   new_lsp_request(15, "textDocument/declaration", %*{
+      "textDocument": {
+         "uri": "file://" & expand_filename(src2_path),
+      },
+      "position": {
+         "line": 40,
+         "character": 18
+      }
+   }),
+   new_lsp_response(132 + src2_path_len, 15, %*[{
+      "uri": "file://" & expand_filename(src2_path),
+      "range": {
+         "start": {"line": 39, "character": 27},
+         "end" : {"line": 39, "character": 28}
+      }
+   }])
+)
+
+
 # Open the file "./src/src3.v", expecting no parsing errors.
 const src3_path = "./src/src3.v"
 const src3_header_path = "./src/src3.vh"
