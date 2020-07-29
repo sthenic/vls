@@ -370,7 +370,7 @@ function add_one(input a)
 )
 
 
-run_test("textDocument/hover: task`",
+run_test("textDocument/hover: task",
    new_lsp_request(15, "textDocument/hover", %*{
       "textDocument": {
          "uri": "file://" & expand_filename(src2_path),

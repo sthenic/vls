@@ -146,6 +146,20 @@ type
       contents*: LspMarkupContent
       range*: LspRange
 
+   LspParameterInformation* = object
+      label*: string
+      documentation: LspMarkupContent
+
+   LspSignatureInformation* = object
+      label*: string
+      documentation*: LspMarkupContent
+      parameters*: seq[LspParameterInformation]
+
+   LspSignatureHelp* = object
+      signatures*: seq[LspSignatureInformation]
+      active_signature*: int
+      active_parameter*: int
+
 
 const
    INDENT = 2
@@ -226,6 +240,24 @@ proc new_lsp_hover*(line, col, len: int, kind: LspMarkupKind, contents: string):
    result.contents = LspMarkupContent(kind: kind, value: contents)
 
 
+proc new_lsp_parameter_information*(label: string, kind: LspMarkupKind, value: string): LspParameterInformation =
+   result.label = label
+   result.documentation = LspMarkupContent(kind: kind, value: value)
+
+
+proc new_lsp_signature_information*(label: string, kind: LspMarkupKind, value: string): LspSignatureInformation =
+   result.label = label
+   result.documentation = LspMarkupContent(kind: kind, value: value)
+   set_len(result.parameters, 0)
+
+
+proc new_lsp_signature_help*(signatures: seq[LspSignatureInformation],
+                             active_signature, active_parameter: int): LspSignatureHelp =
+   result.signatures = signatures
+   result.active_signature = active_signature
+   result.active_parameter = active_parameter
+
+
 proc `%`*(p: LspPosition): JsonNode =
    result = %*{
       "line": p.line,
@@ -304,6 +336,29 @@ proc `%`*(o: LspHover): JsonNode =
    result = %*{
       "range": o.range,
       "contents": o.contents
+   }
+
+
+proc `%`*(o: LspParameterInformation): JsonNode =
+   result = %*{
+      "label": o.label,
+      "documentation": o.documentation
+   }
+
+
+proc `%`*(o: LspSignatureInformation): JsonNode =
+   result = %*{
+      "label": o.label,
+      "documentation": o.documentation,
+      "parameters": o.parameters
+   }
+
+
+proc `%`*(o: LspSignatureHelp): JsonNode =
+   result = %*{
+      "signatures": o.signatures,
+      "activeSignature": o.active_signature,
+      "activeParameter": o.active_parameter
    }
 
 

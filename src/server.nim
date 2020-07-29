@@ -140,7 +140,8 @@ proc initialize(s: var LspServer, msg: LspMessage) =
          "documentSymbolProvider": true,
          "renameProvider": true,
          "documentHighlightProvider": true,
-         "hoverProvider": true
+         "hoverProvider": true,
+         "signatureHelpProvider": true
       }
       send(s, new_lsp_response(msg.id, result))
       s.is_initialized = true
@@ -217,6 +218,12 @@ proc document_highlight(s: LspServer, msg: LspMessage) =
       send(s, new_lsp_response(msg.id, %highlights))
 
 
+proc signature_help(s: LspServer, msg: LspMessage) =
+   analyze_text_document_position(s, msg, uri, line, col):
+      let signature_help = signature_help(s.source_units[uri], line + 1, col)
+      send(s, new_lsp_response(msg.id, %signature_help))
+
+
 proc hover(s: LspServer, msg: LspMessage) =
    analyze_text_document_position(s, msg, uri, line, col):
       let hover = hover(s.source_units[uri], line + 1, col)
@@ -258,6 +265,8 @@ proc handle_request(s: var LspServer, msg: LspMessage) =
       document_highlight(s, msg)
    of "textDocument/hover":
       hover(s, msg)
+   of "textDocument/signatureHelp":
+      signature_help(s, msg)
    else:
       let str = format("Unsupported method '$1'.", msg.m)
       send(s, new_lsp_response(msg.id, RPC_INVALID_REQUEST, str, nil))

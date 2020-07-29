@@ -633,7 +633,7 @@ proc find_internal_hover(unit: SourceUnit, context: AstContext, identifier: PIde
 proc hover*(unit: SourceUnit, line, col: int): LspHover =
    ## Hover over the identifier at (``line``, ``col``), returning a markdown
    ## string with the identifier's declaration and any attached docstring. If the
-   ## operation fails an AnalyzeError is raised.
+   ## operation fails, an AnalyzeError is raised.
    let g = unit.graph
 
    # Before we can assume that the input location is pointing to an identifier,
@@ -666,3 +666,147 @@ proc hover*(unit: SourceUnit, line, col: int): LspHover =
       result = find_external_hover(unit, context, identifier.identifier, highlight_location)
    else:
       result = find_internal_hover(unit, context, identifier.identifier, highlight_location)
+
+
+proc parse_function_like_call(lexer: var Lexer, tok, next_tok: var Token, loc: Location): tuple[token: Token, arg: int] =
+   var paren_count = 0
+   if tok.kind != TkSymbol or next_tok.kind != TkLparen:
+      result.token.kind = TkInvalid
+      return
+   result.token = tok
+   result.arg = 0
+
+   if in_bounds(loc, tok.loc, len(tok.identifier.s) + 1):
+      result.arg = -1
+      return
+
+   while true:
+      tok = next_tok
+      if tok.kind != TkEndOfFile:
+         get_token(lexer, next_tok)
+
+      # Check if we're at or if we've gone past the target location.
+      if tok.loc >= loc:
+         break
+
+      case tok.kind
+      of TkEndOfFile:
+         result.token.kind = TkInvalid
+         break
+      of TkComma:
+         inc(result.arg)
+      of TkSymbol:
+         if next_tok.kind == TkLparen:
+            let recursive_result = parse_function_like_call(lexer, tok, next_tok, loc)
+            if recursive_result.token.kind != TkInvalid:
+               return recursive_result
+      of TkLparen:
+         inc(paren_count)
+      of TkRparen:
+         if paren_count > 0:
+            dec(paren_count)
+         if paren_count == 0:
+            result.token.kind = TkInvalid
+            break
+      else:
+         discard
+
+
+proc find_function_like_call(unit: SourceUnit, loc: Location): tuple[token: Token, arg: int] =
+   let ss = new_string_stream(unit.text)
+   if is_nil(ss):
+      raise new_analyze_error("Failed to create a stream for file '$1'.", unit.filename)
+
+   var lexer: Lexer
+   let cache = new_ident_cache()
+   open_lexer(lexer, cache, ss, unit.filename, 1)
+   var tok: Token
+   var next_tok: Token
+   init(tok)
+   init(next_tok)
+   get_token(lexer, tok)
+   if tok.kind != TkEndOfFile:
+      get_token(lexer, next_tok)
+   while tok.kind != TkEndOfFile:
+      if tok.loc > loc:
+         result.token.kind = TkInvalid
+         break
+      if tok.kind == TkSymbol and next_tok.kind == TkLparen:
+         result = parse_function_like_call(lexer, tok, next_tok, loc)
+         if result.token.kind != TkInvalid:
+            break
+      tok = next_tok
+      get_token(lexer, next_tok)
+   close_lexer(lexer)
+   close(ss)
+
+
+proc construct_parameter_information(n: PNode): LspParameterInformation =
+   result.label = $n
+
+
+proc construct_signature_information(n: PNode): LspSignatureInformation =
+   ## Construct signature information for the task or function declaration ``n``.
+   if n.kind notin {NkTaskDecl, NkFunctionDecl}:
+      raise new_analyze_error("Unsupported node kind for signature information construction.")
+
+   let comment = find_first(n, NkComment)
+   if not is_nil(comment):
+      result.documentation = LspMarkupContent(kind: LspMkMarkdown, value: comment.s)
+   result.label = $n
+
+   for port in walk_sons(n, NkTaskFunctionPortDecl):
+      add(result.parameters, construct_parameter_information(port))
+
+
+proc find_internal_signature_help(unit: SourceUnit, context: AstContext, identifier: PIdentifier, arg: int): LspSignatureHelp =
+   log.debug("Looking up internal signature help for '$1'.", identifier.s)
+   if context[^1].n.kind notin {NkTaskEnable, NkConstantFunctionCall}:
+      raise new_analyze_error("Signature help not requested for a task/function call.")
+
+   let name = find_first(context[^1].n, NkIdentifier)
+   if is_nil(name):
+      raise new_analyze_error("Failed to find the name of the function.")
+   let (declaration, _) = find_declaration(context, name.identifier, false)
+   if is_nil(declaration):
+      raise new_analyze_error("Failed to find the declaration of identifier '$1'.", name.identifier.s)
+
+   result.signatures = @[construct_signature_information(declaration)]
+   result.active_signature = 0
+   result.active_parameter = arg
+
+
+proc signature_help*(unit: SourceUnit, line, col: int): LspSignatureHelp =
+   # Get signature help for the identifier at (``line``, ``col``). If the
+   # operation fails, an AnalyzeError is raised.
+   let g = unit.graph
+
+   # FIXME: Implement for macros
+   let loc = new_location(1, line, col)
+   for map in g.locations.macro_maps:
+      # +1 is to compensate for the expansion location starting at the backtick.
+      if in_bounds(loc, map.expansion_loc, len(map.name) + 1):
+         raise new_analyze_error("Signature help not implemented for macros.")
+
+   # We have to use a lexing based approach since we want to offer signature
+   # help (at least the lookup part) while typing. That means that the AST will
+   # likely be broken most of the time.
+   let (tf_token, tf_arg) = find_function_like_call(unit, loc)
+   if tf_token.kind == TkInvalid:
+      raise new_analyze_error("Failed to find a function-like call at the target location.")
+
+   # Now that we've made sure that the location points to somewhere within a
+   # function-like call, we need to lookup the declaration. For that, we need
+   # the context so we use the token we got from the lexing to convert it into
+   # the corresponding identifier node in the AST.
+   var context: AstContext
+   init(context, 32)
+   let identifier = find_identifier_physical(g.root_node, g.locations, tf_token.loc, context)
+   if is_nil(identifier):
+      raise new_analyze_error("Failed to find an identifer at the target location.")
+
+   if is_external_identifier(context):
+      # FIXME: Implement
+      raise new_analyze_error("Not implemented for external")
+   else:
+      result = find_internal_signature_help(unit, context, identifier.identifier, tf_arg)

@@ -11,3 +11,4 @@ tests/features/tdocument_symbol
 tests/features/trename
 tests/features/tdocument_highlight
 tests/features/thover
+tests/features/tsignature_help
