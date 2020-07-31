@@ -202,7 +202,7 @@ run_test_unordered_compare("textDocument/completion: include directive, browse p
          "character": 15
       }
    }),
-   new_lsp_response(169, 0, %*[
+   new_lsp_response(188, 0, %*[
       {"label": "src0.v"},
       {"label": "src1.v"},
       {"label": "src2.v"},
@@ -210,6 +210,7 @@ run_test_unordered_compare("textDocument/completion: include directive, browse p
       {"label": "src3.vh"},
       {"label": "src4.v"},
       {"label": "src5.v"},
+      {"label": "src6.v"},
    ])
 )
 
@@ -224,7 +225,7 @@ run_test_unordered_compare("textDocument/completion: include directive, browse p
          "character": 14
       }
    }),
-   new_lsp_response(190, 0, %*[
+   new_lsp_response(209, 0, %*[
       {"label": "include/"},
       {"label": "src0.v"},
       {"label": "src1.v"},
@@ -233,6 +234,7 @@ run_test_unordered_compare("textDocument/completion: include directive, browse p
       {"label": "src3.vh"},
       {"label": "src4.v"},
       {"label": "src5.v"},
+      {"label": "src6.v"},
    ])
 )
 

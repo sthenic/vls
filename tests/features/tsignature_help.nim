@@ -63,7 +63,20 @@ run_test("textDocument/signatureHelp: task",
          "character": 17
       }
    }),
-   new_lsp_response(225, 15, new_jnull())
+   new_lsp_response(217, 15, %*{
+      "signatures": [
+         {
+            "label": "task an_empty_task()",
+            "documentation": {
+               "kind": "markdown",
+               "value": "Docstring to `an_empty_task`."
+            },
+            "parameters": []
+         }
+      ],
+      "activeSignature": 0,
+      "activeParameter": -1
+   })
 )
 
 
@@ -77,7 +90,25 @@ run_test("textDocument/signatureHelp: function name",
          "character": 27
       }
    }),
-   new_lsp_response(225, 15, new_jnull())
+   new_lsp_response(292, 15, %*{
+      "signatures": [
+         {
+            "label": "function add_one(input a)",
+            "documentation": {
+               "kind": "markdown",
+               "value": "Docstring to function `add_one`."
+            },
+            "parameters": [
+               {
+                  "label": "input a",
+                  "documentation": {"kind": "plaintext", "value": ""}
+               }
+            ]
+         }
+      ],
+      "activeSignature": 0,
+      "activeParameter": -1
+   })
 )
 
 
@@ -91,8 +122,274 @@ run_test("textDocument/signatureHelp: function parameter",
          "character": 33
       }
    }),
-   new_lsp_response(225, 15, new_jnull())
+   new_lsp_response(291, 15, %*{
+      "signatures": [
+         {
+            "label": "function add_one(input a)",
+            "documentation": {
+               "kind": "markdown",
+               "value": "Docstring to function `add_one`."
+            },
+            "parameters": [
+               {
+                  "label": "input a",
+                  "documentation": {"kind": "plaintext", "value": ""}
+               }
+            ]
+         }
+      ],
+      "activeSignature": 0,
+      "activeParameter": 0
+   })
 )
+
+# Open the file "./src/src6.v", expecting some errors since a broken AST is part
+# of what we want to test.
+const src6_path = "./src/src6.v"
+const src6_text = static_read(src6_path)
+send(ifs, new_lsp_notification("textDocument/didOpen", %*{
+   "textDocument": {
+      "uri": "file://" & expand_filename(src6_path),
+      "languageId": "verilog",
+      "version": 0,
+      "text": src6_text
+   }
+}))
+discard recv(ofs)
+
+
+run_test("textDocument/signatureHelp: function w/ multiple parameters (1)",
+   new_lsp_request(15, "textDocument/signatureHelp", %*{
+      "textDocument": {
+         "uri": "file://" & expand_filename(src6_path),
+      },
+      "position": {
+         "line": 22,
+         "character": 57
+      }
+   }),
+   new_lsp_response(486, 15, %*{
+      "signatures": [
+         {
+            "label": "function compute_something(input [FOO - 1:0] parameter1, input [FOO - 1:0] parameter2)",
+            "documentation": {
+               "kind": "markdown",
+               "value": "Compute something between `parameter1` and `parameter2`."
+            },
+            "parameters": [
+               {
+                  "label": "input [FOO - 1:0] parameter1",
+                  "documentation": {"kind": "plaintext", "value": ""}
+               },
+               {
+                  "label": "input [FOO - 1:0] parameter2",
+                  "documentation": {"kind": "plaintext", "value": ""}
+               }
+            ]
+         }
+      ],
+      "activeSignature": 0,
+      "activeParameter": 0
+   })
+)
+
+
+run_test("textDocument/signatureHelp: function w/ multiple parameters (2)",
+   new_lsp_request(15, "textDocument/signatureHelp", %*{
+      "textDocument": {
+         "uri": "file://" & expand_filename(src6_path),
+      },
+      "position": {
+         "line": 22,
+         "character": 58
+      }
+   }),
+   new_lsp_response(486, 15, %*{
+      "signatures": [
+         {
+            "label": "function compute_something(input [FOO - 1:0] parameter1, input [FOO - 1:0] parameter2)",
+            "documentation": {
+               "kind": "markdown",
+               "value": "Compute something between `parameter1` and `parameter2`."
+            },
+            "parameters": [
+               {
+                  "label": "input [FOO - 1:0] parameter1",
+                  "documentation": {"kind": "plaintext", "value": ""}
+               },
+               {
+                  "label": "input [FOO - 1:0] parameter2",
+                  "documentation": {"kind": "plaintext", "value": ""}
+               }
+            ]
+         }
+      ],
+      "activeSignature": 0,
+      "activeParameter": 1
+   })
+)
+
+
+run_test("textDocument/signatureHelp: task w/ multiple parameters (1)",
+   new_lsp_request(15, "textDocument/signatureHelp", %*{
+      "textDocument": {
+         "uri": "file://" & expand_filename(src6_path),
+      },
+      "position": {
+         "line": 23,
+         "character": 16
+      }
+   }),
+   new_lsp_response(567, 15, %*{
+      "signatures": [
+         {
+            "label": "task do_work(input [FOO:0] input1, input [FOO:0] input2, output [FOO:0] result)",
+            "documentation": {
+               "kind": "markdown",
+               "value": "Do some work provided `input1` and `input2`. The output is stored in `result`."
+            },
+            "parameters": [
+               {
+                  "label": "input [FOO:0] input1",
+                  "documentation": {"kind": "plaintext", "value": ""}
+               },
+               {
+                  "label": "input [FOO:0] input2",
+                  "documentation": {"kind": "plaintext", "value": ""}
+               },
+               {
+                  "label": "output [FOO:0] result",
+                  "documentation": {"kind": "plaintext", "value": ""}
+               }
+            ]
+         }
+      ],
+      "activeSignature": 0,
+      "activeParameter": 0
+   })
+)
+
+
+run_test("textDocument/signatureHelp: task w/ multiple parameters (2)",
+   new_lsp_request(15, "textDocument/signatureHelp", %*{
+      "textDocument": {
+         "uri": "file://" & expand_filename(src6_path),
+      },
+      "position": {
+         "line": 23,
+         "character": 44
+      }
+   }),
+   new_lsp_response(567, 15, %*{
+      "signatures": [
+         {
+            "label": "task do_work(input [FOO:0] input1, input [FOO:0] input2, output [FOO:0] result)",
+            "documentation": {
+               "kind": "markdown",
+               "value": "Do some work provided `input1` and `input2`. The output is stored in `result`."
+            },
+            "parameters": [
+               {
+                  "label": "input [FOO:0] input1",
+                  "documentation": {"kind": "plaintext", "value": ""}
+               },
+               {
+                  "label": "input [FOO:0] input2",
+                  "documentation": {"kind": "plaintext", "value": ""}
+               },
+               {
+                  "label": "output [FOO:0] result",
+                  "documentation": {"kind": "plaintext", "value": ""}
+               }
+            ]
+         }
+      ],
+      "activeSignature": 0,
+      "activeParameter": 1
+   })
+)
+
+
+run_test("textDocument/signatureHelp: task w/ multiple parameters (3)",
+   new_lsp_request(15, "textDocument/signatureHelp", %*{
+      "textDocument": {
+         "uri": "file://" & expand_filename(src6_path),
+      },
+      "position": {
+         "line": 23,
+         "character": 68
+      }
+   }),
+   new_lsp_response(567, 15, %*{
+      "signatures": [
+         {
+            "label": "task do_work(input [FOO:0] input1, input [FOO:0] input2, output [FOO:0] result)",
+            "documentation": {
+               "kind": "markdown",
+               "value": "Do some work provided `input1` and `input2`. The output is stored in `result`."
+            },
+            "parameters": [
+               {
+                  "label": "input [FOO:0] input1",
+                  "documentation": {"kind": "plaintext", "value": ""}
+               },
+               {
+                  "label": "input [FOO:0] input2",
+                  "documentation": {"kind": "plaintext", "value": ""}
+               },
+               {
+                  "label": "output [FOO:0] result",
+                  "documentation": {"kind": "plaintext", "value": ""}
+               }
+            ]
+         }
+      ],
+      "activeSignature": 0,
+      "activeParameter": 2
+   })
+)
+
+
+run_test("textDocument/signatureHelp: task signature w/ broken AST",
+   new_lsp_request(15, "textDocument/signatureHelp", %*{
+      "textDocument": {
+         "uri": "file://" & expand_filename(src6_path),
+      },
+      "position": {
+         "line": 27,
+         "character": 27
+      }
+   }),
+   new_lsp_response(567, 15, %*{
+      "signatures": [
+         {
+            "label": "task do_work(input [FOO:0] input1, input [FOO:0] input2, output [FOO:0] result)",
+            "documentation": {
+               "kind": "markdown",
+               "value": "Do some work provided `input1` and `input2`. The output is stored in `result`."
+            },
+            "parameters": [
+               {
+                  "label": "input [FOO:0] input1",
+                  "documentation": {"kind": "plaintext", "value": ""}
+               },
+               {
+                  "label": "input [FOO:0] input2",
+                  "documentation": {"kind": "plaintext", "value": ""}
+               },
+               {
+                  "label": "output [FOO:0] result",
+                  "documentation": {"kind": "plaintext", "value": ""}
+               }
+            ]
+         }
+      ],
+      "activeSignature": 0,
+      "activeParameter": 1
+   })
+)
+
+
 
 
 # Shut down the server.
