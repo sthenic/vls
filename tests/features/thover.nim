@@ -123,11 +123,11 @@ run_test("textDocument/hover: identifier in macro",
       "contents": {
          "kind": "markdown",
          "value": """
-This is the docstring for `a_common_wire`.
-
 ```verilog
 wire a_common_wire
-```"""
+```
+
+This is the docstring for `a_common_wire`."""
       }
    })
 )
@@ -200,11 +200,11 @@ run_test("textDocument/hover: port of external module (1)",
       "contents": {
          "kind": "markdown",
          "value": """
-The 1-bit data output port.
-
 ```verilog
 output wire data_o
-```"""
+```
+
+The 1-bit data output port."""
       }
    })
 )
@@ -360,11 +360,11 @@ run_test("textDocument/hover: function",
       "contents": {
          "kind": "markdown",
          "value": """
-Docstring to function `add_one`.
-
 ```verilog
 function add_one(input a)
-```"""
+```
+
+Docstring to function `add_one`."""
       }
    })
 )
@@ -388,11 +388,11 @@ run_test("textDocument/hover: task",
       "contents": {
          "kind": "markdown",
          "value": """
-Docstring to `an_empty_task`.
-
 ```verilog
 task an_empty_task()
-```"""
+```
+
+Docstring to `an_empty_task`."""
       }
    })
 )

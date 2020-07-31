@@ -579,15 +579,14 @@ proc document_highlight*(unit: SourceUnit, line, col: int): seq[LspDocumentHighl
 proc construct_hover(n: PNode, highlight_location: Location, highlight_length: int): LspHover =
    ## Construct the LSP hover information given the node ``n`` and the highlight
    ## range specified by ``highlight_location`` and ``highlight_length``.
-   var markdown = ""
+   var markdown = format("```verilog\n$1\n```", $n)
    let comment = find_first(n, NkComment)
    if not is_nil(comment):
       # TODO: We potentially need to figure out if the whitespace following a
       #       newline needs some manipulation to render the markdown
       #       properly. In the worst case, the comment may need to inform us
       #       of the comment's indentation so we can subtrace accordingly.
-      add(markdown, comment.s & "\n\n")
-   add(markdown, format("```verilog\n$1\n```", $n))
+      add(markdown, "\n\n" & comment.s)
    log.debug("Markdown is '$1'", markdown)
    result = new_lsp_hover(int(highlight_location.line - 1),
                           int(highlight_location.col),
