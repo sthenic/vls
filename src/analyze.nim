@@ -607,8 +607,6 @@ proc find_external_hover(unit: SourceUnit, context: AstContext, identifier: PIde
          let (declaration, _) = find_external_module_port_declaration(
             unit, module.identifier, identifier, false
          )
-         log.debug("External hover for $1", pretty(declaration))
-         log.debug("Stringify: '$1'", $declaration)
          result = construct_hover(declaration, highlight_location, len(identifier.s))
    of NkAssignment:
       let module = find_first(context[^3].n, IdentifierTypes)
@@ -746,7 +744,7 @@ proc construct_parameter_information(n: PNode): LspParameterInformation =
 
 proc construct_signature_information(n: PNode): LspSignatureInformation =
    ## Construct signature information for the task or function declaration ``n``.
-   if n.kind notin {NkTaskDecl, NkFunctionDecl}:
+   if n.kind notin {NkTaskDecl, NkFunctionDecl, NkPortDecl}:
       raise new_analyze_error("Unsupported node kind for signature information construction.")
 
    let comment = find_first(n, NkComment)
@@ -777,10 +775,13 @@ proc find_internal_signature_help(unit: SourceUnit, context: AstContext, identif
 
 proc signature_help*(unit: SourceUnit, line, col: int): LspSignatureHelp =
    # Get signature help for the identifier at (``line``, ``col``). If the
-   # operation fails, an AnalyzeError is raised.
+   # operation fails, an AnalyzeError is raised. Signature help is only
+   # available for functions and tasks. Declarations etc. are available via
+   # hover requests.
    let g = unit.graph
 
-   # FIXME: Implement for macros
+   # TODO: Implement for macros. We need some more information from the
+   # preprocessor, just as for hover requests.
    let loc = new_location(1, line, col)
    for map in g.locations.macro_maps:
       # +1 is to compensate for the expansion location starting at the backtick.
@@ -804,8 +805,6 @@ proc signature_help*(unit: SourceUnit, line, col: int): LspSignatureHelp =
    if is_nil(identifier):
       raise new_analyze_error("Failed to find an identifer at the target location.")
 
-   if is_external_identifier(context):
-      # FIXME: Implement
-      raise new_analyze_error("Not implemented for external")
-   else:
-      result = find_internal_signature_help(unit, context, identifier.identifier, tf_arg)
+   # Since only task and function identifiers may be targeted, we only have to
+   # look in the internal tree to construct the reply.
+   result = find_internal_signature_help(unit, context, identifier.identifier, tf_arg)

@@ -390,8 +390,6 @@ run_test("textDocument/signatureHelp: task signature w/ broken AST",
 )
 
 
-
-
 # Shut down the server.
 shutdown(ifs, ofs)
 
