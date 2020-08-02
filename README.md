@@ -123,6 +123,21 @@ https://github.com/hekwall/nvim-lsp
 
     lua require 'nvim_lsp'.vls.setup {}
 
+## Building
+
+If none of the [release packages](https://github.com/sthenic/vls/releases)
+targets your platform, you can still build and use this tool provided that
+you have a C compiler that targets your platform.
+
+1. Download and install the [Nim](https://nim-lang.org/install.html) compiler
+   and its tools.
+
+2. Clone this repository and run
+
+       nimble install
+
+    This will build the binary and add it to the path.
+
 ## Version numbers
 Releases follow [semantic versioning](https://semver.org/) to determine how the version number is incremented. If the specification is ever broken by a release, this will be documented in the changelog.
 
