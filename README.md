@@ -19,7 +19,6 @@ This tool is a Verilog IEEE 1364-2005 [language server](https://microsoft.github
 
 ### Workspace
 - [ ] workspace/executeCommand
-- [ ] workspace/symbol
 - [x] workspace/configuration
 - [x] workspace/didChangeConfiguration
 
@@ -27,7 +26,6 @@ This tool is a Verilog IEEE 1364-2005 [language server](https://microsoft.github
 - [x] textDocument/didChange
 - [x] textDocument/didClose
 - [x] textDocument/didOpen
-- [ ] textDocument/didSave
 
 ### Language features
 - [x] textDocument/completion
@@ -39,7 +37,6 @@ This tool is a Verilog IEEE 1364-2005 [language server](https://microsoft.github
 - [x] textDocument/documentHighlight
 - [x] textDocument/documentSymbol
 - [x] textDocument/rename
-- [ ] textDocument/prepareRename
 
 ## Configuration
 
