@@ -9,6 +9,10 @@ import ./log
 
 type
    AnalyzeError* = object of ValueError
+   LocalParser {.final.} = object
+      lex: Lexer
+      tok: Token
+      next_tok: Token
 
 
 const
@@ -18,6 +22,40 @@ const
 proc new_analyze_error(msg: string, args: varargs[string, `$`]): ref AnalyzeError =
    new result
    result.msg = format(msg, args)
+
+
+proc get_token(p: var LocalParser) =
+   p.tok = p.next_tok
+   if p.next_tok.kind != TkEndOfFile:
+      get_token(p.lex, p.next_tok)
+      while p.next_tok.kind in {TkComment, TkBlockComment}:
+         get_token(p.lex, p.next_tok)
+
+
+proc open_local_parser(p: var LocalParser, cache: IdentifierCache, s: Stream, filename: string) =
+   init(p.tok)
+   init(p.next_tok)
+   open_lexer(p.lex, cache, s, filename, 1)
+   get_token(p)
+
+
+proc close_local_parser(p: var LocalParser) =
+   close_lexer(p.lex)
+
+
+template run_local_parser(unit: SourceUnit, cache: IdentifierCache, parser, body: untyped) =
+   let ss = new_string_stream(unit.text)
+   if is_nil(ss):
+      raise new_analyze_error("Failed to create a stream for file '$1'.", unit.filename)
+
+   var parser: LocalParser
+   open_local_parser(parser, cache, ss, unit.filename)
+   get_token(parser)
+   while parser.tok.kind != TkEndOfFile:
+      body
+
+   close_local_parser(parser)
+   close(ss)
 
 
 iterator walk_verilog_files(dir: string): string {.inline.} =
@@ -328,41 +366,28 @@ proc get_include_file(unit: SourceUnit, filename: string): string =
 
 
 proc find_include_directive(unit: SourceUnit, loc: Location): LspLocation =
-   let ss = new_string_stream(unit.text)
-   if is_nil(ss):
-      raise new_analyze_error("Failed to create a stream for file '$1'.", unit.filename)
-
    let cache = new_ident_cache()
-   var lexer: Lexer
-   open_lexer(lexer, cache, ss, unit.filename, 1)
-   var tok: Token
-   var tok_prev: Token
-   init(tok_prev)
-   get_token(lexer, tok)
-   while tok.kind != TkEndOfFile:
+   var found = false
+   run_local_parser(unit, cache, parser):
       # If the target location points to the string argument of an include
       # directory, we construct an LSP location pointing to the target file if
       # it exists on the current path. We have to add two to the length since
       # the actual string literal token is enclosed in two double quotes (").
       if (
-         tok.kind == TkStrLit and
-         in_bounds(loc, tok.loc, len(tok.literal) + 2) and
-         tok_prev.kind == TkDirective and
-         tok_prev.identifier.s == "include"
+         parser.tok.kind == TkDirective and
+         parser.tok.identifier.s == "include" and
+         parser.next_tok.kind == TkStrLit and
+         in_bounds(loc, parser.next_tok.loc, len(parser.next_tok.literal) + 2)
       ):
-         let filename = get_include_file(unit, tok.literal)
+         let filename = get_include_file(unit, parser.next_tok.literal)
          if len(filename) > 0:
-            close_lexer(lexer)
-            close(ss)
-            return new_lsp_location(construct_uri(filename), 0, 0, 0)
-         else:
-            break
+            result = new_lsp_location(construct_uri(filename), 0, 0, 0)
+            found = true
+         break
+      get_token(parser)
 
-      tok_prev = tok
-      get_token(lexer, tok)
-   close_lexer(lexer)
-   close(ss)
-   raise new_analyze_error("Failed to find an include directive at the target location.")
+   if not found:
+      raise new_analyze_error("Failed to find an include directive at the target location.")
 
 
 proc find_declaration*(unit: SourceUnit, line, col: int): LspLocation =
@@ -475,31 +500,18 @@ proc find_completable_token_at(unit: SourceUnit, loc: Location, cache: Identifie
    # quotes (").
    template is_completable_identifier(tok: Token, loc: Location): bool =
       not is_nil(tok.identifier) and in_bounds(loc, tok.loc, len(tok.identifier.s) + 1)
-   template is_completable_string_literal(tok, tok_prev: Token, loc: Location): bool =
-      tok.kind == TkStrLit and
-      in_bounds(loc, tok.loc, len(tok.literal) + 2) and
-      tok_prev.kind == TkDirective and
-      tok_prev.identifier.s == "include"
+   template is_completable_string_literal(tok, next_tok: Token, loc: Location): bool =
+      tok.kind == TkDirective and tok.identifier.s == "include" and
+      next_tok.kind == TkStrLit and in_bounds(loc, next_tok.loc, len(next_tok.literal) + 2)
 
-   let ss = new_string_stream(unit.text)
-   if is_nil(ss):
-      raise new_analyze_error("Failed to create a stream for file '$1'.", unit.filename)
-
-   init(result)
-   var lexer: Lexer
-   open_lexer(lexer, cache, ss, unit.filename, 1)
-   var tok: Token
-   var tok_prev: Token
-   init(tok_prev)
-   get_token(lexer, tok)
-   while tok.kind != TkEndOfFile:
-      if is_completable_identifier(tok, loc) or is_completable_string_literal(tok, tok_prev, loc):
-         result = tok
+   run_local_parser(unit, cache, parser):
+      if is_completable_identifier(parser.tok, loc):
+         result = parser.tok
          break
-      tok_prev = tok
-      get_token(lexer, tok)
-   close_lexer(lexer)
-   close(ss)
+      elif is_completable_string_literal(parser.tok, parser.next_tok, loc):
+         result = parser.next_tok
+         break
+      get_token(parser)
 
 
 proc find_completions*(unit: SourceUnit, line, col: int): seq[LspCompletionItem] =
@@ -665,29 +677,27 @@ proc hover*(unit: SourceUnit, line, col: int): LspHover =
       result = find_internal_hover(unit, context, identifier.identifier, highlight_location)
 
 
-proc parse_function_like_call(lexer: var Lexer, tok, next_tok: var Token, loc: Location): tuple[token: Token, arg: int] =
+proc parse_function_like_call(p: var LocalParser, loc: Location): tuple[token: Token, arg: int] =
    var paren_count = 0
    var brace_count = 0
-   if tok.kind != TkSymbol or next_tok.kind != TkLparen:
+   if p.tok.kind != TkSymbol or p.next_tok.kind != TkLparen:
       result.token.kind = TkInvalid
       return
-   result.token = tok
+   result.token = p.tok
    result.arg = 0
 
-   if in_bounds(loc, tok.loc, len(tok.identifier.s) + 1):
+   if in_bounds(loc, p.tok.loc, len(p.tok.identifier.s) + 1):
       result.arg = -1
       return
 
    while true:
-      tok = next_tok
-      if tok.kind != TkEndOfFile:
-         get_token(lexer, next_tok)
+      get_token(p)
 
       # Check if we're at or if we've gone past the target location.
-      if tok.loc >= loc:
+      if p.tok.loc >= loc:
          break
 
-      case tok.kind
+      case p.tok.kind
       of TkEndOfFile:
          result.token.kind = TkInvalid
          break
@@ -700,8 +710,8 @@ proc parse_function_like_call(lexer: var Lexer, tok, next_tok: var Token, loc: L
          if brace_count > 0:
             dec(brace_count)
       of TkSymbol:
-         if next_tok.kind == TkLparen:
-            let recursive_result = parse_function_like_call(lexer, tok, next_tok, loc)
+         if p.next_tok.kind == TkLparen:
+            let recursive_result = parse_function_like_call(p, loc)
             if recursive_result.token.kind != TkInvalid:
                return recursive_result
       of TkLparen:
@@ -717,32 +727,16 @@ proc parse_function_like_call(lexer: var Lexer, tok, next_tok: var Token, loc: L
 
 
 proc find_function_like_call(unit: SourceUnit, loc: Location): tuple[token: Token, arg: int] =
-   let ss = new_string_stream(unit.text)
-   if is_nil(ss):
-      raise new_analyze_error("Failed to create a stream for file '$1'.", unit.filename)
-
-   var lexer: Lexer
    let cache = new_ident_cache()
-   open_lexer(lexer, cache, ss, unit.filename, 1)
-   var tok: Token
-   var next_tok: Token
-   init(tok)
-   init(next_tok)
-   get_token(lexer, tok)
-   if tok.kind != TkEndOfFile:
-      get_token(lexer, next_tok)
-   while tok.kind != TkEndOfFile:
-      if tok.loc > loc:
+   run_local_parser(unit, cache, parser):
+      if parser.tok.loc > loc:
          result.token.kind = TkInvalid
          break
-      if tok.kind == TkSymbol and next_tok.kind == TkLparen:
-         result = parse_function_like_call(lexer, tok, next_tok, loc)
+      if parser.tok.kind == TkSymbol and parser.next_tok.kind == TkLparen:
+         result = parse_function_like_call(parser, loc)
          if result.token.kind != TkInvalid:
             break
-      tok = next_tok
-      get_token(lexer, next_tok)
-   close_lexer(lexer)
-   close(ss)
+      get_token(parser)
 
 
 proc construct_parameter_information(n: PNode): LspParameterInformation =
