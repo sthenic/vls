@@ -667,6 +667,7 @@ proc hover*(unit: SourceUnit, line, col: int): LspHover =
 
 proc parse_function_like_call(lexer: var Lexer, tok, next_tok: var Token, loc: Location): tuple[token: Token, arg: int] =
    var paren_count = 0
+   var brace_count = 0
    if tok.kind != TkSymbol or next_tok.kind != TkLparen:
       result.token.kind = TkInvalid
       return
@@ -691,7 +692,13 @@ proc parse_function_like_call(lexer: var Lexer, tok, next_tok: var Token, loc: L
          result.token.kind = TkInvalid
          break
       of TkComma:
-         inc(result.arg)
+         if brace_count == 0 and brace_count == 0:
+            inc(result.arg)
+      of TkLbrace:
+         inc(brace_count)
+      of TkRbrace:
+         if brace_count > 0:
+            dec(brace_count)
       of TkSymbol:
          if next_tok.kind == TkLparen:
             let recursive_result = parse_function_like_call(lexer, tok, next_tok, loc)
@@ -702,7 +709,7 @@ proc parse_function_like_call(lexer: var Lexer, tok, next_tok: var Token, loc: L
       of TkRparen:
          if paren_count > 0:
             dec(paren_count)
-         if paren_count == 0:
+         if paren_count == 0 and brace_count == 0:
             result.token.kind = TkInvalid
             break
       else:

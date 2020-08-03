@@ -25,7 +25,7 @@ module module6 (
     end
 
     initial begin
-        do_work(undeclared,
+        do_work({undeclared1, undeclared1},
     end
 
 endmodule

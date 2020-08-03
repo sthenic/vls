@@ -350,6 +350,46 @@ run_test("textDocument/signatureHelp: task w/ multiple parameters (3)",
 )
 
 
+run_test("textDocument/signatureHelp: task signature, concatenated argument",
+   new_lsp_request(15, "textDocument/signatureHelp", %*{
+      "textDocument": {
+         "uri": "file://" & expand_filename(src6_path),
+      },
+      "position": {
+         "line": 27,
+         "character": 29
+      }
+   }),
+   new_lsp_response(567, 15, %*{
+      "signatures": [
+         {
+            "label": "task do_work(input [FOO:0] input1, input [FOO:0] input2, output [FOO:0] result)",
+            "documentation": {
+               "kind": "markdown",
+               "value": "Do some work provided `input1` and `input2`. The output is stored in `result`."
+            },
+            "parameters": [
+               {
+                  "label": "input [FOO:0] input1",
+                  "documentation": {"kind": "plaintext", "value": ""}
+               },
+               {
+                  "label": "input [FOO:0] input2",
+                  "documentation": {"kind": "plaintext", "value": ""}
+               },
+               {
+                  "label": "output [FOO:0] result",
+                  "documentation": {"kind": "plaintext", "value": ""}
+               }
+            ]
+         }
+      ],
+      "activeSignature": 0,
+      "activeParameter": 0
+   })
+)
+
+
 run_test("textDocument/signatureHelp: task signature w/ broken AST",
    new_lsp_request(15, "textDocument/signatureHelp", %*{
       "textDocument": {
@@ -357,7 +397,7 @@ run_test("textDocument/signatureHelp: task signature w/ broken AST",
       },
       "position": {
          "line": 27,
-         "character": 27
+         "character": 43
       }
    }),
    new_lsp_response(567, 15, %*{
