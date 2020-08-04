@@ -601,13 +601,13 @@ proc parse_module_instantiation(p: var LocalParser, loc: Location): tuple[module
       get_token(p)
 
 
-proc find_module_like_context(unit: SourceUnit, loc: Location): tuple[module, token: Token] =
+proc find_module_port_connection(unit: SourceUnit, loc: Location): tuple[module, token: Token] =
    let cache = new_ident_cache()
    run_local_parser(unit, cache, parser):
       if parser.tok.loc > loc:
          result.module.kind = TkInvalid
          break
-      if parser.tok.kind == TkSymbol and parser.next_tok.kind in {TkHash, TkLparen}:
+      if parser.tok.kind == TkSymbol and parser.next_tok.kind in {TkHash, TkSymbol}:
          result = parse_module_instantiation(parser, loc)
          if result.module.kind != TkInvalid:
             break
@@ -638,6 +638,48 @@ proc find_completable_token_at(unit: SourceUnit, loc: Location, cache: Identifie
       get_token(parser)
 
 
+proc find_port_connection_completions(unit: SourceUnit, module_name, prefix: string): seq[LspCompletionItem] =
+   template add_completion_item(id, declaration: PNode) =
+      var item = new_lsp_completion_item(id.identifier.s & " ()")
+      item.detail = $port
+      let comment = find_first(port, NkComment)
+      if not is_nil(comment):
+         item.documentation = LspMarkupContent(kind: LspMkMarkdown, value: comment.s)
+      add(result, item)
+
+   # See comments in find_external_module_port_declaration().
+   for filename, module in walk_module_declarations(unit.configuration.include_paths):
+      let id = find_first(module, NkModuleIdentifier)
+      if is_nil(id) or id.identifier.s != module_name:
+         continue
+
+      for port in walk_ports(module):
+         case port.kind
+         of NkPortDecl:
+            let id = find_first(port, NkPortIdentifier)
+            if not is_nil(id) and starts_with(id.identifier.s, prefix):
+               add_completion_item(id, port)
+         of NkPort:
+            var external_port = find_first(port, NkPortIdentifier)
+            let internal_port = find_first_chain(port, [NkPortReference, NkPortIdentifier])
+            if is_nil(internal_port):
+               continue
+            if is_nil(external_port):
+               external_port = internal_port
+            if not starts_with(external_port.identifier.s, prefix):
+               continue
+
+            # FIXME: Finding declarations starting from the module root is not
+            #        possible unless find_declaration() is modified.
+            let decl = find_declaration(module, internal_port.identifier)
+            if not is_nil(decl):
+               add_completion_item(external_port, decl)
+            else:
+               add_completion_item(external_port, port)
+         else:
+            discard
+
+
 proc find_completions*(unit: SourceUnit, line, col: int): seq[LspCompletionItem] =
    # We can be faced with one of two situations: either
    #   1. the AST is intact at least up until the target location; or
@@ -649,11 +691,14 @@ proc find_completions*(unit: SourceUnit, line, col: int): seq[LspCompletionItem]
    # tokenize the file and attempt to find an identifier at the target location
    # TODO: We should perhaps add some fuzzy matching?
    let loc = new_location(1, line, col)
-
-   let (module, _) = find_module_like_context(unit, loc)
+   let (module, cursor_token) = find_module_port_connection(unit, loc)
    if module.kind != TkInvalid:
-      # FIXME: Implement external port completion.
-      raise new_analyze_error("Not implemented yet.")
+      let prefix = if cursor_token.kind == TkSymbol:
+         substr(cursor_token.identifier.s, 0, loc.col - cursor_token.loc.col - 1)
+      else:
+         ""
+      # FIXME: Implement completions for parameter ports too.
+      return find_port_connection_completions(unit, module.identifier.s, prefix)
 
    var context: AstContext
    let identifier = find_identifier_physical(unit.graph.root_node, unit.graph.locations,

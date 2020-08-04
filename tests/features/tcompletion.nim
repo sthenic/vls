@@ -238,6 +238,116 @@ run_test_unordered_compare("textDocument/completion: include directive, browse p
    ])
 )
 
+
+run_test("textDocument/completion: module port (1)",
+   new_lsp_request(0, "textDocument/completion", %*{
+      "textDocument": {
+         "uri": "file://" & expand_filename(src3_path),
+      },
+      "position": {
+         "line": 24,
+         "character": 34
+      }
+   }),
+   new_lsp_response(241, 0, %*[
+      {
+         "label": "clk_i ()",
+         "detail": "(* another_attr = \"false\" *) input wire clk_i",
+      },
+      {
+         "label": "data_o ()",
+         "detail": "output wire data_o",
+         "documentation": {
+            "kind": "markdown",
+            "value": "The 1-bit data output port."
+         }
+      }
+   ])
+)
+
+
+run_test("textDocument/completion: module port (2)",
+   new_lsp_request(0, "textDocument/completion", %*{
+      "textDocument": {
+         "uri": "file://" & expand_filename(src3_path),
+      },
+      "position": {
+         "line": 25,
+         "character": 10
+      }
+   }),
+   new_lsp_response(161, 0, %*[
+      {
+         "label": "data_o ()",
+         "detail": "output wire data_o",
+         "documentation": {
+            "kind": "markdown",
+            "value": "The 1-bit data output port."
+         }
+      }
+   ])
+)
+
+# Open the file "./src/src4.v", expecting no parsing errors.
+const src4_path = "./src/src4.v"
+const src4_text = static_read(src4_path)
+send(ifs, new_lsp_notification("textDocument/didOpen", %*{
+   "textDocument": {
+      "uri": "file://" & expand_filename(src4_path),
+      "languageId": "verilog",
+      "version": 0,
+      "text": src4_text
+   }
+}))
+assert len(recv(ofs).parameters["diagnostics"]) == 0
+
+
+run_test("textDocument/completion: module port (3), internal declarations",
+   new_lsp_request(0, "textDocument/completion", %*{
+      "textDocument": {
+         "uri": "file://" & expand_filename(src4_path),
+      },
+      "position": {
+         "line": 16,
+         "character": 9
+      }
+   }),
+   new_lsp_response(167, 0, %*[
+      {
+         "label": "clk_i ()",
+         "detail": ".clk_i(clk_local)"
+      },
+      {
+         "label": "data_o ()",
+         "detail": "data_o"
+      },
+      {
+         "label": "valid_o ()",
+         "detail": "valid_o"
+      }
+   ])
+)
+
+
+run_test("textDocument/completion: module port (4), internal declarations",
+   new_lsp_request(0, "textDocument/completion", %*{
+      "textDocument": {
+         "uri": "file://" & expand_filename(src4_path),
+      },
+      "position": {
+         "line": 18,
+         "character": 16
+      }
+   }),
+   new_lsp_response(77, 0, %*[
+      {
+         "label": "valid_o ()",
+         "detail": "valid_o"
+      }
+   ])
+)
+
+
 # Shut down the server.
 shutdown(ifs, ofs)
 

@@ -82,6 +82,8 @@ type
 
    LspCompletionItem* = object
       label*: string
+      detail*: string
+      documentation*: LspMarkupContent
 
    LspSymbolKind* = enum
       LspSkFile = 1
@@ -208,6 +210,8 @@ proc new_lsp_diagnostic*(start, stop: LspPosition, severity: LspSeverity,
 
 proc new_lsp_completion_item*(label: string): LspCompletionItem =
    result.label = label
+   set_len(result.detail, 0)
+   set_len(result.documentation.value, 0)
 
 
 proc new_lsp_symbol_information*(name: string, kind: LspSymbolKind, loc: LspLocation): LspSymbolInformation =
@@ -287,12 +291,6 @@ proc `%`*(l: LspLocation): JsonNode =
    }
 
 
-proc `%`*(ci: LspCompletionItem): JsonNode =
-   result = %*{
-      "label": ci.label,
-   }
-
-
 proc `%`*(si: LspSymbolInformation): JsonNode =
    result = %*{
       "name": si.name,
@@ -360,6 +358,16 @@ proc `%`*(o: LspSignatureHelp): JsonNode =
       "activeSignature": o.active_signature,
       "activeParameter": o.active_parameter
    }
+
+
+proc `%`*(o: LspCompletionItem): JsonNode =
+   result = %*{
+      "label": o.label,
+   }
+   if len(o.detail) > 0:
+      result["detail"] = %o.detail
+   if len(o.documentation.value) > 0:
+      result["documentation"] = %o.documentation
 
 
 proc `$`*(kind: LspMessageKind): string =
