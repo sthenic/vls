@@ -690,9 +690,11 @@ proc parse_function_like_call(p: var LocalParser, loc: Location): tuple[token: T
       result.arg = -1
       return
 
-   while true:
-      get_token(p)
+   # Remove the identifier and the opening parenthesis.
+   get_token(p)
+   get_token(p)
 
+   while true:
       # Check if we're at or if we've gone past the target location.
       if p.tok.loc >= loc:
          break
@@ -702,7 +704,7 @@ proc parse_function_like_call(p: var LocalParser, loc: Location): tuple[token: T
          result.token.kind = TkInvalid
          break
       of TkComma:
-         if brace_count == 0 and brace_count == 0:
+         if paren_count == 0 and brace_count == 0:
             inc(result.arg)
       of TkLbrace:
          inc(brace_count)
@@ -719,11 +721,12 @@ proc parse_function_like_call(p: var LocalParser, loc: Location): tuple[token: T
       of TkRparen:
          if paren_count > 0:
             dec(paren_count)
-         if paren_count == 0 and brace_count == 0:
+         else:
             result.token.kind = TkInvalid
             break
       else:
          discard
+      get_token(p)
 
 
 proc find_function_like_call(unit: SourceUnit, loc: Location): tuple[token: Token, arg: int] =
