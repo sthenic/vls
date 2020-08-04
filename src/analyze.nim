@@ -490,6 +490,130 @@ proc find_references*(unit: SourceUnit, line, col: int, include_declaration: boo
    result = find_references(unit, declaration_context, identifier.identifier, include_declaration)
 
 
+proc find_port_connection(p: var LocalParser, loc: Location): Token =
+   # We only offer port completions if the cursor is in the whitespace after the
+   # '.' character or in the following identifier.
+   init(result)
+   var paren_count = 0
+   var brace_count = 0
+   var seen_dot = false
+   while true:
+      if seen_dot:
+         if p.tok.kind == TkSymbol and in_bounds(loc, p.tok.loc, len(p.tok.identifier.s) + 1):
+            result = p.tok
+            return
+         elif p.tok.loc > loc:
+            result.kind = TkDot
+            return
+      elif p.tok.loc >= loc:
+         result.kind = TkInvalid
+         return
+
+      seen_dot = false
+
+      case p.tok.kind
+      of TkEndOfFile:
+         result.kind = TkInvalid
+         break
+      of TkLbrace:
+         inc(brace_count)
+      of TkRbrace:
+         if brace_count > 0:
+            dec(brace_count)
+      of TkLparen:
+         inc(paren_count)
+      of TkRparen:
+         if paren_count > 0:
+            dec(paren_count)
+         else:
+            result.kind = TkInvalid
+            break
+      of TkDot:
+         if paren_count == 0 and brace_count == 0:
+            seen_dot = true
+      else:
+         discard
+      get_token(p)
+
+
+proc skip_between(p: var LocalParser, start_kind, stop_kind: TokenKind) =
+   var count = 0
+   if p.tok.kind != start_kind:
+      return
+   get_token(p)
+   while true:
+      if p.tok.kind == TkEndOfFile:
+         break
+      elif p.tok.kind == start_kind:
+         inc(count)
+      elif p.tok.kind == stop_kind:
+         if count > 0:
+            dec(count)
+         else:
+            break
+
+
+proc parse_module_instantiation(p: var LocalParser, loc: Location): tuple[module, token: Token] =
+   if p.tok.kind != TkSymbol:
+      result.module.kind = TkInvalid
+      return
+   result.module = p.tok
+   get_token(p)
+
+   if p.tok.kind == TkHash and p.next_tok.kind == TkLparen:
+      get_token(p)
+      get_token(p)
+      result.token = find_port_connection(p, loc)
+      if result.token.kind != TkInvalid:
+         return
+      if p.tok.kind != TkRparen:
+         result.module.kind = TkInvalid
+         return
+      else:
+         get_token(p)
+
+   while true:
+      if p.tok.kind == TkSymbol:
+         get_token(p)
+
+      if p.tok.kind == TkLbracket:
+         skip_between(p, TkLbracket, TkRbracket)
+
+      if p.tok.kind != TkLparen:
+         result.module.kind = TkInvalid
+         break
+      else:
+         get_token(p)
+         result.token = find_port_connection(p, loc)
+         if result.token.kind != TkInvalid:
+            break
+
+      if p.tok.kind != TkRparen:
+         result.module.kind = TkInvalid
+         break
+      else:
+         get_token(p)
+
+      if p.tok.kind != TkComma:
+         result.module.kind = TkInvalid
+         break
+
+      get_token(p)
+
+
+proc find_module_like_context(unit: SourceUnit, loc: Location): tuple[module, token: Token] =
+   let cache = new_ident_cache()
+   run_local_parser(unit, cache, parser):
+      if parser.tok.loc > loc:
+         result.module.kind = TkInvalid
+         break
+      if parser.tok.kind == TkSymbol and parser.next_tok.kind in {TkHash, TkLparen}:
+         result = parse_module_instantiation(parser, loc)
+         if result.module.kind != TkInvalid:
+            break
+      get_token(parser)
+
+
 proc find_completable_token_at(unit: SourceUnit, loc: Location, cache: IdentifierCache): Token =
    # Completable tokens are identifiers, and string literals that are arguments
    # to an include directive. In the case of the former, we have to pretend
@@ -525,6 +649,12 @@ proc find_completions*(unit: SourceUnit, line, col: int): seq[LspCompletionItem]
    # tokenize the file and attempt to find an identifier at the target location
    # TODO: We should perhaps add some fuzzy matching?
    let loc = new_location(1, line, col)
+
+   let (module, _) = find_module_like_context(unit, loc)
+   if module.kind != TkInvalid:
+      # FIXME: Implement external port completion.
+      raise new_analyze_error("Not implemented yet.")
+
    var context: AstContext
    let identifier = find_identifier_physical(unit.graph.root_node, unit.graph.locations,
                                              loc, context, added_length = 1)
