@@ -9,10 +9,16 @@ import ./log
 
 type
    AnalyzeError* = object of ValueError
+
    LocalParser {.final.} = object
       lex: Lexer
       tok: Token
       next_tok: Token
+
+   ModulePortConnection = tuple
+      module: Token
+      cursor: Token
+      is_parameter: bool
 
 
 const
@@ -553,18 +559,20 @@ proc skip_between(p: var LocalParser, start_kind, stop_kind: TokenKind) =
             break
 
 
-proc parse_module_instantiation(p: var LocalParser, loc: Location): tuple[module, token: Token] =
+proc parse_module_instantiation(p: var LocalParser, loc: Location): ModulePortConnection =
    if p.tok.kind != TkSymbol:
       result.module.kind = TkInvalid
       return
    result.module = p.tok
+   result.is_parameter = false
    get_token(p)
 
    if p.tok.kind == TkHash and p.next_tok.kind == TkLparen:
       get_token(p)
       get_token(p)
-      result.token = find_port_connection(p, loc)
-      if result.token.kind != TkInvalid:
+      result.cursor = find_port_connection(p, loc)
+      if result.cursor.kind != TkInvalid:
+         result.is_parameter = true
          return
       if p.tok.kind != TkRparen:
          result.module.kind = TkInvalid
@@ -584,8 +592,8 @@ proc parse_module_instantiation(p: var LocalParser, loc: Location): tuple[module
          break
       else:
          get_token(p)
-         result.token = find_port_connection(p, loc)
-         if result.token.kind != TkInvalid:
+         result.cursor = find_port_connection(p, loc)
+         if result.cursor.kind != TkInvalid:
             break
 
       if p.tok.kind != TkRparen:
@@ -601,7 +609,7 @@ proc parse_module_instantiation(p: var LocalParser, loc: Location): tuple[module
       get_token(p)
 
 
-proc find_module_port_connection(unit: SourceUnit, loc: Location): tuple[module, token: Token] =
+proc find_module_port_connection(unit: SourceUnit, loc: Location): ModulePortConnection =
    let cache = new_ident_cache()
    run_local_parser(unit, cache, parser):
       if parser.tok.loc > loc:
@@ -641,8 +649,8 @@ proc find_completable_token_at(unit: SourceUnit, loc: Location, cache: Identifie
 proc find_port_connection_completions(unit: SourceUnit, module_name, prefix: string): seq[LspCompletionItem] =
    template add_completion_item(id, declaration: PNode) =
       var item = new_lsp_completion_item(id.identifier.s & " ()")
-      item.detail = $port
-      let comment = find_first(port, NkComment)
+      item.detail = $declaration
+      let comment = find_first(declaration, NkComment)
       if not is_nil(comment):
          item.documentation = LspMarkupContent(kind: LspMkMarkdown, value: comment.s)
       add(result, item)
@@ -680,8 +688,43 @@ proc find_port_connection_completions(unit: SourceUnit, module_name, prefix: str
             discard
 
 
+proc find_parameter_port_connection_completions(unit: SourceUnit, module_name, prefix: string): seq[LspCompletionItem] =
+   for filename, module in walk_module_declarations(unit.configuration.include_paths):
+      let id = find_first(module, NkModuleIdentifier)
+      if is_nil(id) or id.identifier.s != module_name:
+         continue
+
+      for parameter in walk_parameter_ports(module):
+         let assignment = find_first(parameter, NkParamAssignment)
+         if not is_nil(assignment):
+            let id = find_first(assignment, NkParameterIdentifier)
+            if not is_nil(id) and starts_with(id.identifier.s, prefix):
+               var item = new_lsp_completion_item(id.identifier.s & " ()")
+               item.detail = $parameter
+               let comment = find_first(parameter, NkComment)
+               if not is_nil(comment):
+                  item.documentation = LspMarkupContent(kind: LspMkMarkdown, value: comment.s)
+               add(result, item)
+
+
 proc find_completions*(unit: SourceUnit, line, col: int): seq[LspCompletionItem] =
-   # We can be faced with one of two situations: either
+   # TODO: We should perhaps add some fuzzy matching?
+   # Before we do anything else, we check if the target location is pointing to
+   # a port connection. If the module is on the include path, we fetch the
+   # completion information from the external file and return early.
+   let loc = new_location(1, line, col)
+   let (module, cursor, is_parameter) = find_module_port_connection(unit, loc)
+   if module.kind != TkInvalid:
+      let prefix = if cursor.kind == TkSymbol:
+         substr(cursor.identifier.s, 0, loc.col - cursor.loc.col - 1)
+      else:
+         ""
+      if is_parameter:
+         return find_parameter_port_connection_completions(unit, module.identifier.s, prefix)
+      else:
+         return find_port_connection_completions(unit, module.identifier.s, prefix)
+
+   # Now we can be faced with one of two situations: either
    #   1. the AST is intact at least up until the target location; or
    #   2. the AST is broken and attempting to find an identifier at the target
    #      location will not be successful.
@@ -689,17 +732,6 @@ proc find_completions*(unit: SourceUnit, line, col: int): seq[LspCompletionItem]
    # completion items if we know the context AST. However, if we're faced with
    # (2), we still want to return something. We run the lexer to manually
    # tokenize the file and attempt to find an identifier at the target location
-   # TODO: We should perhaps add some fuzzy matching?
-   let loc = new_location(1, line, col)
-   let (module, cursor_token) = find_module_port_connection(unit, loc)
-   if module.kind != TkInvalid:
-      let prefix = if cursor_token.kind == TkSymbol:
-         substr(cursor_token.identifier.s, 0, loc.col - cursor_token.loc.col - 1)
-      else:
-         ""
-      # FIXME: Implement completions for parameter ports too.
-      return find_port_connection_completions(unit, module.identifier.s, prefix)
-
    var context: AstContext
    let identifier = find_identifier_physical(unit.graph.root_node, unit.graph.locations,
                                              loc, context, added_length = 1)

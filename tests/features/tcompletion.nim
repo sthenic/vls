@@ -348,6 +348,48 @@ run_test("textDocument/completion: module port (4), internal declarations",
 )
 
 
+run_test("textDocument/completion: module parameter port (1)",
+   new_lsp_request(0, "textDocument/completion", %*{
+      "textDocument": {
+         "uri": "file://" & expand_filename(src4_path),
+      },
+      "position": {
+         "line": 14,
+         "character": 9
+      }
+   }),
+   new_lsp_response(137, 0, %*[
+      {
+         "label": "FOO ()",
+         "detail": "parameter FOO = 0"
+      },
+      {
+         "label": "BaR ()",
+         "detail": "parameter BaR = \"baz\""
+      }
+   ])
+)
+
+
+run_test("textDocument/completion: module parameter port (2)",
+   new_lsp_request(0, "textDocument/completion", %*{
+      "textDocument": {
+         "uri": "file://" & expand_filename(src4_path),
+      },
+      "position": {
+         "line": 14,
+         "character": 23
+      }
+   }),
+   new_lsp_response(89, 0, %*[
+      {
+         "label": "BaR ()",
+         "detail": "parameter BaR = \"baz\""
+      }
+   ])
+)
+
+
 # Shut down the server.
 shutdown(ifs, ofs)
 
