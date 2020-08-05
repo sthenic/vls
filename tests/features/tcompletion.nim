@@ -249,10 +249,14 @@ run_test("textDocument/completion: module port (1)",
          "character": 34
       }
    }),
-   new_lsp_response(241, 0, %*[
+   new_lsp_response(304, 0, %*[
       {
          "label": "clk_i ()",
          "detail": "(* another_attr = \"false\" *) input wire clk_i",
+         "documentation": {
+            "kind": "markdown",
+            "value": "The clock input."
+         }
       },
       {
          "label": "data_o ()",

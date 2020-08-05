@@ -220,7 +220,7 @@ run_test("textDocument/hover: port of external module (2)",
          "character": 34
       }
    }),
-   new_lsp_response(220, 15, %*{
+   new_lsp_response(240, 15, %*{
       "range": {
          "start": {"line": 24, "character": 34},
          "end" : {"line": 24, "character": 39}
@@ -230,7 +230,9 @@ run_test("textDocument/hover: port of external module (2)",
          "value": """
 ```verilog
 (* another_attr = "false" *) input wire clk_i
-```"""
+```
+
+The clock input."""
       }
    })
 )
