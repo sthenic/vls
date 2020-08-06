@@ -78,6 +78,7 @@ jobs:
         tar -czf "${ARCHIVE_FILENAME}.tar.gz" vls LICENSE THIRD_PARTY_LICENSES.md
         md5sum "${ARCHIVE_FILENAME}.tar.gz" > ${ARCHIVE_FILENAME}.tar.gz.md5
         md5sum "${ARCHIVE_FILENAME}.deb" > ${ARCHIVE_FILENAME}.deb.md5
+        ls -l
 
     - name: Upload artifacts
       uses: softprops/action-gh-release@v1
@@ -85,7 +86,7 @@ jobs:
         GITHUB_TOKEN: ${{ secrets.VPARSE_TOKEN }}
       with:
         files: |
-          "*.tar.gz"
-          "*.tar.gz.md5"
-          "*.deb"
-          "*.deb.md5"
+          *.tar.gz
+          *.tar.gz.md5
+          *.deb
+          *.deb.md5
