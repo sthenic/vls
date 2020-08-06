@@ -41,7 +41,7 @@ jobs:
 
     - uses: jiro4989/setup-nim-action@v1.1.2
       with:
-        nim-version: '1.2.4'
+        nim-version: 'stable'
 
     - name: Install vparse and vltoml
       run: |
