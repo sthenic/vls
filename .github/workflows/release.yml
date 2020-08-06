@@ -13,6 +13,8 @@ jobs:
     strategy:
       matrix:
         os:
+          - ubuntu-18.04
+          - ubuntu-16.04
           - windows-latest
     steps:
     # Check out the repository under $GITHUB_WORKSPACE.
