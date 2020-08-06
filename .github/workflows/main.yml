@@ -25,20 +25,6 @@ jobs:
         path: vltoml
         token: ${{ secrets.VPARSE_TOKEN }}
 
-    - name: Cache choosenim
-      id: cache-choosenim
-      uses: actions/cache@v2
-      with:
-        path: ~/.choosenim
-        key: ${{ runner.os }}-choosenim-stable
-
-    - name: Cache nimble
-      id: cache-nimble
-      uses: actions/cache@v2
-      with:
-        path: ~/.nimble
-        key: ${{ runner.os }}-nimble-stable
-
     - uses: jiro4989/setup-nim-action@v1.1.2
       with:
         nim-version: 'stable'
