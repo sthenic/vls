@@ -36,8 +36,15 @@ jobs:
         token: ${{ secrets.VPARSE_TOKEN }}
 
     - uses: jiro4989/setup-nim-action@v1.1.2
+      if: ${{ matrix.os != 'macos-latest' }}
       with:
         nim-version: '1.2.4'
+
+    - name: 'Install Nim on macOS'
+      if: ${{ matrix.os == 'macos-latest' }}
+      run: |
+        curl https://nim-lang.org/choosenim/init.sh -sSf > init.sh
+        sh init.sh -y
 
     - name: Install vparse and vltoml
       run: |
