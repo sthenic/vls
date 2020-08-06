@@ -13,7 +13,7 @@ jobs:
     strategy:
       matrix:
         os:
-          - macos-latest
+          - windows-latest
     steps:
     # Check out the repository under $GITHUB_WORKSPACE.
     - name: Checkout vls
@@ -37,7 +37,7 @@ jobs:
 
     - uses: jiro4989/setup-nim-action@v1.1.2
       with:
-        nim-version: '1.2.4'
+        nim-version: 'stable'
 
     - name: Install vparse and vltoml
       run: |
@@ -72,6 +72,15 @@ jobs:
         ARCHIVE_FILENAME="vls-$(cat src/VERSION)-macos"
         tar -czf "${ARCHIVE_FILENAME}.tar.gz" vls LICENSE THIRD_PARTY_LICENSES.md CHANGELOG.md
         md5 "${ARCHIVE_FILENAME}.tar.gz" > ${ARCHIVE_FILENAME}.tar.gz.md5
+
+    - name: Build Windows
+      if: ${{ matrix.os == 'windows-latest' }}
+      run: |
+        cd vls
+        nimble build -y
+        ARCHIVE_FILENAME="vls-$(cat src/VERSION)-win_x86_64"
+        7z a -tzip "${ARCHIVE_FILENAME}.zip" vls LICENSE THIRD_PARTY_LICENSES.md CHANGELOG.md
+        FCIV -md5 "${ARCHIVE_FILENAME}.zip" > ${ARCHIVE_FILENAME}.zip.md5
 
     - name: Upload artifacts
       uses: softprops/action-gh-release@v1
