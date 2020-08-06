@@ -76,7 +76,7 @@ jobs:
         sh build_deb.sh "${PLATFORM_INFO}"
         cp *.deb ../
         cd ..
-        tar -czf "${ARCHIVE_FILENAME}.tar.gz" vls LICENSE THIRD_PARTY_LICENSES.md
+        tar -czf "${ARCHIVE_FILENAME}.tar.gz" vls LICENSE THIRD_PARTY_LICENSES.md CHANGELOG.md
         md5sum "${ARCHIVE_FILENAME}.tar.gz" > ${ARCHIVE_FILENAME}.tar.gz.md5
         md5sum "${ARCHIVE_FILENAME}.deb" > ${ARCHIVE_FILENAME}.deb.md5
         ls -l

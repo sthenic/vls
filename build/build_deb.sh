@@ -7,6 +7,7 @@ mkdir -p "deb/usr/share/doc/vls"
 cp "../LICENSE" "deb/usr/share/doc/vls/copyright"
 echo  >> "deb/usr/share/doc/vls/copyright"
 cat "../THIRD_PARTY_LICENSES.md" >> "deb/usr/share/doc/vls/copyright"
+cp "../CHANGELOG.md" "deb/usr/share/doc/vls/"
 echo " done."
 
 # Update version information
