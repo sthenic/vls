@@ -16,14 +16,12 @@ jobs:
       with:
         repository: 'sthenic/vparse'
         path: vparse
-        token: ${{ secrets.VPARSE_TOKEN }}
 
     - name: Checkout vltoml
       uses: actions/checkout@v2
       with:
         repository: 'sthenic/vltoml'
         path: vltoml
-        token: ${{ secrets.VPARSE_TOKEN }}
 
     - uses: jiro4989/setup-nim-action@v1.1.2
       with:
