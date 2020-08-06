@@ -10,11 +10,7 @@ jobs:
     strategy:
       matrix:
         os:
-          - ubuntu-20.04
-          - ubuntu-18.04
           - ubuntu-16.04
-          - windows-latest
-          - macos-latest
     steps:
     - name: Checkout vls
       uses: actions/checkout@v2
@@ -26,14 +22,12 @@ jobs:
       with:
         repository: 'sthenic/vparse'
         path: vparse
-        token: ${{ secrets.VPARSE_TOKEN }}
 
     - name: Checkout vltoml
       uses: actions/checkout@v2
       with:
         repository: 'sthenic/vltoml'
         path: vltoml
-        token: ${{ secrets.VPARSE_TOKEN }}
 
     - uses: jiro4989/setup-nim-action@v1.1.2
       with:
@@ -86,7 +80,7 @@ jobs:
     - name: Upload artifacts
       uses: softprops/action-gh-release@v1
       env:
-        GITHUB_TOKEN: ${{ secrets.VPARSE_TOKEN }}
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       with:
         draft: true
         files: |
