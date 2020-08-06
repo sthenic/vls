@@ -80,7 +80,12 @@ jobs:
         nimble build -y
         $ARCHIVE_FILENAME="vls-$(cat src/VERSION)-win_x86_64"
         7z a -tzip "${ARCHIVE_FILENAME}.zip" vls.exe LICENSE THIRD_PARTY_LICENSES.md CHANGELOG.md
-        echo (get-filehash -Algorithm MD5 "${ARCHIVE_FILENAME}.zip").Hash > ${ARCHIVE_FILENAME}.zip.md5
+        [string]$MD5 = (get-filehash -Algorithm MD5 "${ARCHIVE_FILENAME}.zip").Hash
+        $MD5
+        echo $MD5
+        echo $MD5 > foo.txt
+        cat foo.txt
+        echo $MD5 > "${ARCHIVE_FILENAME}.zip.md5"
         dir
 
     - name: Upload artifacts
