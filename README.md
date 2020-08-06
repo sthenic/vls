@@ -45,7 +45,7 @@ server](https://microsoft.github.io/language-server-protocol/) written in
 
 ## Installation
 
-1. Download the latest [release archive](hgttps://github.com/sthenic/releases)
+1. Download the latest [release archive](https://github.com/sthenic/vls/releases)
    that targets your platform.
 
 2. Extract the archive to a persistent location and make the binary file
