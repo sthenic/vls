@@ -13,7 +13,7 @@ jobs:
     strategy:
       matrix:
         os:
-          - ubuntu-16.04
+          - macos-latest
     steps:
     # Check out the repository under $GITHUB_WORKSPACE.
     - name: Checkout vls
@@ -48,7 +48,8 @@ jobs:
         nimble install -y
         popd
 
-    - name: Build
+    - name: Build Ubuntu
+      if: ${{ matrix.os == 'ubuntu-20.04' || matrix.os == 'ubuntu-18.04' || matrix.os == 'ubuntu-16.04'}}
       run: |
         cd vls
         nimble build -y
@@ -62,7 +63,15 @@ jobs:
         tar -czf "${ARCHIVE_FILENAME}.tar.gz" vls LICENSE THIRD_PARTY_LICENSES.md CHANGELOG.md
         md5sum "${ARCHIVE_FILENAME}.tar.gz" > ${ARCHIVE_FILENAME}.tar.gz.md5
         md5sum "${ARCHIVE_FILENAME}.deb" > ${ARCHIVE_FILENAME}.deb.md5
-        ls -l
+
+    - name: Build macOS
+      if: ${{ matrix.os == 'macos-latest' }}
+      run: |
+        cd vls
+        nimble build -y
+        ARCHIVE_FILENAME="vls-$(cat src/VERSION)-macos"
+        tar -czf "${ARCHIVE_FILENAME}.tar.gz" vls LICENSE THIRD_PARTY_LICENSES.md CHANGELOG.md
+        md5 "${ARCHIVE_FILENAME}.tar.gz" > ${ARCHIVE_FILENAME}.tar.gz.md5
 
     - name: Upload artifacts
       uses: softprops/action-gh-release@v1
