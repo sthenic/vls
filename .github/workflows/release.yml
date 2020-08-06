@@ -10,7 +10,11 @@ jobs:
     strategy:
       matrix:
         os:
+          - ubuntu-20.04
+          - ubuntu-18.04
           - ubuntu-16.04
+          - windows-latest
+          - macos-latest
     steps:
     - name: Checkout vls
       uses: actions/checkout@v2
@@ -54,7 +58,7 @@ jobs:
         sh build_deb.sh "${PLATFORM_INFO}"
         cp *.deb ../
         cd ..
-        tar -czf "${ARCHIVE_FILENAME}.tar.gz" vls LICENSE THIRD_PARTY_LICENSES.md CHANGELOG.md
+        tar -czf "${ARCHIVE_FILENAME}.tar.gz" vls README.md LICENSE THIRD_PARTY_LICENSES.md CHANGELOG.md
         md5sum "${ARCHIVE_FILENAME}.tar.gz" > ${ARCHIVE_FILENAME}.tar.gz.md5
         md5sum "${ARCHIVE_FILENAME}.deb" > ${ARCHIVE_FILENAME}.deb.md5
 
@@ -64,7 +68,7 @@ jobs:
         cd vls
         nimble build -y
         ARCHIVE_FILENAME="vls-$(cat src/VERSION)-macos"
-        tar -czf "${ARCHIVE_FILENAME}.tar.gz" vls LICENSE THIRD_PARTY_LICENSES.md CHANGELOG.md
+        tar -czf "${ARCHIVE_FILENAME}.tar.gz" vls README.md LICENSE THIRD_PARTY_LICENSES.md CHANGELOG.md
         md5 "${ARCHIVE_FILENAME}.tar.gz" > ${ARCHIVE_FILENAME}.tar.gz.md5
 
     - name: Build Windows
@@ -73,7 +77,7 @@ jobs:
         cd vls
         nimble build -y
         $ARCHIVE_FILENAME="vls-$(cat src/VERSION)-win_x86_64"
-        7z a -tzip "${ARCHIVE_FILENAME}.zip" vls.exe LICENSE THIRD_PARTY_LICENSES.md CHANGELOG.md
+        7z a -tzip "${ARCHIVE_FILENAME}.zip" vls.exe README.md LICENSE THIRD_PARTY_LICENSES.md CHANGELOG.md
         [string]$MD5 = (get-filehash -Algorithm MD5 "${ARCHIVE_FILENAME}.zip").Hash
         echo $MD5 > "${ARCHIVE_FILENAME}.zip.md5"
 
