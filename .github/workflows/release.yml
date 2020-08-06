@@ -8,24 +8,7 @@ env:
   VLS_VERSION:
 
 jobs:
-  create_release:
-    runs-on: ubuntu-latest
-    outputs:
-      upload_url: ${{ steps.create_release.outputs.upload_url }}
-    steps:
-    - name: Create Release
-      id: create_release
-      uses: actions/create-release@v1
-      env:
-        GITHUB_TOKEN: ${{ secrets.VPARSE_TOKEN }}
-      with:
-        tag_name: ${{ github.ref }}
-        release_name: Release ${{ github.ref }}
-        draft: true
-        prerelease: false
-
   build:
-    needs: create_release
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
@@ -87,7 +70,7 @@ jobs:
         GITHUB_TOKEN: ${{ secrets.VPARSE_TOKEN }}
       with:
         files: |
-          "vls/*.tar.gz"
-          "vls/*.tar.gz.md5"
-          "vls/*.deb"
-          "vls/*.deb.md5"
+          vls/*.tar.gz
+          vls/*.tar.gz.md5
+          vls/*.deb
+          vls/*.deb.md5
