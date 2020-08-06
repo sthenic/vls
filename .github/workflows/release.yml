@@ -1,0 +1,91 @@
+name: release
+on:
+  push:
+    tags:
+      - 'v*'
+
+env:
+  VLS_VERSION:
+
+jobs:
+  create_release:
+    runs-on: ubuntu-latest
+    outputs:
+      upload_url: ${{ steps.create_release.outputs.upload_url }}
+    steps:
+    - name: Create Release
+      id: create_release
+      uses: actions/create-release@v1
+      env:
+        GITHUB_TOKEN: ${{ secrets.VPARSE_TOKEN }}
+      with:
+        tag_name: ${{ github.ref }}
+        release_name: Release ${{ github.ref }}
+        draft: true
+        prerelease: false
+
+  build:
+    needs: create_release
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        os:
+          - ubuntu-16.04
+    steps:
+    # Check out the repository under $GITHUB_WORKSPACE.
+    - name: Checkout vls
+      uses: actions/checkout@v2
+      with:
+        path: vls
+
+    - name: Checkout vparse
+      uses: actions/checkout@v2
+      with:
+        repository: 'sthenic/vparse'
+        path: vparse
+        token: ${{ secrets.VPARSE_TOKEN }}
+
+    - name: Checkout vltoml
+      uses: actions/checkout@v2
+      with:
+        repository: 'sthenic/vltoml'
+        path: vltoml
+        token: ${{ secrets.VPARSE_TOKEN }}
+
+    - uses: jiro4989/setup-nim-action@v1.1.2
+      with:
+        nim-version: '1.2.4'
+
+    - name: Install vparse and vltoml
+      run: |
+        pushd vparse
+        nimble install -y
+        popd
+        pushd vltoml
+        nimble install -y
+        popd
+
+    - name: Build
+      run: |
+        cd vls
+        nimble build -y
+        PLATFORM_INFO="${ID}-${VERSION_ID}-$(uname -i)"
+        ARCHIVE_FILENAME="vls-$(cat VERSION)-${PLATFORM_INFO}"
+        cd build
+        sh build_deb.sh "${PLATFORM_INFO}"
+        cp *.deb ../
+        cd ..
+        tar -czf "${ARCHIVE_FILENAME}.tar.gz" vls LICENSE THIRD_PARTY_LICENSES.md
+        md5sum "${ARCHIVE_FILENAME}.tar.gz" > ${ARCHIVE_FILENAME}.tar.gz.md5
+        md5sum "${ARCHIVE_FILENAME}.deb" > ${ARCHIVE_FILENAME}.deb.md5
+
+    - name: Upload artifacts
+      uses: softprops/action-gh-release@v1
+      env:
+        GITHUB_TOKEN: ${{ secrets.VPARSE_TOKEN }}
+      with:
+        files: |
+          "*.tar.gz"
+          "*.tar.gz.md5"
+          "*.deb"
+          "*.deb.md5"
