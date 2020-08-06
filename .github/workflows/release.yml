@@ -70,7 +70,7 @@ jobs:
         cd vls
         nimble build -y
         PLATFORM_INFO="${ID}-${VERSION_ID}-$(uname -i)"
-        ARCHIVE_FILENAME="vls-$(cat VERSION)-${PLATFORM_INFO}"
+        ARCHIVE_FILENAME="vls-$(cat src/VERSION)-${PLATFORM_INFO}"
         cd build
         sh build_deb.sh "${PLATFORM_INFO}"
         cp *.deb ../
