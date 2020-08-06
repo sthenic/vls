@@ -1,0 +1,4 @@
+#!/usr/bin/env bash
+
+# Add symbolic link
+ln -s /usr/share/vls/vls /usr/bin/vls

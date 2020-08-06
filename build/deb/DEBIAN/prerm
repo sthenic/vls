@@ -1,0 +1,4 @@
+#!/usr/bin/env bash
+
+# Remove symbolic link
+rm /usr/bin/vls

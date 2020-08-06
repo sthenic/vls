@@ -1,0 +1,10 @@
+Package: vls
+Version: 0.1.0
+Section: misc
+Priority: optional
+Architecture: amd64
+Maintainer: Marcus Eriksson <marcus.eriksson+vls@protonmail.com>
+Provides: vls
+Conflicts: vls
+Replaces: vls
+Description: A language server for Verilog IEEE 1364-2005

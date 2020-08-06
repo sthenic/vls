@@ -1,5 +1,6 @@
 vls
 *.code-workspace
+build/*.deb
 tests/protocol/trecv
 tests/protocol/tsend
 tests/configuration/tconfiguration
