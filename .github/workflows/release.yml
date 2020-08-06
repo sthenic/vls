@@ -75,13 +75,12 @@ jobs:
 
     - name: Build Windows
       if: ${{ matrix.os == 'windows-latest' }}
-      shell: bash
       run: |
         cd vls
         nimble build -y
-        ARCHIVE_FILENAME="vls-$(cat src/VERSION)-win_x86_64"
+        $ARCHIVE_FILENAME="vls-$(cat src/VERSION)-win_x86_64"
         7z a -tzip "${ARCHIVE_FILENAME}.zip" vls.exe LICENSE THIRD_PARTY_LICENSES.md CHANGELOG.md
-        FCIV -md5 "${ARCHIVE_FILENAME}.zip" > ${ARCHIVE_FILENAME}.zip.md5
+        get-filehash -Algorithm MD5 "${ARCHIVE_FILENAME}.zip" > ${ARCHIVE_FILENAME}.zip.md5
 
     - name: Upload artifacts
       uses: softprops/action-gh-release@v1
@@ -93,3 +92,5 @@ jobs:
           vls/*.tar.gz.md5
           vls/*.deb
           vls/*.deb.md5
+          vls/*.zip
+          vls/*.zip.md5
