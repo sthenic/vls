@@ -80,7 +80,9 @@ jobs:
         nimble build -y
         $ARCHIVE_FILENAME="vls-$(cat src/VERSION)-win_x86_64"
         7z a -tzip "${ARCHIVE_FILENAME}.zip" vls.exe LICENSE THIRD_PARTY_LICENSES.md CHANGELOG.md
+        get-filehash -Algorithm MD5 "${ARCHIVE_FILENAME}.zip"
         get-filehash -Algorithm MD5 "${ARCHIVE_FILENAME}.zip" > ${ARCHIVE_FILENAME}.zip.md5
+        dir
 
     - name: Upload artifacts
       uses: softprops/action-gh-release@v1
