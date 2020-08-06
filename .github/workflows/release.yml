@@ -69,6 +69,7 @@ jobs:
       run: |
         cd vls
         nimble build -y
+        source /etc/os-release
         PLATFORM_INFO="${ID}-${VERSION_ID}-$(uname -i)"
         ARCHIVE_FILENAME="vls-$(cat src/VERSION)-${PLATFORM_INFO}"
         cd build
@@ -86,7 +87,7 @@ jobs:
         GITHUB_TOKEN: ${{ secrets.VPARSE_TOKEN }}
       with:
         files: |
-          *.tar.gz
-          *.tar.gz.md5
-          *.deb
-          *.deb.md5
+          "vls/*.tar.gz"
+          "vls/*.tar.gz.md5"
+          "vls/*.deb"
+          "vls/*.deb.md5"
