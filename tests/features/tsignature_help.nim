@@ -90,10 +90,10 @@ run_test("textDocument/signatureHelp: function name",
          "character": 27
       }
    }),
-   new_lsp_response(292, 15, %*{
+   new_lsp_response(316, 15, %*{
       "signatures": [
          {
-            "label": "function add_one(input a)",
+            "label": "function automatic [WIDTH - 1:0] add_one(input a)",
             "documentation": {
                "kind": "markdown",
                "value": "Docstring to function `add_one`."
@@ -122,10 +122,10 @@ run_test("textDocument/signatureHelp: function parameter",
          "character": 33
       }
    }),
-   new_lsp_response(291, 15, %*{
+   new_lsp_response(315, 15, %*{
       "signatures": [
          {
-            "label": "function add_one(input a)",
+            "label": "function automatic [WIDTH - 1:0] add_one(input a)",
             "documentation": {
                "kind": "markdown",
                "value": "Docstring to function `add_one`."
@@ -168,10 +168,10 @@ run_test("textDocument/signatureHelp: function w/ multiple parameters (1)",
          "character": 57
       }
    }),
-   new_lsp_response(486, 15, %*{
+   new_lsp_response(494, 15, %*{
       "signatures": [
          {
-            "label": "function compute_something(input [FOO - 1:0] parameter1, input [FOO - 1:0] parameter2)",
+            "label": "function [FOO:0] compute_something(input [FOO - 1:0] parameter1, input [FOO - 1:0] parameter2)",
             "documentation": {
                "kind": "markdown",
                "value": "Compute something between `parameter1` and `parameter2`."
@@ -204,10 +204,10 @@ run_test("textDocument/signatureHelp: function w/ multiple parameters (2)",
          "character": 58
       }
    }),
-   new_lsp_response(486, 15, %*{
+   new_lsp_response(494, 15, %*{
       "signatures": [
          {
-            "label": "function compute_something(input [FOO - 1:0] parameter1, input [FOO - 1:0] parameter2)",
+            "label": "function [FOO:0] compute_something(input [FOO - 1:0] parameter1, input [FOO - 1:0] parameter2)",
             "documentation": {
                "kind": "markdown",
                "value": "Compute something between `parameter1` and `parameter2`."

@@ -354,7 +354,7 @@ run_test("textDocument/hover: function",
          "character": 22
       }
    }),
-   new_lsp_response(234, 15, %*{
+   new_lsp_response(258, 15, %*{
       "range": {
          "start": {"line": 50, "character": 22},
          "end" : {"line": 50, "character": 29}
@@ -363,7 +363,7 @@ run_test("textDocument/hover: function",
          "kind": "markdown",
          "value": """
 ```verilog
-function add_one(input a)
+function automatic [WIDTH - 1:0] add_one(input a)
 ```
 
 Docstring to function `add_one`."""

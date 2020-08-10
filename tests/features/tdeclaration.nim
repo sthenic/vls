@@ -201,8 +201,8 @@ run_test("textDocument/declaration: function",
    new_lsp_response(131 + src2_path_len, 7, %*[{
       "uri": "file://" & expand_filename(src2_path),
       "range": {
-         "start": {"line": 39, "character": 13},
-         "end" : {"line": 39, "character": 20}
+         "start": {"line": 39, "character": 35},
+         "end" : {"line": 39, "character": 42}
       }
    }])
 )
@@ -392,8 +392,8 @@ run_test("textDocument/declaration: function parameter",
    new_lsp_response(132 + src2_path_len, 15, %*[{
       "uri": "file://" & expand_filename(src2_path),
       "range": {
-         "start": {"line": 39, "character": 27},
-         "end" : {"line": 39, "character": 28}
+         "start": {"line": 39, "character": 49},
+         "end" : {"line": 39, "character": 50}
       }
    }])
 )

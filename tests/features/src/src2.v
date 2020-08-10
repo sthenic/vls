@@ -37,7 +37,7 @@ module mymodule #(
         reg_no_default <= 1'b0;
     endtask
     /* Docstring to function `add_one`. */
-    function add_one(input a);
+    function automatic [WIDTH-1:0] add_one(input a);
         add_one = a + 1;
     endfunction
 

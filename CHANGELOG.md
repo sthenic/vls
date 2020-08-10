@@ -13,6 +13,8 @@ All notable changes to this project will be documented in this file.
   request).
 - Avoid hover requests for internal module declarations (until properly
   implemented).
+- The hover information for task & function declarations now correctly includes
+  the type information (vparse v0.1.1).
 
 ## [v0.1.0] - 2020-08-08
 
