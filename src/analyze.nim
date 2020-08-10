@@ -687,6 +687,7 @@ proc find_port_connection_completions(unit: SourceUnit, module_name, prefix: str
                add_completion_item(external_port, port)
          else:
             discard
+      return
 
 
 proc find_parameter_port_connection_completions(unit: SourceUnit, module_name, prefix: string): seq[LspCompletionItem] =
@@ -706,6 +707,7 @@ proc find_parameter_port_connection_completions(unit: SourceUnit, module_name, p
                if not is_nil(comment):
                   item.documentation = LspMarkupContent(kind: LspMkMarkdown, value: comment.s)
                add(result, item)
+      return
 
 
 proc find_completions*(unit: SourceUnit, line, col: int): seq[LspCompletionItem] =
