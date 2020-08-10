@@ -9,6 +9,8 @@ All notable changes to this project will be documented in this file.
 - Fix infinite loop when looking up completions in a file containing a ranged
   module instantiation.
 - Speed up the parameter/port connection completion request.
+- Fix the type of the `signatureHelpProvider` field (response to an `initialize`
+  request).
 
 ## [v0.1.0] - 2020-08-08
 

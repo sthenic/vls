@@ -141,7 +141,7 @@ proc initialize(s: var LspServer, msg: LspMessage) =
          "renameProvider": true,
          "documentHighlightProvider": true,
          "hoverProvider": true,
-         "signatureHelpProvider": true
+         "signatureHelpProvider": {}
       }
       send(s, new_lsp_response(msg.id, result))
       s.is_initialized = true
