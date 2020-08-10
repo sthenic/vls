@@ -1,4 +1,5 @@
 vls
+*.txt
 *.code-workspace
 build/*.deb
 tests/protocol/trecv
