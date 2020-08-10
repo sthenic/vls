@@ -11,6 +11,8 @@ All notable changes to this project will be documented in this file.
 - Speed up the parameter/port connection completion request.
 - Fix the type of the `signatureHelpProvider` field (response to an `initialize`
   request).
+- Avoid hover requests for internal module declarations (until properly
+  implemented).
 
 ## [v0.1.0] - 2020-08-08
 

@@ -400,6 +400,20 @@ Docstring to `an_empty_task`."""
 )
 
 
+run_test("textDocument/hover: top-level module declaration",
+   new_lsp_request(15, "textDocument/hover", %*{
+      "textDocument": {
+         "uri": "file://" & expand_filename(src3_path),
+      },
+      "position": {
+         "line": 0,
+         "character": 9
+      }
+   }),
+   new_lsp_response(39, 15, new_jnull())
+)
+
+
 # Shut down the server.
 shutdown(ifs, ofs)
 
