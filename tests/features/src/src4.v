@@ -13,7 +13,7 @@
     wire [1:0] out;
     module5 #(
         .FOO (BAR), .BaR (fOO)
-    ) module5_inst (
+    ) module5_inst [1:0] (
         .clk_i (clk_i),
         .data_o (out[0]),
         .valid_o (out[1])

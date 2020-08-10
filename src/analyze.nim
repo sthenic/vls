@@ -546,8 +546,8 @@ proc skip_between(p: var LocalParser, start_kind, stop_kind: TokenKind) =
    var count = 0
    if p.tok.kind != start_kind:
       return
-   get_token(p)
    while true:
+      get_token(p)
       if p.tok.kind == TkEndOfFile:
          break
       elif p.tok.kind == start_kind:
@@ -556,6 +556,7 @@ proc skip_between(p: var LocalParser, start_kind, stop_kind: TokenKind) =
          if count > 0:
             dec(count)
          else:
+            get_token(p)
             break
 
 
