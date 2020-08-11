@@ -29,15 +29,19 @@ proc get_configuration(source_filename: string): Configuration =
          log.error("Failed to parse configuration file: '$1'", e.msg)
 
 
-proc open*(unit: var SourceUnit, filename, text: string) =
-   unit.configuration = get_configuration(filename)
+proc update*(unit: var SourceUnit, text: string) =
    unit.cache = new_ident_cache()
-   unit.filename = filename
    unit.text = text
    let ss = new_string_stream(text)
-   open_graph(unit.graph, unit.cache, ss, filename,
+   open_graph(unit.graph, unit.cache, ss, unit.filename,
               unit.configuration.include_paths, unit.configuration.defines)
    close(ss)
+
+
+proc open*(unit: var SourceUnit, filename, text: string) =
+   unit.configuration = get_configuration(filename)
+   unit.filename = filename
+   update(unit, text)
 
 
 proc close*(unit: var SourceUnit) =

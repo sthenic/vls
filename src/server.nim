@@ -94,22 +94,21 @@ proc publish_diagnostics(s: LspServer, unit: SourceUnit) =
 
 
 proc process_text(s: var LspServer, uri, text: string) =
-   ## Create a new source unit from the input ``text``. The environment
-   ## (include paths etc.) is initialized from the ``uri``. The resulting
-   ## source unit will be indexed with the ``uri`` as key.
-   log.debug("Processing text from '$1'.", uri)
-   var unit: SourceUnit
-   open(unit, get_path_from_uri(uri), text)
+   ## Create a new (or update an existing) source unit from the input ``text``.
+   ## The environment (include paths etc.) is initialized from the ``uri``. The
+   ## resulting source unit will be indexed with the ``uri`` as key.
 
-   # Index the source unit to be able to analyze the graph when the client
-   # makes subsequent request. If an element already exists in the table, we
-   # call the close proc before discarding the old source unit in favor of
-   # the new.
+   # Index the source unit to be able to analyze the graph when the client makes
+   # other requests. If an element already exists in the table, we update that
+   # one.
    if has_key(s.source_units, uri):
-      log.debug("Closing source unit for file '$1'.", uri)
-      close(s.source_units[uri])
-   log.debug("Adding a new source unit for the file '$1' to the index.", uri)
-   s.source_units[uri] = unit
+      log.debug("Updating the source unit for the file '$1'.", uri)
+      update(s.source_units[uri], text)
+   else:
+      log.debug("Adding a new source unit for the file '$1' to the index.", uri)
+      var unit: SourceUnit
+      open(unit, get_path_from_uri(uri), text)
+      s.source_units[uri] = unit
 
    if s.client_capabilities.diagnostics or s.force_diagnostics:
       publish_diagnostics(s, s.source_units[uri])

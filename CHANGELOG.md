@@ -2,6 +2,13 @@
 
 All notable changes to this project will be documented in this file.
 
+## [Unreleased]
+
+### Changed
+
+- Only read the configuration file when the a source file is opened (`didOpen`)
+  instead of every time the source file changes (`didChange`).
+
 ## [v0.1.1] - 2020-08-10
 
 ### Fixed
@@ -14,7 +21,7 @@ All notable changes to this project will be documented in this file.
 - Avoid hover requests for internal module declarations (until properly
   implemented).
 - The hover information for task & function declarations now correctly includes
-  the type information (vparse v0.1.1).
+  the type information (`vparse` v0.1.1).
 
 ## [v0.1.0] - 2020-08-08
 
