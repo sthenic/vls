@@ -320,7 +320,7 @@ proc is_external_identifier(context: AstContext): bool =
 
 proc find_internal_declaration(unit: SourceUnit, context: AstContext, identifier: PIdentifier): LspLocation =
    log.debug("Looking up an internal declaration for '$1'.", identifier.s)
-   let (n, _) = find_declaration(context, identifier, true)
+   let (_, n, _) = find_declaration(context, identifier)
    if not is_nil(n):
       let uri = construct_uri(unit.graph.locations.file_maps[n.loc.file - 1].filename)
       result = new_lsp_location(uri, int(n.loc.line - 1), int(n.loc.col), len(n.identifier.s))
@@ -489,7 +489,7 @@ proc find_references*(unit: SourceUnit, line, col: int, include_declaration: boo
       if c.n.kind == NkPortConnection and c.pos == find_first_index(c.n, NkIdentifier):
          raise new_analyze_error("Failed to find an identifer at the target location.")
 
-   let (declaration, declaration_context) = find_declaration(identifier_context, identifier.identifier, true)
+   let (_, declaration, declaration_context) = find_declaration(identifier_context, identifier.identifier)
    if is_nil(declaration):
       raise new_analyze_error("Failed to find the declaration of identifier '$1'.", identifier.identifier.s)
 
@@ -680,9 +680,9 @@ proc find_port_connection_completions(unit: SourceUnit, module_name, prefix: str
 
             # FIXME: Finding declarations starting from the module root is not
             #        possible unless find_declaration() is modified.
-            let decl = find_declaration(module, internal_port.identifier)
-            if not is_nil(decl):
-               add_completion_item(external_port, decl)
+            let (declaration, _) = find_declaration(module, internal_port.identifier)
+            if not is_nil(declaration):
+               add_completion_item(external_port, declaration)
             else:
                add_completion_item(external_port, port)
          else:
@@ -740,8 +740,9 @@ proc find_completions*(unit: SourceUnit, line, col: int): seq[LspCompletionItem]
                                              loc, context, added_length = 1)
    if not is_nil(identifier):
       let prefix = substr(identifier.identifier.s, 0, loc.col - identifier.loc.col - 1)
-      for n in walk_nodes_starting_with(find_all_declarations(context, true), prefix):
-         add(result, new_lsp_completion_item(n.identifier.s))
+      for (declaration, identifier) in find_all_declarations(context):
+         if starts_with(identifier.identifier.s, prefix):
+            add(result, new_lsp_completion_item(identifier.identifier.s))
    else:
       let cache = new_ident_cache()
       let tok = find_completable_token_at(unit, loc, cache)
@@ -761,7 +762,7 @@ proc find_completions*(unit: SourceUnit, line, col: int): seq[LspCompletionItem]
 
 proc find_symbols*(unit: SourceUnit): seq[LspSymbolInformation] =
    # Add an entry for each declaration in the AST.
-   for n in find_all_declarations(unit.graph.root_node, true):
+   for (_, n) in find_all_declarations(unit.graph.root_node):
       # Filter out declarations not in the current file.
       if n.loc.file != 1:
          continue
@@ -843,7 +844,7 @@ proc find_external_hover(unit: SourceUnit, context: AstContext, identifier: PIde
 
 proc find_internal_hover(unit: SourceUnit, context: AstContext, identifier: PIdentifier,
                          highlight_location: Location): LspHover =
-   let (declaration, _) = find_declaration(context, identifier, false)
+   let (declaration, _, _) = find_declaration(context, identifier)
    if is_nil(declaration):
       raise new_analyze_error("Failed to find the declaration of identifier '$1'.", identifier.s)
    elif declaration.kind == NkModuleDecl:
@@ -981,7 +982,7 @@ proc find_internal_signature_help(unit: SourceUnit, context: AstContext, identif
    let name = find_first(context[^1].n, NkIdentifier)
    if is_nil(name):
       raise new_analyze_error("Failed to find the name of the function.")
-   let (declaration, _) = find_declaration(context, name.identifier, false)
+   let (declaration, _, _) = find_declaration(context, name.identifier)
    if is_nil(declaration):
       raise new_analyze_error("Failed to find the declaration of identifier '$1'.", name.identifier.s)
 
