@@ -117,6 +117,7 @@ type
       name*: string
       kind*: LspSymbolKind
       location*: LspLocation
+      container_name*: string
 
    LspTextEdit* = object
       range*: LspRange
@@ -291,12 +292,14 @@ proc `%`*(l: LspLocation): JsonNode =
    }
 
 
-proc `%`*(si: LspSymbolInformation): JsonNode =
+proc `%`*(o: LspSymbolInformation): JsonNode =
    result = %*{
-      "name": si.name,
-      "kind": int(si.kind),
-      "location": %si.location
+      "name": o.name,
+      "kind": int(o.kind),
+      "location": %o.location
    }
+   if len(o.container_name) > 0:
+      result["containerName"] = %o.container_name
 
 
 proc `%`*(o: LspTextEdit): JsonNode =

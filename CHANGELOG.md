@@ -4,6 +4,10 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+### Fixed
+
+- The `documentSymbol` request now correctly lists all module instances.
+
 ### Changed
 
 - Only read the configuration file when the a source file is opened (`didOpen`)

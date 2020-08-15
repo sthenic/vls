@@ -785,10 +785,22 @@ proc find_symbols*(unit: SourceUnit): seq[LspSymbolInformation] =
    for n in find_all_module_instantiations(unit.graph.root_node):
       if n.loc.file != 1:
          continue
-      let loc = new_lsp_location(construct_uri(unit.filename),
-                                 int(n.loc.line - 1),
-                                 int(n.loc.col), len(n.identifier.s))
-      add(result, new_lsp_symbol_information(n.identifier.s, LspSkModule, loc))
+
+      let module_name = find_first(n, NkIdentifier)
+      if is_nil(module_name):
+         continue
+
+      for s in walk_sons(n, NkModuleInstance):
+         let module_instance_name = find_first(s, NkIdentifier)
+         if is_nil(module_instance_name):
+            continue
+         let loc = new_lsp_location(construct_uri(unit.filename),
+                                    int(module_instance_name.loc.line - 1),
+                                    int(module_instance_name.loc.col),
+                                    len(module_instance_name.identifier.s))
+         var symbol = new_lsp_symbol_information(module_name.identifier.s, LspSkModule, loc)
+         symbol.container_name = module_instance_name.identifier.s
+         add(result, symbol)
 
 
 proc rename_symbol*(unit: SourceUnit, line, col: int, new_name: string): seq[LspTextDocumentEdit] =
