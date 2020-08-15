@@ -440,6 +440,33 @@ run_test("textDocument/completion: w/ documentation",
 )
 
 
+run_test("textDocument/completion: local scope",
+   new_lsp_request(0, "textDocument/completion", %*{
+      "textDocument": {
+         "uri": "file://" & expand_filename(src3_path),
+      },
+      "position": {
+         "line": 41,
+         "character": 37
+      }
+   }),
+   new_lsp_response(241, 0, %*[
+      {
+         "label": "a_common_wire",
+         "detail": "wire a_common_wire",
+         "documentation": {
+            "kind": "markdown",
+            "value": "This is the docstring for `a_common_wire`."
+         }
+      },
+      {
+         "label": "a_local_wire",
+         "detail": "wire a_local_wire = 1'b1"
+      }
+   ])
+)
+
+
 # Shut down the server.
 shutdown(ifs, ofs)
 
