@@ -690,6 +690,17 @@ proc find_port_connection_completions(unit: SourceUnit, module_name, prefix: str
       return
 
 
+proc add_declaration_information(unit: SourceUnit, item: var LspCompletionItem, n: PNode) =
+   item.detail = $n
+   let comment = find_first(n, NkComment)
+   item.documentation.kind = LspMkMarkdown
+   if not is_nil(comment):
+      item.documentation.value = comment.s
+   if n.loc.file > 1:
+      let filename = extract_filename(unit.graph.locations.file_maps[n.loc.file - 1].filename)
+      add(item.documentation.value, "\n\n---\nFile: " & filename)
+
+
 proc find_parameter_port_connection_completions(unit: SourceUnit, module_name, prefix: string): seq[LspCompletionItem] =
    for filename, module in walk_module_declarations(unit.configuration.include_paths):
       let id = find_first(module, NkModuleIdentifier)
@@ -702,10 +713,7 @@ proc find_parameter_port_connection_completions(unit: SourceUnit, module_name, p
             let id = find_first(assignment, NkParameterIdentifier)
             if not is_nil(id) and starts_with(id.identifier.s, prefix):
                var item = new_lsp_completion_item(id.identifier.s & " ()")
-               item.detail = $parameter
-               let comment = find_first(parameter, NkComment)
-               if not is_nil(comment):
-                  item.documentation = LspMarkupContent(kind: LspMkMarkdown, value: comment.s)
+               add_declaration_information(unit, item, parameter)
                add(result, item)
       return
 
@@ -742,7 +750,9 @@ proc find_completions*(unit: SourceUnit, line, col: int): seq[LspCompletionItem]
       let prefix = substr(identifier.identifier.s, 0, loc.col - identifier.loc.col - 1)
       for (declaration, identifier) in find_all_declarations(context):
          if starts_with(identifier.identifier.s, prefix):
-            add(result, new_lsp_completion_item(identifier.identifier.s))
+            var item = new_lsp_completion_item(identifier.identifier.s)
+            add_declaration_information(unit, item, declaration)
+            add(result, item)
    else:
       let cache = new_ident_cache()
       let tok = find_completable_token_at(unit, loc, cache)

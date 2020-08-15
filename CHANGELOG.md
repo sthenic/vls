@@ -8,6 +8,8 @@ All notable changes to this project will be documented in this file.
 
 - Only read the configuration file when the a source file is opened (`didOpen`)
   instead of every time the source file changes (`didChange`).
+- If available, completion suggestions now include information about the
+  identifier's declaration and any attached docstring.
 
 ## [v0.1.1] - 2020-08-10
 

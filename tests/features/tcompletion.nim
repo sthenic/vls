@@ -89,8 +89,11 @@ run_test("textDocument/completion: c(lk_i)",
          "character": 22
       }
    }),
-   new_lsp_response(53, 0, %*[
-      {"label": "clk_i"}
+   new_lsp_response(81, 0, %*[
+      {
+         "label": "clk_i",
+         "detail": "input wire clk_i"
+      }
    ])
 )
 
@@ -105,9 +108,19 @@ run_test("textDocument/completion: WIDTH",
          "character": 13
       }
    }),
-   new_lsp_response(83, 0, %*[
-      {"label": "WIDTH"},
-      {"label": "WIDTH_FROM_HEADER"}
+   new_lsp_response(235, 0, %*[
+      {
+         "label": "WIDTH",
+         "detail": "parameter integer WIDTH = 0"
+      },
+      {
+         "label": "WIDTH_FROM_HEADER",
+         "detail": "localparam WIDTH_FROM_HEADER = 8",
+         "documentation": {
+            "kind": "markdown",
+            "value": "\n\n---\nFile: src3.vh"
+         }
+      }
    ])
 )
 
@@ -122,8 +135,15 @@ run_test("textDocument/completion: WIDTH_",
          "character": 15
       }
    }),
-   new_lsp_response(65, 0, %*[
-      {"label": "WIDTH_FROM_HEADER"}
+   new_lsp_response(178, 0, %*[
+      {
+         "label": "WIDTH_FROM_HEADER",
+         "detail": "localparam WIDTH_FROM_HEADER = 8",
+         "documentation": {
+            "kind": "markdown",
+            "value": "\n\n---\nFile: src3.vh"
+         }
+      }
    ])
 )
 
@@ -138,8 +158,11 @@ run_test("textDocument/completion: macro argument (1)",
          "character": 27
       }
    }),
-   new_lsp_response(54, 0, %*[
-      {"label": "my_reg"}
+   new_lsp_response(83, 0, %*[
+      {
+         "label": "my_reg",
+         "detail": "reg my_reg = 1'b0"
+      }
    ])
 )
 
@@ -389,6 +412,29 @@ run_test("textDocument/completion: module parameter port (2)",
       {
          "label": "BaR ()",
          "detail": "parameter BaR = \"baz\""
+      }
+   ])
+)
+
+
+run_test("textDocument/completion: w/ documentation",
+   new_lsp_request(0, "textDocument/completion", %*{
+      "textDocument": {
+         "uri": "file://" & expand_filename(src3_path),
+      },
+      "position": {
+         "line": 37,
+         "character": 40
+      }
+   }),
+   new_lsp_response(180, 0, %*[
+      {
+         "label": "a_common_wire",
+         "detail": "wire a_common_wire",
+         "documentation": {
+            "kind": "markdown",
+            "value": "This is the docstring for `a_common_wire`."
+         }
       }
    ])
 )
