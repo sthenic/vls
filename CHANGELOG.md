@@ -7,6 +7,9 @@ All notable changes to this project will be documented in this file.
 ### Added
 
 - Completion suggestions now make use of the optional 'kind' field.
+- Reference lookups targeting a module instantiation or the module declaration
+  itself will now browse through the include paths and report back all the
+  instantiations of that module.
 
 ### Fixed
 

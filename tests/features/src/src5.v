@@ -13,4 +13,9 @@
         tmp <= ~tmp;
     assign data_o = tmp;
 
+    module4 module4_inst (
+        (* some_attr = "true" *) .clk_i (clk_i),
+        .data_o (from_module4)
+    );
+
 endmodule

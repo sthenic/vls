@@ -431,6 +431,25 @@ proc find_declaration*(unit: SourceUnit, line, col: int): LspLocation =
       result = find_internal_declaration(unit, context, identifier.identifier)
 
 
+proc find_module_references*(unit: SourceUnit, identifier: PIdentifier): seq[LspLocation] =
+   for filename, module in walk_module_declarations(unit.configuration.include_paths):
+      for module_instantiation in find_all_module_instantiations(module):
+         let module_name = find_first(module_instantiation, NkIdentifier)
+         if is_nil(module_name) or module_name.identifier.s != identifier.s:
+            continue
+
+         for s in walk_sons(module_instantiation, NkModuleInstance):
+            let module_instance_name = find_first(s, NkIdentifier)
+            if is_nil(module_instance_name):
+               continue
+            # TODO: Need to map module_instance_name.loc to a physical location?
+            #       If so we need to extract the graph's locations.
+            add(result, new_lsp_location(construct_uri(filename),
+                                         int(module_instance_name.loc.line - 1),
+                                         int(module_instance_name.loc.col),
+                                         len(module_instance_name.identifier.s)))
+
+
 proc find_references(unit: SourceUnit, context: AstContextItem, identifier: PIdentifier,
                      include_declaration: bool): seq[LspLocation] =
    let start = if include_declaration: context.pos else: context.pos + 1
@@ -481,13 +500,20 @@ proc find_references*(unit: SourceUnit, line, col: int, include_declaration: boo
    if is_nil(identifier):
       raise new_analyze_error("Failed to find an identifer at the target location.")
 
-   # We have to revert the identifier match if it turns out it's the first
-   # identifier in a port connection node. That's the port name, so there
-   # shouldn't be any references reported in that case.
+   # Here we handle two special cases of the reference lookup:
+   # - We have to abort the request if it turns out that we're targeting the
+   #   first identifier in a port connection node. That's the port name, so
+   #   there shouldn't be any references reported in that case.
+   # - If we're targeting a module instantiation or the identifier in the module
+   #   declaration itself, we look up all references to this module by browsing
+   #   the include path.
    if len(identifier_context) > 0:
       let c = identifier_context[^1]
       if c.n.kind == NkPortConnection and c.pos == find_first_index(c.n, NkIdentifier):
          raise new_analyze_error("Failed to find an identifer at the target location.")
+      elif c.n.kind == NkModuleInstantiation or
+           c.n.kind == NkModuleDecl and c.pos == find_first_index(c.n, NkModuleIdentifier):
+         return find_module_references(unit, identifier.identifier)
 
    let (_, declaration, declaration_context) = find_declaration(identifier_context, identifier.identifier)
    if is_nil(declaration):
