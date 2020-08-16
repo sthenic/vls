@@ -80,10 +80,38 @@ type
       severity*: LspSeverity
       message*: string
 
+   LspCompletionKind* = enum
+      LspCkText = 1
+      LspCkMethod = 2
+      LspCkFunction = 3
+      LspCkConstructor = 4
+      LspCkField = 5
+      LspCkVariable = 6
+      LspCkClass = 7
+      LspCkInterface = 8
+      LspCkModule = 9
+      LspCkProperty = 10
+      LspCkUnit = 11
+      LspCkValue = 12
+      LspCkEnum = 13
+      LspCkKeyword = 14
+      LspCkSnippet = 15
+      LspCkColor = 16
+      LspCkFile = 17
+      LspCkReference = 18
+      LspCkFolder = 19
+      LspCkEnumMember = 20
+      LspCkConstant = 21
+      LspCkStruct = 22
+      LspCkEvent = 23
+      LspCkOperator = 24
+      LspCkTypeParameter = 25
+
    LspCompletionItem* = object
       label*: string
       detail*: string
       documentation*: LspMarkupContent
+      kind*: LspCompletionKind
 
    LspSymbolKind* = enum
       LspSkFile = 1
@@ -211,6 +239,7 @@ proc new_lsp_diagnostic*(start, stop: LspPosition, severity: LspSeverity,
 
 proc new_lsp_completion_item*(label: string): LspCompletionItem =
    result.label = label
+   result.kind = LspCkText
    set_len(result.detail, 0)
    set_len(result.documentation.value, 0)
 
@@ -366,6 +395,7 @@ proc `%`*(o: LspSignatureHelp): JsonNode =
 proc `%`*(o: LspCompletionItem): JsonNode =
    result = %*{
       "label": o.label,
+      "kind": int(o.kind)
    }
    if len(o.detail) > 0:
       result["detail"] = %o.detail

@@ -4,6 +4,10 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+### Added
+
+- Completion suggestions now make use of the optional 'kind' field.
+
 ### Fixed
 
 - The `documentSymbol` request now correctly lists all module instances.

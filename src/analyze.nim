@@ -647,15 +647,30 @@ proc find_completable_token_at(unit: SourceUnit, loc: Location, cache: Identifie
       get_token(parser)
 
 
-proc find_port_connection_completions(unit: SourceUnit, module_name, prefix: string): seq[LspCompletionItem] =
-   template add_completion_item(id, declaration: PNode) =
-      var item = new_lsp_completion_item(id.identifier.s & " ()")
-      item.detail = $declaration
-      let comment = find_first(declaration, NkComment)
-      if not is_nil(comment):
-         item.documentation = LspMarkupContent(kind: LspMkMarkdown, value: comment.s)
-      add(result, item)
+proc add_declaration_information(unit: SourceUnit, item: var LspCompletionItem, n: PNode) =
+   item.detail = $n
 
+   let comment = find_first(n, NkComment)
+   item.documentation.kind = LspMkMarkdown
+   if not is_nil(comment):
+      item.documentation.value = comment.s
+
+   if n.loc.file > 1:
+      let filename = extract_filename(unit.graph.locations.file_maps[n.loc.file - 1].filename)
+      add(item.documentation.value, "\n\n---\nFile: " & filename)
+
+   case n.kind
+   of NkTaskDecl, NkFunctionDecl:
+      item.kind = LspCkFunction
+   of NkParameterDecl, NkLocalparamDecl, NkSpecparamDecl:
+      item.kind = LspCkConstant
+   of NkPortDecl, NkPort:
+      item.kind = LspCkInterface
+   else:
+      item.kind = LspCkVariable
+
+
+proc find_port_connection_completions(unit: SourceUnit, module_name, prefix: string): seq[LspCompletionItem] =
    # See comments in find_external_module_port_declaration().
    for filename, module in walk_module_declarations(unit.configuration.include_paths):
       let id = find_first(module, NkModuleIdentifier)
@@ -667,7 +682,9 @@ proc find_port_connection_completions(unit: SourceUnit, module_name, prefix: str
          of NkPortDecl:
             let id = find_first(port, NkPortIdentifier)
             if not is_nil(id) and starts_with(id.identifier.s, prefix):
-               add_completion_item(id, port)
+               var item = new_lsp_completion_item(id.identifier.s & " ()")
+               add_declaration_information(unit, item, port)
+               add(result, item)
          of NkPort:
             var external_port = find_first(port, NkPortIdentifier)
             let internal_port = find_first_chain(port, [NkPortReference, NkPortIdentifier])
@@ -681,24 +698,15 @@ proc find_port_connection_completions(unit: SourceUnit, module_name, prefix: str
             # FIXME: Finding declarations starting from the module root is not
             #        possible unless find_declaration() is modified.
             let (declaration, _) = find_declaration(module, internal_port.identifier)
+            var item = new_lsp_completion_item(external_port.identifier.s & " ()")
             if not is_nil(declaration):
-               add_completion_item(external_port, declaration)
+               add_declaration_information(unit, item, declaration)
             else:
-               add_completion_item(external_port, port)
+               add_declaration_information(unit, item, port)
+            add(result, item)
          else:
             discard
       return
-
-
-proc add_declaration_information(unit: SourceUnit, item: var LspCompletionItem, n: PNode) =
-   item.detail = $n
-   let comment = find_first(n, NkComment)
-   item.documentation.kind = LspMkMarkdown
-   if not is_nil(comment):
-      item.documentation.value = comment.s
-   if n.loc.file > 1:
-      let filename = extract_filename(unit.graph.locations.file_maps[n.loc.file - 1].filename)
-      add(item.documentation.value, "\n\n---\nFile: " & filename)
 
 
 proc find_parameter_port_connection_completions(unit: SourceUnit, module_name, prefix: string): seq[LspCompletionItem] =
@@ -764,7 +772,9 @@ proc find_completions*(unit: SourceUnit, line, col: int): seq[LspCompletionItem]
       of TkStrLit:
          let prefix = substr(tok.literal, 0, loc.col - tok.loc.col - 2)
          for path in walk_include_paths_starting_with(unit, prefix):
-            add(result, new_lsp_completion_item(path))
+            var item = new_lsp_completion_item(path)
+            item.kind = LspCkFile
+            add(result, item)
          log.debug("Found include string '$1', $2.", prefix, loc.col - tok.loc.col - 2)
       else:
          raise new_analyze_error("Failed to find a token at the target location.")
@@ -772,7 +782,7 @@ proc find_completions*(unit: SourceUnit, line, col: int): seq[LspCompletionItem]
 
 proc find_symbols*(unit: SourceUnit): seq[LspSymbolInformation] =
    # Add an entry for each declaration in the AST.
-   for (_, n) in find_all_declarations(unit.graph.root_node):
+   for (_, n) in find_all_declarations(unit.graph.root_node, recursive = true):
       # Filter out declarations not in the current file.
       if n.loc.file != 1:
          continue

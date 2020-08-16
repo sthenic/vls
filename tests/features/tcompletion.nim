@@ -89,10 +89,11 @@ run_test("textDocument/completion: c(lk_i)",
          "character": 22
       }
    }),
-   new_lsp_response(81, 0, %*[
+   new_lsp_response(90, 0, %*[
       {
          "label": "clk_i",
-         "detail": "input wire clk_i"
+         "detail": "input wire clk_i",
+         "kind": int(LspCkInterface)
       }
    ])
 )
@@ -108,10 +109,11 @@ run_test("textDocument/completion: WIDTH",
          "character": 13
       }
    }),
-   new_lsp_response(235, 0, %*[
+   new_lsp_response(255, 0, %*[
       {
          "label": "WIDTH",
-         "detail": "parameter integer WIDTH = 0"
+         "detail": "parameter integer WIDTH = 0",
+         "kind": int(LspCkConstant)
       },
       {
          "label": "WIDTH_FROM_HEADER",
@@ -119,7 +121,8 @@ run_test("textDocument/completion: WIDTH",
          "documentation": {
             "kind": "markdown",
             "value": "\n\n---\nFile: src3.vh"
-         }
+         },
+         "kind": int(LspCkConstant)
       }
    ])
 )
@@ -135,14 +138,15 @@ run_test("textDocument/completion: WIDTH_",
          "character": 15
       }
    }),
-   new_lsp_response(178, 0, %*[
+   new_lsp_response(188, 0, %*[
       {
          "label": "WIDTH_FROM_HEADER",
          "detail": "localparam WIDTH_FROM_HEADER = 8",
          "documentation": {
             "kind": "markdown",
             "value": "\n\n---\nFile: src3.vh"
-         }
+         },
+         "kind": int(LspCkConstant)
       }
    ])
 )
@@ -158,10 +162,11 @@ run_test("textDocument/completion: macro argument (1)",
          "character": 27
       }
    }),
-   new_lsp_response(83, 0, %*[
+   new_lsp_response(92, 0, %*[
       {
          "label": "my_reg",
-         "detail": "reg my_reg = 1'b0"
+         "detail": "reg my_reg = 1'b0",
+         "kind": int(LspCkVariable)
       }
    ])
 )
@@ -177,8 +182,32 @@ run_test("textDocument/completion: macro argument (2)",
          "character": 30
       }
    }),
-   new_lsp_response(57, 0, %*[
-      {"label": "wider_reg"}
+   new_lsp_response(121, 0, %*[
+      {
+         "label": "wider_reg",
+         "detail": "reg [WIDTH_FROM_HEADER - 1:0] wider_reg = 0",
+         "kind": int(LspCkVariable)
+      }
+   ])
+)
+
+
+run_test("textDocument/completion: macro argument (3)",
+   new_lsp_request(0, "textDocument/completion", %*{
+      "textDocument": {
+         "uri": "file://" & expand_filename(src3_path),
+      },
+      "position": {
+         "line": 52,
+         "character": 34
+      }
+   }),
+   new_lsp_response(87, 0, %*[
+      {
+         "label": "one",
+         "detail": "wire one = 1'b1",
+         "kind": int(LspCkVariable)
+      }
    ])
 )
 
@@ -193,8 +222,11 @@ run_test("textDocument/completion: macro name (1)",
          "character": 21
       }
    }),
-   new_lsp_response(51, 0, %*[
-      {"label": "AND"}
+   new_lsp_response(60, 0, %*[
+      {
+         "label": "AND",
+         "kind": int(LspCkText)
+      }
    ])
 )
 
@@ -209,8 +241,11 @@ run_test("textDocument/completion: macro name (2)",
          "character": 28
       }
    }),
-   new_lsp_response(61, 0, %*[
-      {"label": "AND_WITH_ZERO"}
+   new_lsp_response(70, 0, %*[
+      {
+         "label": "AND_WITH_ZERO",
+         "kind": int(LspCkText)
+      }
    ])
 )
 
@@ -225,15 +260,39 @@ run_test_unordered_compare("textDocument/completion: include directive, browse p
          "character": 15
       }
    }),
-   new_lsp_response(188, 0, %*[
-      {"label": "src0.v"},
-      {"label": "src1.v"},
-      {"label": "src2.v"},
-      {"label": "src3.v"},
-      {"label": "src3.vh"},
-      {"label": "src4.v"},
-      {"label": "src5.v"},
-      {"label": "src6.v"},
+   new_lsp_response(268, 0, %*[
+      {
+         "label": "src0.v",
+         "kind": int(LspCkFile)
+      },
+      {
+         "label": "src1.v",
+         "kind": int(LspCkFile)
+      },
+      {
+         "label": "src2.v",
+         "kind": int(LspCkFile)
+      },
+      {
+         "label": "src3.v",
+         "kind": int(LspCkFile)
+      },
+      {
+         "label": "src3.vh",
+         "kind": int(LspCkFile)
+      },
+      {
+         "label": "src4.v",
+         "kind": int(LspCkFile)
+      },
+      {
+         "label": "src5.v",
+         "kind": int(LspCkFile)
+      },
+      {
+         "label": "src6.v",
+         "kind": int(LspCkFile)
+      },
    ])
 )
 
@@ -248,16 +307,43 @@ run_test_unordered_compare("textDocument/completion: include directive, browse p
          "character": 14
       }
    }),
-   new_lsp_response(209, 0, %*[
-      {"label": "include/"},
-      {"label": "src0.v"},
-      {"label": "src1.v"},
-      {"label": "src2.v"},
-      {"label": "src3.v"},
-      {"label": "src3.vh"},
-      {"label": "src4.v"},
-      {"label": "src5.v"},
-      {"label": "src6.v"},
+   new_lsp_response(299, 0, %*[
+      {
+         "label": "include/",
+         "kind": int(LspCkFile)
+      },
+      {
+         "label": "src0.v",
+         "kind": int(LspCkFile)
+      },
+      {
+         "label": "src1.v",
+         "kind": int(LspCkFile)
+      },
+      {
+         "label": "src2.v",
+         "kind": int(LspCkFile)
+      },
+      {
+         "label": "src3.v",
+         "kind": int(LspCkFile)
+      },
+      {
+         "label": "src3.vh",
+         "kind": int(LspCkFile)
+      },
+      {
+         "label": "src4.v",
+         "kind": int(LspCkFile)
+      },
+      {
+         "label": "src5.v",
+         "kind": int(LspCkFile)
+      },
+      {
+         "label": "src6.v",
+         "kind": int(LspCkFile)
+      },
    ])
 )
 
@@ -272,10 +358,11 @@ run_test("textDocument/completion: module port (1)",
          "character": 34
       }
    }),
-   new_lsp_response(304, 0, %*[
+   new_lsp_response(322, 0, %*[
       {
          "label": "clk_i ()",
          "detail": "(* another_attr = \"false\" *) input wire clk_i",
+         "kind": int(LspCkInterface),
          "documentation": {
             "kind": "markdown",
             "value": "The clock input."
@@ -284,6 +371,7 @@ run_test("textDocument/completion: module port (1)",
       {
          "label": "data_o ()",
          "detail": "output wire data_o",
+         "kind": int(LspCkInterface),
          "documentation": {
             "kind": "markdown",
             "value": "The 1-bit data output port."
@@ -303,10 +391,11 @@ run_test("textDocument/completion: module port (2)",
          "character": 10
       }
    }),
-   new_lsp_response(161, 0, %*[
+   new_lsp_response(170, 0, %*[
       {
          "label": "data_o ()",
          "detail": "output wire data_o",
+         "kind": int(LspCkInterface),
          "documentation": {
             "kind": "markdown",
             "value": "The 1-bit data output port."
@@ -339,18 +428,21 @@ run_test("textDocument/completion: module port (3), internal declarations",
          "character": 9
       }
    }),
-   new_lsp_response(167, 0, %*[
+   new_lsp_response(194, 0, %*[
       {
          "label": "clk_i ()",
-         "detail": ".clk_i(clk_local)"
+         "detail": ".clk_i(clk_local)",
+         "kind": int(LspCkInterface)
       },
       {
          "label": "data_o ()",
-         "detail": "data_o"
+         "detail": "data_o",
+         "kind": int(LspCkInterface)
       },
       {
          "label": "valid_o ()",
-         "detail": "valid_o"
+         "detail": "valid_o",
+         "kind": int(LspCkInterface)
       }
    ])
 )
@@ -366,10 +458,11 @@ run_test("textDocument/completion: module port (4), internal declarations",
          "character": 16
       }
    }),
-   new_lsp_response(77, 0, %*[
+   new_lsp_response(86, 0, %*[
       {
          "label": "valid_o ()",
-         "detail": "valid_o"
+         "detail": "valid_o",
+         "kind": int(LspCkInterface)
       }
    ])
 )
@@ -385,14 +478,16 @@ run_test("textDocument/completion: module parameter port (1)",
          "character": 9
       }
    }),
-   new_lsp_response(137, 0, %*[
+   new_lsp_response(157, 0, %*[
       {
          "label": "FOO ()",
-         "detail": "parameter FOO = 0"
+         "detail": "parameter FOO = 0",
+         "kind": int(LspCkConstant)
       },
       {
          "label": "BaR ()",
-         "detail": "parameter BaR = \"baz\""
+         "detail": "parameter BaR = \"baz\"",
+         "kind": int(LspCkConstant)
       }
    ])
 )
@@ -408,10 +503,11 @@ run_test("textDocument/completion: module parameter port (2)",
          "character": 23
       }
    }),
-   new_lsp_response(89, 0, %*[
+   new_lsp_response(99, 0, %*[
       {
          "label": "BaR ()",
-         "detail": "parameter BaR = \"baz\""
+         "detail": "parameter BaR = \"baz\"",
+         "kind": int(LspCkConstant)
       }
    ])
 )
@@ -427,10 +523,11 @@ run_test("textDocument/completion: w/ documentation",
          "character": 40
       }
    }),
-   new_lsp_response(180, 0, %*[
+   new_lsp_response(189, 0, %*[
       {
          "label": "a_common_wire",
          "detail": "wire a_common_wire",
+         "kind": int(LspCkVariable),
          "documentation": {
             "kind": "markdown",
             "value": "This is the docstring for `a_common_wire`."
@@ -450,10 +547,11 @@ run_test("textDocument/completion: local scope",
          "character": 37
       }
    }),
-   new_lsp_response(241, 0, %*[
+   new_lsp_response(259, 0, %*[
       {
          "label": "a_common_wire",
          "detail": "wire a_common_wire",
+         "kind": int(LspCkVariable),
          "documentation": {
             "kind": "markdown",
             "value": "This is the docstring for `a_common_wire`."
@@ -461,7 +559,32 @@ run_test("textDocument/completion: local scope",
       },
       {
          "label": "a_local_wire",
-         "detail": "wire a_local_wire = 1'b1"
+         "detail": "wire a_local_wire = 1'b1",
+         "kind": int(LspCkVariable),
+      }
+   ])
+)
+
+
+run_test("textDocument/completion: ignore declarations in local scope",
+   new_lsp_request(0, "textDocument/completion", %*{
+      "textDocument": {
+         "uri": "file://" & expand_filename(src3_path),
+      },
+      "position": {
+         "line": 61,
+         "character": 10
+      }
+   }),
+   new_lsp_response(189, 0, %*[
+      {
+         "label": "a_common_wire",
+         "detail": "wire a_common_wire",
+         "kind": int(LspCkVariable),
+         "documentation": {
+            "kind": "markdown",
+            "value": "This is the docstring for `a_common_wire`."
+         }
       }
    ])
 )
