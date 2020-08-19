@@ -431,8 +431,17 @@ proc find_declaration*(unit: SourceUnit, line, col: int): LspLocation =
       result = find_internal_declaration(unit, context, identifier.identifier)
 
 
-proc find_module_references*(unit: SourceUnit, identifier: PIdentifier): seq[LspLocation] =
+proc find_module_references*(unit: SourceUnit, identifier: PIdentifier,
+                             include_declaration: bool): seq[LspLocation] =
    for filename, module in walk_module_declarations(unit.configuration.include_paths):
+      let id = find_first(module, NkModuleIdentifier)
+      if include_declaration and not is_nil(id) and id.identifier.s == identifier.s:
+         # Recursive declarations are not expected. So if we find the target
+         # module's declaration, we skip looking for instantiations.
+         add(result, new_lsp_location(construct_uri(filename), int(id.loc.line - 1),
+                                      int(id.loc.col), len(id.identifier.s)))
+         continue
+
       for module_instantiation in find_all_module_instantiations(module):
          let module_name = find_first(module_instantiation, NkIdentifier)
          if is_nil(module_name) or module_name.identifier.s != identifier.s:
@@ -513,7 +522,7 @@ proc find_references*(unit: SourceUnit, line, col: int, include_declaration: boo
          raise new_analyze_error("Failed to find an identifer at the target location.")
       elif c.n.kind == NkModuleInstantiation or
            c.n.kind == NkModuleDecl and c.pos == find_first_index(c.n, NkModuleIdentifier):
-         return find_module_references(unit, identifier.identifier)
+         return find_module_references(unit, identifier.identifier, include_declaration)
 
    let (_, declaration, declaration_context) = find_declaration(identifier_context, identifier.identifier)
    if is_nil(declaration):

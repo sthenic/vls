@@ -863,6 +863,7 @@ run_test("textDocument/references: module port (2)",
 # Open the file "./src/src4.v", expecting no parsing errors.
 const src4_path = "./src/src4.v"
 const src4_text = static_read(src4_path)
+let src4_path_len = len(expand_filename(src4_path))
 send(ifs, new_lsp_notification("textDocument/didOpen", %*{
    "textDocument": {
       "uri": "file://" & expand_filename(src4_path),
@@ -886,7 +887,7 @@ run_test("textDocument/references: module instantiation",
          "character": 6
       },
       "context": {
-         "includeDeclaration": true
+         "includeDeclaration": false
       }
    }),
    new_lsp_response(227 + src3_path_len + src5_path_len, 0, %*[
@@ -907,6 +908,44 @@ run_test("textDocument/references: module instantiation",
    ])
 )
 
+run_test("textDocument/references: module instantiation w/ declaration",
+   new_lsp_request(0, "textDocument/references", %*{
+      "textDocument": {
+         "uri": "file://" & expand_filename(src3_path),
+      },
+      "position": {
+         "line": 23,
+         "character": 6
+      },
+      "context": {
+         "includeDeclaration": true
+      }
+   }),
+   new_lsp_response(321 + src3_path_len + src5_path_len + src4_path_len, 0, %*[
+   {
+      "uri": "file://" & expand_filename(src5_path),
+      "range": {
+         "start": {"line": 15, "character": 12},
+         "end" : {"line": 15, "character": 24}
+      }
+   },
+   {
+      "uri": "file://" & expand_filename(src3_path),
+      "range": {
+         "start": {"line": 23, "character": 12},
+         "end" : {"line": 23, "character": 24}
+      }
+   },
+   {
+      "uri": "file://" & expand_filename(src4_path),
+      "range": {
+         "start": {"line": 0, "character": 32},
+         "end" : {"line": 0, "character": 39}
+      }
+   }
+   ])
+)
+
 run_test("textDocument/references: module declaration",
    new_lsp_request(0, "textDocument/references", %*{
       "textDocument": {
@@ -917,7 +956,7 @@ run_test("textDocument/references: module declaration",
          "character": 32
       },
       "context": {
-         "includeDeclaration": true
+         "includeDeclaration": false
       }
    }),
    new_lsp_response(227 + src3_path_len + src5_path_len, 0, %*[
@@ -933,6 +972,44 @@ run_test("textDocument/references: module declaration",
       "range": {
          "start": {"line": 23, "character": 12},
          "end" : {"line": 23, "character": 24}
+      }
+   }
+   ])
+)
+
+run_test("textDocument/references: module declaration w/ declaration",
+   new_lsp_request(0, "textDocument/references", %*{
+      "textDocument": {
+         "uri": "file://" & expand_filename(src4_path),
+      },
+      "position": {
+         "line": 0,
+         "character": 32
+      },
+      "context": {
+         "includeDeclaration": true
+      }
+   }),
+   new_lsp_response(321 + src3_path_len + src5_path_len + src4_path_len, 0, %*[
+   {
+      "uri": "file://" & expand_filename(src5_path),
+      "range": {
+         "start": {"line": 15, "character": 12},
+         "end" : {"line": 15, "character": 24}
+      }
+   },
+   {
+      "uri": "file://" & expand_filename(src3_path),
+      "range": {
+         "start": {"line": 23, "character": 12},
+         "end" : {"line": 23, "character": 24}
+      }
+   },
+   {
+      "uri": "file://" & expand_filename(src4_path),
+      "range": {
+         "start": {"line": 0, "character": 32},
+         "end" : {"line": 0, "character": 39}
       }
    }
    ])
