@@ -297,21 +297,13 @@ proc is_external_identifier(context: AstContext): bool =
          #       same file (context) and the file itself is _not_ on the include
          #       path.
          result = true
-      of NkPortConnection:
+      of NkNamedPortConnection, NkNamedParameterAssignment:
          # We only perform an external lookup if the target identifier is the
          # one following the dot.
          var seen_another_identifier = false
          for i in 0..<pos:
             seen_another_identifier = (n.sons[i].kind == NkIdentifier)
          result = not seen_another_identifier
-      of NkAssignment:
-         if len(context) > 1:
-            # We only perform an external lookup if the target identifier is the
-            # one following the dot.
-            var seen_another_identifier = false
-            for i in 0..<pos:
-               seen_another_identifier = (n.sons[i].kind == NkIdentifier)
-            result = context[^2].n.kind == NkParameterValueAssignment and not seen_another_identifier
       else:
          result = false
    else:
@@ -333,26 +325,20 @@ proc find_external_declaration(unit: SourceUnit, context: AstContext, identifier
    case context[^1].n.kind
    of NkModuleInstantiation:
       result = find_module_declaration(unit, identifier)
-   of NkPortConnection:
+   of NkNamedPortConnection, NkNamedParameterAssignment:
       # We first need to find the name of the module before we can proceed with
       # the lookup.
       let module = find_first(context[^3].n, IdentifierTypes)
       if not is_nil(module):
-         let (id, filename) = find_external_module_port_declaration(
-            unit, module.identifier, identifier, true
-         )
-         result = new_lsp_location(
-            construct_uri(filename), int(id.loc.line - 1), int(id.loc.col), len(id.identifier.s)
-         )
-   of NkAssignment:
-      # When this proc is called, it's already been established that an
-      # assignment node implies that we should look for an external parameter
-      # port declaration. But before we can do that, we need the module name.
-      let module = find_first(context[^3].n, IdentifierTypes)
-      if not is_nil(module):
-         let (id, filename) = find_external_module_parameter_port_declaration(
-            unit, module.identifier, identifier, true
-         )
+         let (id, filename) = if context[^1].n.kind == NkNamedPortConnection:
+            find_external_module_port_declaration(
+               unit, module.identifier, identifier, true
+            )
+         else:
+            find_external_module_parameter_port_declaration(
+               unit, module.identifier, identifier, true
+            )
+
          result = new_lsp_location(
             construct_uri(filename), int(id.loc.line - 1), int(id.loc.col), len(id.identifier.s)
          )
@@ -511,14 +497,15 @@ proc find_references*(unit: SourceUnit, line, col: int, include_declaration: boo
 
    # Here we handle two special cases of the reference lookup:
    # - We have to abort the request if it turns out that we're targeting the
-   #   first identifier in a port connection node. That's the port name, so
-   #   there shouldn't be any references reported in that case.
+   #   first identifier in named port/parameter connection node. That's the port
+   #   name, so there shouldn't be any references reported in that case.
    # - If we're targeting a module instantiation or the identifier in the module
    #   declaration itself, we look up all references to this module by browsing
    #   the include path.
    if len(identifier_context) > 0:
       let c = identifier_context[^1]
-      if c.n.kind == NkPortConnection and c.pos == find_first_index(c.n, NkIdentifier):
+      if c.n.kind in {NkNamedPortConnection, NkNamedParameterAssignment} and
+            c.pos == find_first_index(c.n, NkIdentifier):
          raise new_analyze_error("Failed to find an identifer at the target location.")
       elif c.n.kind == NkModuleInstantiation or
            c.n.kind == NkModuleDecl and c.pos == find_first_index(c.n, NkModuleIdentifier):
@@ -891,19 +878,18 @@ proc find_external_hover(unit: SourceUnit, context: AstContext, identifier: PIde
    of NkModuleInstantiation:
       # FIXME: Implement
       raise new_analyze_error("Not implemented.")
-   of NkPortConnection:
+   of NkNamedPortConnection, NkNamedParameterAssignment:
       let module = find_first(context[^3].n, IdentifierTypes)
       if not is_nil(module):
-         let (declaration, _) = find_external_module_port_declaration(
-            unit, module.identifier, identifier, false
-         )
-         result = construct_hover(declaration, highlight_location, len(identifier.s))
-   of NkAssignment:
-      let module = find_first(context[^3].n, IdentifierTypes)
-      if not is_nil(module):
-         let (declaration, _) = find_external_module_parameter_port_declaration(
-            unit, module.identifier, identifier, false
-         )
+         let (declaration, _) = if context[^1].n.kind == NkNamedPortConnection:
+            find_external_module_port_declaration(
+               unit, module.identifier, identifier, false
+            )
+         else:
+            find_external_module_parameter_port_declaration(
+               unit, module.identifier, identifier, false
+            )
+
          result = construct_hover(declaration, highlight_location, len(identifier.s))
    else:
       raise new_analyze_error("Invalid context for an external declaration lookup.")

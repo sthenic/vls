@@ -14,6 +14,10 @@ All notable changes to this project will be documented in this file.
 ### Fixed
 
 - The `documentSymbol` request now correctly lists all module instances.
+- Looking up the references of a symbol with the same name as a module parameter
+  port no longer returns a match for the named parameter port.
+- Renaming a symbol with the same name as a module parameter port no longer
+  changes the name of the parameter port.
 
 ### Changed
 

@@ -9,10 +9,10 @@
         tmp <= ~tmp;
     assign data_o = tmp;
 
-    localparam BAR = 10, fOO = 23;
+    localparam BAR = 10, FOO = 23;
     wire [1:0] out;
     module5 #(
-        .FOO (BAR), .BaR (fOO)
+        .FOO (BAR), .BaR (FOO)
     ) module5_inst [1:0] (
         .clk_i (clk_i),
         .data_o (out[0]),

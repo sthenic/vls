@@ -150,7 +150,7 @@ run_test("textDocument/documentSymbol",
       }
    },
    {
-      "name": "fOO",
+      "name": "FOO",
       "kind": 13,
       "location": {
          "uri": "file://" & expand_filename(src4_path),

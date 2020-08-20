@@ -1015,6 +1015,37 @@ run_test("textDocument/references: module declaration w/ declaration",
    ])
 )
 
+run_test("textDocument/references: localparam w/ same name as a parameter port",
+   new_lsp_request(0, "textDocument/references", %*{
+      "textDocument": {
+         "uri": "file://" & expand_filename(src4_path),
+      },
+      "position": {
+         "line": 11,
+         "character": 26
+      },
+      "context": {
+         "includeDeclaration": true
+      }
+   }),
+   new_lsp_response(227 + 2 * src4_path_len, 0, %*[
+   {
+      "uri": "file://" & expand_filename(src4_path),
+      "range": {
+         "start": {"line": 11, "character": 25},
+         "end" : {"line": 11, "character": 28}
+      }
+   },
+   {
+      "uri": "file://" & expand_filename(src4_path),
+      "range": {
+         "start": {"line": 14, "character": 26},
+         "end" : {"line": 14, "character": 29}
+      }
+   }
+   ])
+)
+
 
 # Shut down the server.
 shutdown(ifs, ofs)
