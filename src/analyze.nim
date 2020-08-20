@@ -220,10 +220,10 @@ proc check_syntax*(unit: SourceUnit): seq[LspDiagnostic] =
 
 proc find_module_declaration(unit: SourceUnit, identifier: PIdentifier): LspLocation =
    for filename, module in walk_module_declarations(unit.configuration.include_paths):
-      for s in module.sons:
-         if s.kind == NkModuleIdentifier and s.identifier.s == identifier.s:
-            return new_lsp_location(construct_uri(filename), int(s.loc.line - 1),
-                                    int(s.loc.col), len(s.identifier.s))
+      let id = find_first(module, NkModuleIdentifier)
+      if not is_nil(id) and id.identifier.s == identifier.s:
+         return new_lsp_location(construct_uri(filename), int(id.loc.line - 1),
+                                 int(id.loc.col), len(id.identifier.s))
    raise new_analyze_error("Failed to find the declaration of module '$1'.", identifier.s)
 
 
