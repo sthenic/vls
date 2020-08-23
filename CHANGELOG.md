@@ -10,6 +10,8 @@ All notable changes to this project will be documented in this file.
 - Reference lookups targeting a module instantiation or the module declaration
   itself will now browse through the include paths and report back all the
   instantiations of that module.
+- Symbol renaming is now able to target module names, ports and parameter ports
+  to rename these across all files found on the include paths.
 
 ### Fixed
 

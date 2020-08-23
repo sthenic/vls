@@ -432,6 +432,444 @@ run_test("textDocument/rename: wire used as macro argument",
 )
 
 
+const src4_path = "./src/src4.v"
+let src4_path_len = len(expand_filename(src4_path))
+const src5_path = "./src/src5.v"
+let src5_path_len = len(expand_filename(src5_path))
+
+run_test("textDocument/rename: module instance name",
+   new_lsp_request(0, "textDocument/rename", %*{
+      "textDocument": {
+         "uri": "file://" & expand_filename(src3_path),
+      },
+      "position": {
+         "line": 23,
+         "character": 4
+      },
+      "newName": "new_module4"
+   }),
+   new_lsp_response(543 + src3_path_len + src4_path_len + src5_path_len, 0, %*{
+      "documentChanges": [
+         {
+            "textDocument": {
+               "uri": "file://" & expand_filename(src5_path),
+               "version": new_jnull()
+            },
+            "edits": [
+               {
+                  "range": {
+                     "start": {"line": 15, "character": 4},
+                     "end" : {"line": 15, "character": 11}
+                  },
+                  "newText": "new_module4"
+               }
+            ]
+         },
+         {
+            "textDocument": {
+               "uri": "file://" & expand_filename(src3_path),
+               "version": new_jnull()
+            },
+            "edits": [
+               {
+                  "range": {
+                     "start": {"line": 23, "character": 4},
+                     "end" : {"line": 23, "character": 11}
+                  },
+                  "newText": "new_module4"
+               }
+            ]
+         },
+         {
+            "textDocument": {
+               "uri": "file://" & expand_filename(src4_path),
+               "version": new_jnull()
+            },
+            "edits": [
+               {
+                  "range": {
+                     "start": {"line": 0, "character": 32},
+                     "end" : {"line": 0, "character": 39}
+                  },
+                  "newText": "new_module4"
+               }
+            ]
+         }
+      ]
+   })
+)
+
+
+run_test("textDocument/rename: module port (clk_i)",
+   new_lsp_request(0, "textDocument/rename", %*{
+      "textDocument": {
+         "uri": "file://" & expand_filename(src3_path),
+      },
+      "position": {
+         "line": 24,
+         "character": 34
+      },
+      "newName": "new_clk_i"
+   }),
+   new_lsp_response(861 + src3_path_len + 3 * src4_path_len + src5_path_len, 0, %*{
+      "documentChanges": [
+         {
+            "textDocument": {
+               "uri": "file://" & expand_filename(src5_path),
+               "version": new_jnull()
+            },
+            "edits": [
+               {
+                  "range": {
+                     "start": {"line": 16, "character": 34},
+                     "end" : {"line": 16, "character": 39}
+                  },
+                  "newText": "new_clk_i"
+               }
+            ]
+         },
+         {
+            "textDocument": {
+               "uri": "file://" & expand_filename(src3_path),
+               "version": new_jnull()
+            },
+            "edits": [
+               {
+                  "range": {
+                     "start": {"line": 24, "character": 34},
+                     "end" : {"line": 24, "character": 39}
+                  },
+                  "newText": "new_clk_i"
+               }
+            ]
+         },
+         {
+            "textDocument": {
+               "uri": "file://" & expand_filename(src4_path),
+               "version": new_jnull()
+            },
+            "edits": [
+               {
+                  "range": {
+                     "start": {"line": 1, "character": 44},
+                     "end" : {"line": 1, "character": 49}
+                  },
+                  "newText": "new_clk_i"
+               }
+            ]
+         },
+         {
+            "textDocument": {
+               "uri": "file://" & expand_filename(src4_path),
+               "version": new_jnull()
+            },
+            "edits": [
+               {
+                  "range": {
+                     "start": {"line": 7, "character": 21},
+                     "end" : {"line": 7, "character": 26}
+                  },
+                  "newText": "new_clk_i"
+               }
+            ]
+         },
+         {
+            "textDocument": {
+               "uri": "file://" & expand_filename(src4_path),
+               "version": new_jnull()
+            },
+            "edits": [
+               {
+                  "range": {
+                     "start": {"line": 16, "character": 16},
+                     "end" : {"line": 16, "character": 21}
+                  },
+                  "newText": "new_clk_i"
+               }
+            ]
+         }
+      ]
+   })
+)
+
+# Open the file "./src/src4.v", expecting no parsing errors.
+const src4_text = static_read(src4_path)
+send(ifs, new_lsp_notification("textDocument/didOpen", %*{
+   "textDocument": {
+      "uri": "file://" & expand_filename(src4_path),
+      "languageId": "verilog",
+      "version": 0,
+      "text": src4_text
+   }
+}))
+assert len(recv(ofs).parameters["diagnostics"]) == 0
+
+
+run_test("textDocument/rename: module parameter port (FOO)",
+   new_lsp_request(0, "textDocument/rename", %*{
+      "textDocument": {
+         "uri": "file://" & expand_filename(src4_path),
+      },
+      "position": {
+         "line": 14,
+         "character": 9
+      },
+      "newName": "new_fOO"
+   }),
+   new_lsp_response(372 + src4_path_len + src5_path_len, 0, %*{
+      "documentChanges": [
+         {
+            "textDocument": {
+               "uri": "file://" & expand_filename(src5_path),
+               "version": new_jnull()
+            },
+            "edits": [
+               {
+                  "range": {
+                     "start": {"line": 1, "character": 14},
+                     "end" : {"line": 1, "character": 17}
+                  },
+                  "newText": "new_fOO"
+               }
+            ]
+         },
+         {
+            "textDocument": {
+               "uri": "file://" & expand_filename(src4_path),
+               "version": new_jnull()
+            },
+            "edits": [
+               {
+                  "range": {
+                     "start": {"line": 14, "character": 9},
+                     "end" : {"line": 14, "character": 12}
+                  },
+                  "newText": "new_fOO"
+               }
+            ]
+         }
+      ]
+   })
+)
+
+
+
+run_test("textDocument/rename: module name (from declaration)",
+   new_lsp_request(0, "textDocument/rename", %*{
+      "textDocument": {
+         "uri": "file://" & expand_filename(src4_path),
+      },
+      "position": {
+         "line": 0,
+         "character": 32
+      },
+      "newName": "new_module4"
+   }),
+   new_lsp_response(543 + src3_path_len + src4_path_len + src5_path_len, 0, %*{
+      "documentChanges": [
+         {
+            "textDocument": {
+               "uri": "file://" & expand_filename(src5_path),
+               "version": new_jnull()
+            },
+            "edits": [
+               {
+                  "range": {
+                     "start": {"line": 15, "character": 4},
+                     "end" : {"line": 15, "character": 11}
+                  },
+                  "newText": "new_module4"
+               }
+            ]
+         },
+         {
+            "textDocument": {
+               "uri": "file://" & expand_filename(src3_path),
+               "version": new_jnull()
+            },
+            "edits": [
+               {
+                  "range": {
+                     "start": {"line": 23, "character": 4},
+                     "end" : {"line": 23, "character": 11}
+                  },
+                  "newText": "new_module4"
+               }
+            ]
+         },
+         {
+            "textDocument": {
+               "uri": "file://" & expand_filename(src4_path),
+               "version": new_jnull()
+            },
+            "edits": [
+               {
+                  "range": {
+                     "start": {"line": 0, "character": 32},
+                     "end" : {"line": 0, "character": 39}
+                  },
+                  "newText": "new_module4"
+               }
+            ]
+         }
+      ]
+   })
+)
+
+
+run_test("textDocument/rename: module port (from declaration)",
+   new_lsp_request(0, "textDocument/rename", %*{
+      "textDocument": {
+         "uri": "file://" & expand_filename(src4_path),
+      },
+      "position": {
+         "line": 1,
+         "character": 45
+      },
+      "newName": "new_clk_i"
+   }),
+   new_lsp_response(861 + src3_path_len + 3 * src4_path_len + src5_path_len, 0, %*{
+      "documentChanges": [
+         {
+            "textDocument": {
+               "uri": "file://" & expand_filename(src5_path),
+               "version": new_jnull()
+            },
+            "edits": [
+               {
+                  "range": {
+                     "start": {"line": 16, "character": 34},
+                     "end" : {"line": 16, "character": 39}
+                  },
+                  "newText": "new_clk_i"
+               }
+            ]
+         },
+         {
+            "textDocument": {
+               "uri": "file://" & expand_filename(src3_path),
+               "version": new_jnull()
+            },
+            "edits": [
+               {
+                  "range": {
+                     "start": {"line": 24, "character": 34},
+                     "end" : {"line": 24, "character": 39}
+                  },
+                  "newText": "new_clk_i"
+               }
+            ]
+         },
+         {
+            "textDocument": {
+               "uri": "file://" & expand_filename(src4_path),
+               "version": new_jnull()
+            },
+            "edits": [
+               {
+                  "range": {
+                     "start": {"line": 1, "character": 44},
+                     "end" : {"line": 1, "character": 49}
+                  },
+                  "newText": "new_clk_i"
+               }
+            ]
+         },
+         {
+            "textDocument": {
+               "uri": "file://" & expand_filename(src4_path),
+               "version": new_jnull()
+            },
+            "edits": [
+               {
+                  "range": {
+                     "start": {"line": 7, "character": 21},
+                     "end" : {"line": 7, "character": 26}
+                  },
+                  "newText": "new_clk_i"
+               }
+            ]
+         },
+         {
+            "textDocument": {
+               "uri": "file://" & expand_filename(src4_path),
+               "version": new_jnull()
+            },
+            "edits": [
+               {
+                  "range": {
+                     "start": {"line": 16, "character": 16},
+                     "end" : {"line": 16, "character": 21}
+                  },
+                  "newText": "new_clk_i"
+               }
+            ]
+         }
+      ]
+   })
+)
+
+# Open the file "./src/src5.v", expecting no parsing errors.
+const src5_text = static_read(src5_path)
+send(ifs, new_lsp_notification("textDocument/didOpen", %*{
+   "textDocument": {
+      "uri": "file://" & expand_filename(src5_path),
+      "languageId": "verilog",
+      "version": 0,
+      "text": src5_text
+   }
+}))
+assert len(recv(ofs).parameters["diagnostics"]) == 0
+
+
+run_test("textDocument/rename: module parameter port (FOO)",
+   new_lsp_request(0, "textDocument/rename", %*{
+      "textDocument": {
+         "uri": "file://" & expand_filename(src5_path),
+      },
+      "position": {
+         "line": 1,
+         "character": 14
+      },
+      "newName": "new_fOO"
+   }),
+   new_lsp_response(372 + src4_path_len + src5_path_len, 0, %*{
+      "documentChanges": [
+         {
+            "textDocument": {
+               "uri": "file://" & expand_filename(src5_path),
+               "version": new_jnull()
+            },
+            "edits": [
+               {
+                  "range": {
+                     "start": {"line": 1, "character": 14},
+                     "end" : {"line": 1, "character": 17}
+                  },
+                  "newText": "new_fOO"
+               }
+            ]
+         },
+         {
+            "textDocument": {
+               "uri": "file://" & expand_filename(src4_path),
+               "version": new_jnull()
+            },
+            "edits": [
+               {
+                  "range": {
+                     "start": {"line": 14, "character": 9},
+                     "end" : {"line": 14, "character": 12}
+                  },
+                  "newText": "new_fOO"
+               }
+            ]
+         }
+      ]
+   })
+)
+
+
 # Shut down the server.
 shutdown(ifs, ofs)
 

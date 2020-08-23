@@ -342,6 +342,8 @@ proc find_external_declaration(unit: SourceUnit, context: AstContext, identifier
          result = new_lsp_location(
             construct_uri(filename), int(id.loc.line - 1), int(id.loc.col), len(id.identifier.s)
          )
+      else:
+         raise new_analyze_error("Failed to find the module name needed for an external declaration lookup.")
    else:
       raise new_analyze_error("Invalid context for an external declaration lookup.")
 
@@ -420,12 +422,14 @@ proc find_declaration*(unit: SourceUnit, line, col: int): LspLocation =
 proc find_module_references*(unit: SourceUnit, identifier: PIdentifier,
                              include_declaration: bool): seq[LspLocation] =
    for filename, module in walk_module_declarations(unit.configuration.include_paths):
-      let id = find_first(module, NkModuleIdentifier)
-      if include_declaration and not is_nil(id) and id.identifier.s == identifier.s:
+      let module_name = find_first(module, NkModuleIdentifier)
+      if include_declaration and not is_nil(module_name) and module_name.identifier.s == identifier.s:
          # Recursive declarations are not expected. So if we find the target
          # module's declaration, we skip looking for instantiations.
-         add(result, new_lsp_location(construct_uri(filename), int(id.loc.line - 1),
-                                      int(id.loc.col), len(id.identifier.s)))
+         add(result, new_lsp_location(construct_uri(filename),
+                                      int(module_name.loc.line - 1),
+                                      int(module_name.loc.col),
+                                      len(module_name.identifier.s)))
          continue
 
       for module_instantiation in find_all_module_instantiations(module):
@@ -835,7 +839,118 @@ proc find_symbols*(unit: SourceUnit): seq[LspSymbolInformation] =
          add(result, symbol)
 
 
+proc add(x: var seq[LspTextDocumentEdit], n: PNode, filename, s: string) =
+   let start = new_lsp_position(int(n.loc.line - 1), int(n.loc.col))
+   let stop = new_lsp_position(int(n.loc.line - 1), int(n.loc.col + len(n.identifier.s)))
+   let text_edit = new_lsp_text_edit(start, stop, s)
+   add(x, new_lsp_text_document_edit(construct_uri(filename), [text_edit]))
+
+
+proc rename_external_module(unit: SourceUnit, identifier: PIdentifier, new_name: string): seq[LspTextDocumentEdit] =
+   for (filename, module) in walk_module_declarations(unit.configuration.include_paths):
+      let module_name = find_first(module, NkModuleIdentifier)
+      if not is_nil(module_name) and module_name.identifier.s == identifier.s:
+         # We've encountered the definition of the module itself. Replace the
+         # module name in the declaration and continue walking the verilog
+         # files.
+         add(result, module_name, filename, new_name)
+         continue
+
+      for module_instantiation in find_all_module_instantiations(module):
+         let module_name = find_first(module_instantiation, NkIdentifier)
+         if not is_nil(module_name) and module_name.identifier.s == identifier.s:
+            # We've encountered an instantiation of the module. Replace the name.
+            add(result, module_name, filename, new_name)
+
+
+proc rename_external_module_port(unit: SourceUnit, module_id, port_id: PIdentifier,
+                                 new_name: string): seq[LspTextDocumentEdit] =
+   for (filename, module) in walk_module_declarations(unit.configuration.include_paths):
+      let module_name = find_first(module, NkModuleIdentifier)
+      if not is_nil(module_name) and module_name.identifier.s == module_id.s:
+         for reference in find_references(module, port_id):
+            add(result, reference, filename, new_name)
+         continue
+
+      for module_instantiation in find_all_module_instantiations(module):
+         let module_name = find_first(module_instantiation, NkIdentifier)
+         if is_nil(module_name) or module_name.identifier.s != module_id.s:
+            continue
+
+         for module_instance in walk_sons(module_instantiation, NkModuleInstance):
+            for named_connection in walk_sons(module_instance, NkNamedPortConnection):
+               let id = find_first(named_connection, NkIdentifier)
+               if not is_nil(id) and id.identifier.s == port_id.s:
+                  add(result, id, filename, new_name)
+
+
+proc rename_external_module_parameter_port(unit: SourceUnit, module_id, parameter_id: PIdentifier,
+                                           new_name: string): seq[LspTextDocumentEdit] =
+   for (filename, module) in walk_module_declarations(unit.configuration.include_paths):
+      let module_name = find_first(module, NkModuleIdentifier)
+      if not is_nil(module_name) and module_name.identifier.s == module_id.s:
+         for reference in find_references(module, parameter_id):
+            add(result, reference, filename, new_name)
+         continue
+
+      for module_instantiation in find_all_module_instantiations(module):
+         let module_name = find_first(module_instantiation, NkIdentifier)
+         if is_nil(module_name) or module_name.identifier.s != module_id.s:
+            continue
+
+         let parameter_ports = find_first(module_instantiation, NkParameterValueAssignment)
+         if not is_nil(parameter_ports):
+            for named_assignment in walk_sons(parameter_ports, NkNamedParameterAssignment):
+               let id = find_first(named_assignment, NkIdentifier)
+               if not is_nil(id) and id.identifier.s == parameter_id.s:
+                  add(result, id, filename, new_name)
+
+
+proc rename_external_symbol(unit: SourceUnit, context: AstContext, identifier: PIdentifier,
+                            new_name: string): seq[LspTextDocumentEdit] =
+   if context[^1].n.kind in {NkModuleInstantiation, NkModuleDecl}:
+      result = rename_external_module(unit, identifier, new_name)
+   elif context[^1].n.kind in {NkNamedPortConnection, NkNamedParameterAssignment}:
+      let module = find_first(context[^3].n, NkIdentifier)
+      if not is_nil(module):
+         result = if context[^1].n.kind == NkNamedPortConnection:
+            rename_external_module_port(unit, module.identifier, identifier, new_name)
+         else:
+            rename_external_module_parameter_port(unit, module.identifier, identifier, new_name)
+      else:
+         raise new_analyze_error("Failed to find the module name needed for a rename symbol operation.")
+   elif context[^1].n.kind == NkPortDecl:
+      let module = find_first(context[^3].n, NkModuleIdentifier)
+      if not is_nil(module):
+         result = rename_external_module_port(unit, module.identifier, identifier, new_name)
+      else:
+         raise new_analyze_error("Expected a module name identifier.")
+   elif len(context) >= 3 and context[^3].n.kind == NkModuleParameterPortList:
+      let module = find_first(context[^4].n, NkModuleIdentifier)
+      if not is_nil(module):
+         result = rename_external_module_parameter_port(unit, module.identifier, identifier, new_name)
+      else:
+         raise new_analyze_error("Expected a module name identifier.")
+   else:
+      raise new_analyze_error("Unknown context for external rename '$1'.", context[^1].n.kind)
+
+
 proc rename_symbol*(unit: SourceUnit, line, col: int, new_name: string): seq[LspTextDocumentEdit] =
+   # Renaming a symbol is the same as first finding all references (including
+   # the declaration) and constructing the text edits describing the changes
+   # based on that. However, we have to make an exception for external symbols,
+   # like when a module instance or a module port is targeted. But we don't know
+   # what we're targeting until we've tried locating the identifier at the
+   # target location.
+   var context: AstContext
+   init(context, 32)
+   let loc = new_location(1, line, col)
+   let identifier = find_identifier_physical(unit.graph.root_node, unit.graph.locations, loc, context)
+   if not is_nil(identifier) and
+      (is_external_identifier(context) or
+       identifier.kind in {NkModuleIdentifier, NkPortIdentifier, NkParameterIdentifier}):
+      return rename_external_symbol(unit, context, identifier.identifier, new_name)
+
    # Renaming a symbol is the same as first finding all references (including the declaration)
    # and constructing the text edits describing the changes based on that.
    for loc in find_references(unit, line, col, true):
@@ -864,7 +979,6 @@ proc construct_hover(n: PNode, highlight_location: Location, highlight_length: i
       #       properly. In the worst case, the comment may need to inform us
       #       of the comment's indentation so we can subtrace accordingly.
       add(markdown, "\n\n" & comment.s)
-   log.debug("Markdown is '$1'", markdown)
    result = new_lsp_hover(int(highlight_location.line - 1),
                           int(highlight_location.col),
                           highlight_length,
