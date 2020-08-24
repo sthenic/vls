@@ -33,12 +33,22 @@ jobs:
         repository: 'sthenic/vltoml'
         path: vltoml
 
+    # Manually choose a patched fork of parsetoml until the library is fixed.
+    - name: Checkout parsetoml
+      uses: actions/checkout@v2
+      with:
+        repository: 'sthenic/parsetoml'
+        path: parsetoml
+
     - uses: jiro4989/setup-nim-action@v1.1.2
       with:
         nim-version: 'stable'
 
     - name: Install vparse and vltoml
       run: |
+        pushd parsetoml
+        nimble install -y
+        popd
         pushd vparse
         nimble install -y
         popd
