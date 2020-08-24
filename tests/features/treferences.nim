@@ -35,7 +35,7 @@ assert len(recv(ofs).parameters["diagnostics"]) == 0
 template run_test(title: string, stimuli, reference: LspMessage) =
    send(ifs, stimuli)
    let response = recv(ofs)
-   if response == reference:
+   if unordered_compare(response, reference):
       styledWriteLine(stdout, styleBright, fgGreen, "[✓] ",
                      fgWhite, "Test '",  title, "'")
       inc(nof_passed)
