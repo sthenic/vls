@@ -9,6 +9,7 @@ All notable changes to this project will be documented in this file.
 - When parsing files from the include path, e.g. when looking up external
   symbols, browse for the corresponding configuration file to correctly set up
   the environment.
+- Fix an issue which prevented symbol renaming of localparams.
 
 ## [v0.2.0] - 2020-08-24
 

@@ -911,6 +911,7 @@ proc rename_external_symbol(unit: SourceUnit, context: AstContext, identifier: P
                             new_name: string): seq[LspTextDocumentEdit] =
    if context[^1].n.kind in {NkModuleInstantiation, NkModuleDecl}:
       result = rename_external_module(unit, identifier, new_name)
+
    elif context[^1].n.kind in {NkNamedPortConnection, NkNamedParameterAssignment}:
       let module = find_first(context[^3].n, NkIdentifier)
       if not is_nil(module):
@@ -919,19 +920,22 @@ proc rename_external_symbol(unit: SourceUnit, context: AstContext, identifier: P
          else:
             rename_external_module_parameter_port(unit, module.identifier, identifier, new_name)
       else:
-         raise new_analyze_error("Failed to find the module name needed for a rename symbol operation.")
+         raise new_analyze_error("Expected a module name identifier.")
+
    elif context[^1].n.kind == NkPortDecl:
       let module = find_first(context[^3].n, NkModuleIdentifier)
       if not is_nil(module):
          result = rename_external_module_port(unit, module.identifier, identifier, new_name)
       else:
          raise new_analyze_error("Expected a module name identifier.")
+
    elif len(context) >= 3 and context[^3].n.kind == NkModuleParameterPortList:
       let module = find_first(context[^4].n, NkModuleIdentifier)
       if not is_nil(module):
          result = rename_external_module_parameter_port(unit, module.identifier, identifier, new_name)
       else:
          raise new_analyze_error("Expected a module name identifier.")
+
    else:
       raise new_analyze_error("Unknown context for external rename '$1'.", context[^1].n.kind)
 
@@ -945,15 +949,14 @@ proc rename_symbol*(unit: SourceUnit, line, col: int, new_name: string): seq[Lsp
    # target location.
    var context: AstContext
    init(context, 32)
-   let loc = new_location(1, line, col)
-   let identifier = find_identifier_physical(unit.graph.root_node, unit.graph.locations, loc, context)
-   if not is_nil(identifier) and
-      (is_external_identifier(context) or
-       identifier.kind in {NkModuleIdentifier, NkPortIdentifier, NkParameterIdentifier}):
-      return rename_external_symbol(unit, context, identifier.identifier, new_name)
+   let identifier = find_identifier_physical(unit.graph.root_node, unit.graph.locations,
+                                             new_location(1, line, col), context)
+   if not is_nil(identifier):
+      try:
+         return rename_external_symbol(unit, context, identifier.identifier, new_name)
+      except AnalyzeError:
+         discard
 
-   # Renaming a symbol is the same as first finding all references (including the declaration)
-   # and constructing the text edits describing the changes based on that.
    for loc in find_references(unit, line, col, true):
       let text_edit = new_lsp_text_edit(loc.range.start, loc.range.stop, new_name)
       add(result, new_lsp_text_document_edit(loc.uri, [text_edit]))

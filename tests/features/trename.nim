@@ -809,6 +809,55 @@ run_test("textDocument/rename: module port (from declaration)",
    })
 )
 
+
+run_test("textDocument/rename: module parameter port (FOO)",
+   new_lsp_request(0, "textDocument/rename", %*{
+      "textDocument": {
+         "uri": "file://" & expand_filename(src4_path),
+      },
+      "position": {
+         "line": 11,
+         "character": 15
+      },
+      "newName": "BAZ"
+   }),
+   new_lsp_response(367 + 2 * src4_path_len, 0, %*{
+      "documentChanges": [
+         {
+            "textDocument": {
+               "uri": "file://" & expand_filename(src4_path),
+               "version": new_jnull()
+            },
+            "edits": [
+               {
+                  "range": {
+                     "start": {"line": 11, "character": 15},
+                     "end" : {"line": 11, "character": 18}
+                  },
+                  "newText": "BAZ"
+               }
+            ]
+         },
+         {
+            "textDocument": {
+               "uri": "file://" & expand_filename(src4_path),
+               "version": new_jnull()
+            },
+            "edits": [
+               {
+                  "range": {
+                     "start": {"line": 14, "character": 14},
+                     "end" : {"line": 14, "character": 17}
+                  },
+                  "newText": "BAZ"
+               }
+            ]
+         }
+      ]
+   })
+)
+
+
 # Open the file "./src/src5.v", expecting no parsing errors.
 const src5_text = static_read(src5_path)
 send(ifs, new_lsp_notification("textDocument/didOpen", %*{
