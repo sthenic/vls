@@ -79,7 +79,8 @@ iterator walk_module_declarations(filename: string): PNode {.inline.} =
       let cache = new_ident_cache()
       var graph: Graph
       log.debug("Parsing file '$1'.", filename)
-      open_graph(graph, cache, fs, filename, [], [])
+      let configuration = get_configuration(filename)
+      open_graph(graph, cache, fs, filename, configuration.include_paths, configuration.defines)
       close(fs)
       if graph.root_node.kind == NkSourceText:
          for s in graph.root_node.sons:

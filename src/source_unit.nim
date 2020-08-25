@@ -13,7 +13,7 @@ type
       text*: string
 
 
-proc get_configuration(source_filename: string): Configuration =
+proc get_configuration*(source_filename: string): Configuration =
    # Search for a configuration file starting at the ``source_filename`` and
    # walking up to the root directory. If we find a file but fail to parse it,
    # we fall back to default values.
