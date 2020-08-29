@@ -929,16 +929,31 @@ proc rename_external_symbol(unit: SourceUnit, context: AstContext, identifier: P
          raise new_analyze_error("Expected a module name identifier.")
 
    else:
-      raise new_analyze_error("Unknown context for external rename '$1'.", context[^1].n.kind)
+      # We use the raw declaration search interface to get the context in which
+      # it applies. Since we're looking to handle port and parameter port
+      # declarations, the context will hold the AST for the full module
+      # declaration. We'll use this tree to find the name of the module.
+      let (declaration, _, declaration_context) = find_declaration(context, identifier)
+      if not is_nil(declaration) and declaration.kind in {NkPortDecl, NkParameterDecl}:
+         let module = find_first(declaration_context.n, NkModuleIdentifier)
+         if not is_nil(module):
+            result = if declaration.kind == NkPortDecl:
+               rename_external_module_port(unit, module.identifier, identifier, new_name)
+            else:
+               rename_external_module_parameter_port(unit, module.identifier, identifier, new_name)
+         else:
+            raise new_analyze_error("Expected a module name identifier.")
+      else:
+         raise new_analyze_error("Unknown context for external rename '$1'.", context[^1].n.kind)
 
 
 proc rename_symbol*(unit: SourceUnit, line, col: int, new_name: string): seq[LspTextDocumentEdit] =
    # Renaming a symbol is the same as first finding all references (including
    # the declaration) and constructing the text edits describing the changes
-   # based on that. However, we have to make an exception for external symbols,
-   # like when a module instance or a module port is targeted. But we don't know
-   # what we're targeting until we've tried locating the identifier at the
-   # target location.
+   # based on that. However, we have to make an exception for symbols where a
+   # rename has external side effects, e.g. when a module instance or a module
+   # port is targeted. We don't know what we're targeting until we've tried
+   # locating the identifier at the target location.
    var context: AstContext
    init(context, 32)
    let identifier = find_identifier_physical(unit.graph.root_node, unit.graph.locations,

@@ -616,7 +616,7 @@ run_test("textDocument/rename: module parameter port (FOO)",
       },
       "newName": "new_fOO"
    }),
-   new_lsp_response(372 + src4_path_len + src5_path_len, 0, %*{
+   new_lsp_response(532 + src4_path_len + 2 * src5_path_len, 0, %*{
       "documentChanges": [
          {
             "textDocument": {
@@ -643,6 +643,21 @@ run_test("textDocument/rename: module parameter port (FOO)",
                   "range": {
                      "start": {"line": 14, "character": 9},
                      "end" : {"line": 14, "character": 12}
+                  },
+                  "newText": "new_fOO"
+               }
+            ]
+         },
+         {
+            "textDocument": {
+               "uri": "file://" & expand_filename(src5_path),
+               "version": new_jnull()
+            },
+            "edits": [
+               {
+                  "range": {
+                     "start": {"line": 20, "character": 29},
+                     "end" : {"line": 20, "character": 32}
                   },
                   "newText": "new_fOO"
                }
@@ -717,7 +732,7 @@ run_test("textDocument/rename: module name (from declaration)",
 )
 
 
-run_test("textDocument/rename: module port (from declaration)",
+run_test("textDocument/rename: module port, direct",
    new_lsp_request(0, "textDocument/rename", %*{
       "textDocument": {
          "uri": "file://" & expand_filename(src4_path),
@@ -810,7 +825,100 @@ run_test("textDocument/rename: module port (from declaration)",
 )
 
 
-run_test("textDocument/rename: module parameter port (FOO)",
+run_test("textDocument/rename: module port, indirect",
+   new_lsp_request(0, "textDocument/rename", %*{
+      "textDocument": {
+         "uri": "file://" & expand_filename(src4_path),
+      },
+      "position": {
+         "line": 7,
+         "character": 23
+      },
+      "newName": "new_clk_i"
+   }),
+   new_lsp_response(861 + src3_path_len + 3 * src4_path_len + src5_path_len, 0, %*{
+      "documentChanges": [
+         {
+            "textDocument": {
+               "uri": "file://" & expand_filename(src5_path),
+               "version": new_jnull()
+            },
+            "edits": [
+               {
+                  "range": {
+                     "start": {"line": 16, "character": 34},
+                     "end" : {"line": 16, "character": 39}
+                  },
+                  "newText": "new_clk_i"
+               }
+            ]
+         },
+         {
+            "textDocument": {
+               "uri": "file://" & expand_filename(src3_path),
+               "version": new_jnull()
+            },
+            "edits": [
+               {
+                  "range": {
+                     "start": {"line": 24, "character": 34},
+                     "end" : {"line": 24, "character": 39}
+                  },
+                  "newText": "new_clk_i"
+               }
+            ]
+         },
+         {
+            "textDocument": {
+               "uri": "file://" & expand_filename(src4_path),
+               "version": new_jnull()
+            },
+            "edits": [
+               {
+                  "range": {
+                     "start": {"line": 1, "character": 44},
+                     "end" : {"line": 1, "character": 49}
+                  },
+                  "newText": "new_clk_i"
+               }
+            ]
+         },
+         {
+            "textDocument": {
+               "uri": "file://" & expand_filename(src4_path),
+               "version": new_jnull()
+            },
+            "edits": [
+               {
+                  "range": {
+                     "start": {"line": 7, "character": 21},
+                     "end" : {"line": 7, "character": 26}
+                  },
+                  "newText": "new_clk_i"
+               }
+            ]
+         },
+         {
+            "textDocument": {
+               "uri": "file://" & expand_filename(src4_path),
+               "version": new_jnull()
+            },
+            "edits": [
+               {
+                  "range": {
+                     "start": {"line": 16, "character": 16},
+                     "end" : {"line": 16, "character": 21}
+                  },
+                  "newText": "new_clk_i"
+               }
+            ]
+         }
+      ]
+   })
+)
+
+
+run_test("textDocument/rename: localparam",
    new_lsp_request(0, "textDocument/rename", %*{
       "textDocument": {
          "uri": "file://" & expand_filename(src4_path),
@@ -871,7 +979,7 @@ send(ifs, new_lsp_notification("textDocument/didOpen", %*{
 assert len(recv(ofs).parameters["diagnostics"]) == 0
 
 
-run_test("textDocument/rename: module parameter port (FOO)",
+run_test("textDocument/rename: module parameter port, direct",
    new_lsp_request(0, "textDocument/rename", %*{
       "textDocument": {
          "uri": "file://" & expand_filename(src5_path),
@@ -882,7 +990,7 @@ run_test("textDocument/rename: module parameter port (FOO)",
       },
       "newName": "new_fOO"
    }),
-   new_lsp_response(372 + src4_path_len + src5_path_len, 0, %*{
+   new_lsp_response(532 + src4_path_len + 2 * src5_path_len, 0, %*{
       "documentChanges": [
          {
             "textDocument": {
@@ -909,6 +1017,84 @@ run_test("textDocument/rename: module parameter port (FOO)",
                   "range": {
                      "start": {"line": 14, "character": 9},
                      "end" : {"line": 14, "character": 12}
+                  },
+                  "newText": "new_fOO"
+               }
+            ]
+         },
+         {
+            "textDocument": {
+               "uri": "file://" & expand_filename(src5_path),
+               "version": new_jnull()
+            },
+            "edits": [
+               {
+                  "range": {
+                     "start": {"line": 20, "character": 29},
+                     "end" : {"line": 20, "character": 32}
+                  },
+                  "newText": "new_fOO"
+               }
+            ]
+         }
+      ]
+   })
+)
+
+
+run_test("textDocument/rename: module parameter port, indirect",
+   new_lsp_request(0, "textDocument/rename", %*{
+      "textDocument": {
+         "uri": "file://" & expand_filename(src5_path),
+      },
+      "position": {
+         "line": 20,
+         "character": 29
+      },
+      "newName": "new_fOO"
+   }),
+   new_lsp_response(532 + src4_path_len + 2 * src5_path_len, 0, %*{
+      "documentChanges": [
+         {
+            "textDocument": {
+               "uri": "file://" & expand_filename(src5_path),
+               "version": new_jnull()
+            },
+            "edits": [
+               {
+                  "range": {
+                     "start": {"line": 1, "character": 14},
+                     "end" : {"line": 1, "character": 17}
+                  },
+                  "newText": "new_fOO"
+               }
+            ]
+         },
+         {
+            "textDocument": {
+               "uri": "file://" & expand_filename(src4_path),
+               "version": new_jnull()
+            },
+            "edits": [
+               {
+                  "range": {
+                     "start": {"line": 14, "character": 9},
+                     "end" : {"line": 14, "character": 12}
+                  },
+                  "newText": "new_fOO"
+               }
+            ]
+         },
+         {
+            "textDocument": {
+               "uri": "file://" & expand_filename(src5_path),
+               "version": new_jnull()
+            },
+            "edits": [
+               {
+                  "range": {
+                     "start": {"line": 20, "character": 29},
+                     "end" : {"line": 20, "character": 32}
                   },
                   "newText": "new_fOO"
                }

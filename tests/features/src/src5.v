@@ -18,4 +18,6 @@
         .data_o (from_module4)
     );
 
+    localparam ANOTHER_FOO = FOO;
+
 endmodule

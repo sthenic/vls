@@ -10,6 +10,8 @@ All notable changes to this project will be documented in this file.
   symbols, browse for the corresponding configuration file to correctly set up
   the environment.
 - Fix an issue which prevented symbol renaming of localparams.
+- Fix symbol renaming when a module port or parameter port was targeted
+  indirectly via an internal reference.
 
 ## [v0.2.0] - 2020-08-24
 
