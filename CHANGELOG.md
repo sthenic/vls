@@ -16,6 +16,8 @@ All notable changes to this project will be documented in this file.
   body, i.e. not in the module parameter port list.
 - Fix parameter port completions not including parameters that are declared
   inside the module body.
+- Fix port completions for ports declared with the 'port list' syntax using
+  concatenations.
 
 ## [v0.2.0] - 2020-08-24
 

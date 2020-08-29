@@ -16,7 +16,8 @@
     ) module5_inst [1:0] (
         .clk_i (clk_i),
         .data_o (out[0]),
-        .valid_o (out[1])
+        .valid_o (out[1]),
+        .split_port_i (6'b100101)
     );
 
 endmodule

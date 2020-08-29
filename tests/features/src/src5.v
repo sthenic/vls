@@ -1,7 +1,7 @@
 (* some_attr = "true" *) module module5 #(
     parameter FOO = 0, parameter BaR = "baz"
 )(
-    .clk_i(clk_local),
+    .clk_i(clk_local), .split_port_i({first_half, second_half}),
     data_o, valid_o
 );
     input wire clk_local;
@@ -20,5 +20,8 @@
 
     localparam ANOTHER_FOO = FOO;
     parameter LATE_DECLARATION = 32;
+
+    input wire [LATE_DECLARATION/2-1: 0] first_half;
+    input wire [LATE_DECLARATION/2-1: 0] second_half;
 
 endmodule

@@ -712,23 +712,39 @@ proc find_port_connection_completions(unit: SourceUnit, module_name, prefix: str
                add_declaration_information(unit, item, port)
                add(result, item)
          of NkPort:
-            var external_port = find_first(port, NkPortIdentifier)
-            let internal_port = find_first_chain(port, [NkPortReference, NkPortIdentifier])
-            if is_nil(internal_port):
-               continue
-            if is_nil(external_port):
-               external_port = internal_port
-            if not starts_with(external_port.identifier.s, prefix):
+            var external_name = find_first(port, NkPortIdentifier)
+            let internal_name = find_first_chain(port, [NkPortReference, NkPortIdentifier])
+            let internal_name_concat = find_first(port, NkPortReferenceConcat)
+
+            # Resolve the internal names of a port.
+            var internal_names: seq[PNode]
+            if not is_nil(internal_name):
+               add(internal_names, internal_name)
+            elif not is_nil(internal_name_concat):
+               for s in walk_sons(internal_name_concat, NkPortReference):
+                  let name = find_first(s, NkIdentifier)
+                  if not is_nil(name):
+                     add(internal_names, name)
+            else:
                continue
 
-            # FIXME: Finding declarations starting from the module root is not
-            #        possible unless find_declaration() is modified.
-            let (declaration, _) = find_declaration(module, internal_port.identifier)
-            var item = new_lsp_completion_item(external_port.identifier.s & " ()")
-            if not is_nil(declaration):
-               add_declaration_information(unit, item, declaration)
-            else:
-               add_declaration_information(unit, item, port)
+            if is_nil(external_name):
+               if is_nil(internal_name):
+                  # Port reference concatenations w/o a specific external name
+                  # are not addressable.
+                  continue
+               else:
+                  # Port references w/o a specific name are known by their
+                  # internal name from the outside.
+                  external_name = internal_name
+
+            if not starts_with(external_name.identifier.s, prefix):
+               continue
+
+            # TODO: We could potentially show the declarations of the internal
+            #       names if we wanted to.
+            var item = new_lsp_completion_item(external_name.identifier.s & " ()")
+            add_declaration_information(unit, item, port)
             add(result, item)
          else:
             discard

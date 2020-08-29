@@ -428,10 +428,15 @@ run_test("textDocument/completion: module port (3), internal declarations",
          "character": 9
       }
    }),
-   new_lsp_response(194, 0, %*[
+   new_lsp_response(283, 0, %*[
       {
          "label": "clk_i ()",
          "detail": ".clk_i(clk_local)",
+         "kind": int(LspCkInterface)
+      },
+      {
+         "label": "split_port_i ()",
+         "detail": ".split_port_i({first_half, second_half})",
          "kind": int(LspCkInterface)
       },
       {
