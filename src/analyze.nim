@@ -407,9 +407,6 @@ proc find_declaration*(unit: SourceUnit, line, col: int): LspLocation =
    else:
       find_internal_declaration(unit, context, identifier.identifier)
 
-   if not is_nil(id):
-      log.debug("nope not is nil")
-
    result = new_lsp_location(
       construct_uri(filename), int(id.loc.line - 1), int(id.loc.col), len(id.identifier.s)
    )
