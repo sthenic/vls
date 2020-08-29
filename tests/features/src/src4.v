@@ -12,7 +12,7 @@
     localparam BAR = 10, FOO = 23;
     wire [1:0] out;
     module5 #(
-        .FOO (BAR), .BaR (FOO), .LATE_DECLARATION(6)
+        .FOO (BAR), .BaR (FOO), .LATE_DECLARATION (6)
     ) module5_inst [1:0] (
         .clk_i (clk_i),
         .data_o (out[0]),

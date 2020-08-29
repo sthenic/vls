@@ -14,6 +14,8 @@ All notable changes to this project will be documented in this file.
   indirectly via an internal reference.
 - Fix declaration lookup of parameter ports that are declared inside the module
   body, i.e. not in the module parameter port list.
+- Fix parameter port completions not including parameters that are declared
+  inside the module body.
 
 ## [v0.2.0] - 2020-08-24
 

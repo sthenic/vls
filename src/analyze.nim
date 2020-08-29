@@ -736,19 +736,24 @@ proc find_port_connection_completions(unit: SourceUnit, module_name, prefix: str
 
 
 proc find_parameter_port_connection_completions(unit: SourceUnit, module_name, prefix: string): seq[LspCompletionItem] =
+   template add_completion(parameter: PNode, prefix: string) =
+      let assignment = find_first(parameter, NkParamAssignment)
+      if not is_nil(assignment):
+         let id = find_first(assignment, NkParameterIdentifier)
+         if not is_nil(id) and starts_with(id.identifier.s, prefix):
+            var item = new_lsp_completion_item(id.identifier.s & " ()")
+            add_declaration_information(unit, item, parameter)
+            add(result, item)
+
    for filename, module in walk_module_declarations(unit.configuration.include_paths):
       let id = find_first(module, NkModuleIdentifier)
       if is_nil(id) or id.identifier.s != module_name:
          continue
 
       for parameter in walk_parameter_ports(module):
-         let assignment = find_first(parameter, NkParamAssignment)
-         if not is_nil(assignment):
-            let id = find_first(assignment, NkParameterIdentifier)
-            if not is_nil(id) and starts_with(id.identifier.s, prefix):
-               var item = new_lsp_completion_item(id.identifier.s & " ()")
-               add_declaration_information(unit, item, parameter)
-               add(result, item)
+         add_completion(parameter, prefix)
+      for parameter in walk_sons(module, NkParameterDecl):
+         add_completion(parameter, prefix)
       return
 
 
