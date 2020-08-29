@@ -264,17 +264,24 @@ proc find_external_module_port_declaration(unit: SourceUnit, module_id, port_id:
 
 proc find_external_module_parameter_port_declaration(unit: SourceUnit, module_id, parameter_id: PIdentifier):
       tuple[declaration, identifier: PNode, filename: string] =
+   template return_if_matching(parameter: PNode, parameter_id: PIdentifier) =
+      let assignment = find_first(parameter, NkParamAssignment)
+      if not is_nil(assignment):
+         let id = find_first(assignment, NkParameterIdentifier)
+         if not is_nil(id) and id.identifier.s == parameter_id.s:
+            return (parameter, id, filename)
+
    for filename, module in walk_module_declarations(unit.configuration.include_paths):
       let id = find_first(module, NkModuleIdentifier)
       if is_nil(id) or id.identifier.s != module_id.s:
          continue
 
       for parameter in walk_parameter_ports(module):
-         let assignment = find_first(parameter, NkParamAssignment)
-         if not is_nil(assignment):
-            let id = find_first(assignment, NkParameterIdentifier)
-            if not is_nil(id) and id.identifier.s == parameter_id.s:
-               return (parameter, id, filename)
+         return_if_matching(parameter, parameter_id)
+
+      for parameter in walk_sons(module, NkParameterDecl):
+         return_if_matching(parameter, parameter_id)
+
 
    raise new_analyze_error("Failed to find the declaration of parameter port '$1'.", parameter_id.s)
 

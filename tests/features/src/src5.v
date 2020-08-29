@@ -19,5 +19,6 @@
     );
 
     localparam ANOTHER_FOO = FOO;
+    parameter LATE_DECLARATION = 32;
 
 endmodule

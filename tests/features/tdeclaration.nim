@@ -999,7 +999,7 @@ run_test("textDocument/declaration: module parameter value",
          "character": 26
       }
    }),
-   new_lsp_response(132 + src5_path_len, 15, %*[{
+   new_lsp_response(132 + src4_path_len, 15, %*[{
       "uri": "file://" & expand_filename(src4_path),
       "range": {
          "start": {"line": 11, "character": 25},
@@ -1042,6 +1042,25 @@ run_test("textDocument/declaration: goto include file (last quote)",
       "range": {
          "start": {"line": 0, "character": 0},
          "end" : {"line": 0, "character": 0}
+      }
+   }])
+)
+
+run_test("textDocument/declaration: module parameter port, declared in body",
+   new_lsp_request(15, "textDocument/declaration", %*{
+      "textDocument": {
+         "uri": "file://" & expand_filename(src4_path),
+      },
+      "position": {
+         "line": 14,
+         "character": 38
+      }
+   }),
+   new_lsp_response(132 + src5_path_len, 15, %*[{
+      "uri": "file://" & expand_filename(src5_path),
+      "range": {
+         "start": {"line": 21, "character": 14},
+         "end" : {"line": 21, "character": 30}
       }
    }])
 )

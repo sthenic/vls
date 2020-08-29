@@ -12,6 +12,8 @@ All notable changes to this project will be documented in this file.
 - Fix an issue which prevented symbol renaming of localparams.
 - Fix symbol renaming when a module port or parameter port was targeted
   indirectly via an internal reference.
+- Fix declaration lookup of parameter ports that are declared inside the module
+  body, i.e. not in the module parameter port list.
 
 ## [v0.2.0] - 2020-08-24
 
