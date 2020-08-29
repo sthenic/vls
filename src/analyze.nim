@@ -902,31 +902,29 @@ proc rename_external_module_parameter_port(unit: SourceUnit, module_id, paramete
 proc rename_external_symbol(unit: SourceUnit, context: AstContext, identifier: PIdentifier,
                             new_name: string): seq[LspTextDocumentEdit] =
    if context[^1].n.kind in {NkModuleInstantiation, NkModuleDecl}:
-      result = rename_external_module(unit, identifier, new_name)
+      return rename_external_module(unit, identifier, new_name)
 
    elif context[^1].n.kind in {NkNamedPortConnection, NkNamedParameterAssignment}:
-      let module = find_first(context[^3].n, NkIdentifier)
-      if not is_nil(module):
-         result = if context[^1].n.kind == NkNamedPortConnection:
-            rename_external_module_port(unit, module.identifier, identifier, new_name)
-         else:
-            rename_external_module_parameter_port(unit, module.identifier, identifier, new_name)
-      else:
-         raise new_analyze_error("Expected a module name identifier.")
+      # Named port or parameter port connections of a module instantiation. We
+      # only perform an external rename if a port is targeted, the context
+      # position is equal to the first identifier that we find.
+      if find_first_index(context[^1].n, NkIdentifier) == context[^1].pos and len(context) >= 3:
+         let module = find_first(context[^3].n, NkIdentifier)
+         if not is_nil(module):
+            if context[^1].n.kind == NkNamedPortConnection:
+               return rename_external_module_port(unit, module.identifier, identifier, new_name)
+            else:
+               return rename_external_module_parameter_port(unit, module.identifier, identifier, new_name)
 
    elif context[^1].n.kind == NkPortDecl:
       let module = find_first(context[^3].n, NkModuleIdentifier)
       if not is_nil(module):
-         result = rename_external_module_port(unit, module.identifier, identifier, new_name)
-      else:
-         raise new_analyze_error("Expected a module name identifier.")
+         return rename_external_module_port(unit, module.identifier, identifier, new_name)
 
-   elif len(context) >= 3 and context[^3].n.kind == NkModuleParameterPortList:
+   elif len(context) >= 4 and context[^3].n.kind == NkModuleParameterPortList:
       let module = find_first(context[^4].n, NkModuleIdentifier)
       if not is_nil(module):
-         result = rename_external_module_parameter_port(unit, module.identifier, identifier, new_name)
-      else:
-         raise new_analyze_error("Expected a module name identifier.")
+         return rename_external_module_parameter_port(unit, module.identifier, identifier, new_name)
 
    else:
       # We use the raw declaration search interface to get the context in which
@@ -937,14 +935,12 @@ proc rename_external_symbol(unit: SourceUnit, context: AstContext, identifier: P
       if not is_nil(declaration) and declaration.kind in {NkPortDecl, NkParameterDecl}:
          let module = find_first(declaration_context.n, NkModuleIdentifier)
          if not is_nil(module):
-            result = if declaration.kind == NkPortDecl:
-               rename_external_module_port(unit, module.identifier, identifier, new_name)
+            if declaration.kind == NkPortDecl:
+               return rename_external_module_port(unit, module.identifier, identifier, new_name)
             else:
-               rename_external_module_parameter_port(unit, module.identifier, identifier, new_name)
-         else:
-            raise new_analyze_error("Expected a module name identifier.")
-      else:
-         raise new_analyze_error("Unknown context for external rename '$1'.", context[^1].n.kind)
+               return rename_external_module_parameter_port(unit, module.identifier, identifier, new_name)
+
+   raise new_analyze_error("External rename failed.")
 
 
 proc rename_symbol*(unit: SourceUnit, line, col: int, new_name: string): seq[LspTextDocumentEdit] =

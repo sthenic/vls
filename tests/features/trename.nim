@@ -1105,6 +1105,54 @@ run_test("textDocument/rename: module parameter port, indirect",
 )
 
 
+run_test("textDocument/rename: localparam from parameter port connection",
+   new_lsp_request(0, "textDocument/rename", %*{
+      "textDocument": {
+         "uri": "file://" & expand_filename(src4_path),
+      },
+      "position": {
+         "line": 14,
+         "character": 26
+      },
+      "newName": "new_fOO"
+   }),
+   new_lsp_response(375 + 2 * src4_path_len, 0, %*{
+      "documentChanges": [
+         {
+            "textDocument": {
+               "uri": "file://" & expand_filename(src4_path),
+               "version": new_jnull()
+            },
+            "edits": [
+               {
+                  "range": {
+                     "start": {"line": 11, "character": 25},
+                     "end" : {"line": 11, "character": 28}
+                  },
+                  "newText": "new_fOO"
+               }
+            ]
+         },
+         {
+            "textDocument": {
+               "uri": "file://" & expand_filename(src4_path),
+               "version": new_jnull()
+            },
+            "edits": [
+               {
+                  "range": {
+                     "start": {"line": 14, "character": 26},
+                     "end" : {"line": 14, "character": 29}
+                  },
+                  "newText": "new_fOO"
+               }
+            ]
+         }
+      ]
+   })
+)
+
+
 # Shut down the server.
 shutdown(ifs, ofs)
 
