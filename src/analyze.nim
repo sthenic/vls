@@ -954,19 +954,18 @@ proc rename_external_symbol(unit: SourceUnit, context: AstContext, identifier: P
       if not is_nil(module):
          return rename_external_module_parameter_port(unit, module.identifier, identifier, new_name)
 
-   else:
-      # We use the raw declaration search interface to get the context in which
-      # it applies. Since we're looking to handle port and parameter port
-      # declarations, the context will hold the AST for the full module
-      # declaration. We'll use this tree to find the name of the module.
-      let (declaration, _, declaration_context) = find_declaration(context, identifier)
-      if not is_nil(declaration) and declaration.kind in {NkPortDecl, NkParameterDecl}:
-         let module = find_first(declaration_context.n, NkModuleIdentifier)
-         if not is_nil(module):
-            if declaration.kind == NkPortDecl:
-               return rename_external_module_port(unit, module.identifier, identifier, new_name)
-            else:
-               return rename_external_module_parameter_port(unit, module.identifier, identifier, new_name)
+   # We use the raw declaration search interface to get the context in which it
+   # applies. Since we're looking to handle port and parameter port
+   # declarations, the context will hold the AST for the full module
+   # declaration. We'll use this tree to find the name of the module.
+   let (declaration, _, declaration_context) = find_declaration(context, identifier)
+   if not is_nil(declaration) and declaration.kind in {NkPortDecl, NkParameterDecl}:
+      let module = find_first(declaration_context.n, NkModuleIdentifier)
+      if not is_nil(module):
+         if declaration.kind == NkPortDecl:
+            return rename_external_module_port(unit, module.identifier, identifier, new_name)
+         else:
+            return rename_external_module_parameter_port(unit, module.identifier, identifier, new_name)
 
    raise new_analyze_error("External rename failed.")
 

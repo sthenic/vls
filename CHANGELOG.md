@@ -2,6 +2,15 @@
 
 All notable changes to this project will be documented in this file.
 
+## [Unreleased]
+
+### Fixed
+
+- Fix symbol renaming when a module port or parameter port was targeted
+  indirectly via an internal reference when that reference was used in a named
+  port connection.
+- Fix docstrings not showing up for localparam and parameter declarations.
+
 ## [v0.2.1] - 2020-08-30
 
 ### Fixed
