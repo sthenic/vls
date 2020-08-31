@@ -1,7 +1,7 @@
 /* File with some defines used by src3.v */
 
 `define AND(x, y) (x & y)
-
+/* Docstring for `WIDTH_FROM_HEADER`. */
 localparam WIDTH_FROM_HEADER = 8;
 
 

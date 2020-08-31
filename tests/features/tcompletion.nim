@@ -109,7 +109,7 @@ run_test("textDocument/completion: WIDTH",
          "character": 13
       }
    }),
-   new_lsp_response(255, 0, %*[
+   new_lsp_response(289, 0, %*[
       {
          "label": "WIDTH",
          "detail": "parameter integer WIDTH = 0",
@@ -120,7 +120,7 @@ run_test("textDocument/completion: WIDTH",
          "detail": "localparam WIDTH_FROM_HEADER = 8",
          "documentation": {
             "kind": "markdown",
-            "value": "\n\n---\nFile: src3.vh"
+            "value": "Docstring for `WIDTH_FROM_HEADER`.\n\n---\nFile: src3.vh",
          },
          "kind": int(LspCkConstant)
       }
@@ -138,13 +138,13 @@ run_test("textDocument/completion: WIDTH_",
          "character": 15
       }
    }),
-   new_lsp_response(188, 0, %*[
+   new_lsp_response(222, 0, %*[
       {
          "label": "WIDTH_FROM_HEADER",
          "detail": "localparam WIDTH_FROM_HEADER = 8",
          "documentation": {
             "kind": "markdown",
-            "value": "\n\n---\nFile: src3.vh"
+            "value": "Docstring for `WIDTH_FROM_HEADER`.\n\n---\nFile: src3.vh"
          },
          "kind": int(LspCkConstant)
       }
@@ -483,11 +483,15 @@ run_test("textDocument/completion: module parameter port (1)",
          "character": 9
       }
    }),
-   new_lsp_response(242, 0, %*[
+   new_lsp_response(309, 0, %*[
       {
          "label": "FOO ()",
          "detail": "parameter FOO = 0",
-         "kind": int(LspCkConstant)
+         "kind": int(LspCkConstant),
+         "documentation": {
+            "kind": "markdown",
+            "value": "Docstring for `FOO`."
+         }
       },
       {
          "label": "BaR ()",

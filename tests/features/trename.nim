@@ -626,8 +626,8 @@ run_test("textDocument/rename: module parameter port (FOO)",
             "edits": [
                {
                   "range": {
-                     "start": {"line": 1, "character": 14},
-                     "end" : {"line": 1, "character": 17}
+                     "start": {"line": 1, "character": 41},
+                     "end" : {"line": 1, "character": 44}
                   },
                   "newText": "new_fOO"
                }
@@ -986,7 +986,7 @@ run_test("textDocument/rename: module parameter port, direct",
       },
       "position": {
          "line": 1,
-         "character": 14
+         "character": 41
       },
       "newName": "new_fOO"
    }),
@@ -1000,8 +1000,8 @@ run_test("textDocument/rename: module parameter port, direct",
             "edits": [
                {
                   "range": {
-                     "start": {"line": 1, "character": 14},
-                     "end" : {"line": 1, "character": 17}
+                     "start": {"line": 1, "character": 41},
+                     "end" : {"line": 1, "character": 44}
                   },
                   "newText": "new_fOO"
                }
@@ -1063,8 +1063,8 @@ run_test("textDocument/rename: module parameter port, indirect",
             "edits": [
                {
                   "range": {
-                     "start": {"line": 1, "character": 14},
-                     "end" : {"line": 1, "character": 17}
+                     "start": {"line": 1, "character": 41},
+                     "end" : {"line": 1, "character": 44}
                   },
                   "newText": "new_fOO"
                }

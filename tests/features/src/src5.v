@@ -1,5 +1,5 @@
 (* some_attr = "true" *) module module5 #(
-    parameter FOO = 0, parameter BaR = "baz"
+    /* Docstring for `FOO`. */ parameter FOO = 0, parameter BaR = "baz"
 )(
     .clk_i(clk_local), .split_port_i({first_half, second_half}),
     data_o, valid_o

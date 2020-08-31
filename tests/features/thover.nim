@@ -262,7 +262,7 @@ run_test("textDocument/hover: parameter port of external module",
          "character": 10
       }
    }),
-   new_lsp_response(189, 15, %*{
+   new_lsp_response(213, 15, %*{
       "range": {
          "start": {"line": 14, "character": 9},
          "end" : {"line": 14, "character": 12}
@@ -272,7 +272,9 @@ run_test("textDocument/hover: parameter port of external module",
          "value": """
 ```verilog
 parameter FOO = 0
-```"""
+```
+
+Docstring for `FOO`."""
       }
    })
 )
@@ -411,6 +413,34 @@ run_test("textDocument/hover: top-level module declaration",
       }
    }),
    new_lsp_response(39, 15, new_jnull())
+)
+
+
+run_test("textDocument/hover: localparam",
+   new_lsp_request(15, "textDocument/hover", %*{
+      "textDocument": {
+         "uri": "file://" & expand_filename(src3_path),
+      },
+      "position": {
+         "line": 15,
+         "character": 16
+      }
+   }),
+   new_lsp_response(242, 15, %*{
+      "range": {
+         "start": {"line": 15, "character": 9},
+         "end" : {"line": 15, "character": 26}
+      },
+      "contents": {
+         "kind": "markdown",
+         "value": """
+```verilog
+localparam WIDTH_FROM_HEADER = 8
+```
+
+Docstring for `WIDTH_FROM_HEADER`."""
+      }
+   })
 )
 
 
