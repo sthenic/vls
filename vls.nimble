@@ -1,5 +1,5 @@
 # Package
-version = "0.2.1"
+version = "0.2.2"
 author = "Marcus Eriksson"
 description = "A Verilog IEEE 1364-2005 language server written in Nim."
 license = "MIT"
@@ -8,7 +8,7 @@ bin = @["vls"]
 
 # Dependencies
 requires "nim >= 1.2.6"
-requires "vparse >= 0.2.1"
+requires "vparse >= 0.2.2"
 requires "vltoml >= 0.1.0"
 
 
