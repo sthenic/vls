@@ -766,10 +766,14 @@ proc find_parameter_port_connection_completions(unit: SourceUnit, module_name, p
       if is_nil(id) or id.identifier.s != module_name:
          continue
 
-      for parameter in walk_parameter_ports(module):
-         add_completion(parameter, prefix)
-      for parameter in walk_sons(module, NkParameterDecl):
-         add_completion(parameter, prefix)
+      # According to the standard, parameters declared in the module body should
+      # only be listed if the parameter port list is omitted.
+      if not is_nil(find_first(module, NkModuleParameterPortList)):
+         for parameter in walk_parameter_ports(module):
+            add_completion(parameter, prefix)
+      else:
+         for parameter in walk_sons(module, NkParameterDecl):
+            add_completion(parameter, prefix)
       return
 
 

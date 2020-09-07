@@ -483,7 +483,7 @@ run_test("textDocument/completion: module parameter port (1)",
          "character": 9
       }
    }),
-   new_lsp_response(309, 0, %*[
+   new_lsp_response(224, 0, %*[
       {
          "label": "FOO ()",
          "detail": "parameter FOO = 0",
@@ -491,16 +491,11 @@ run_test("textDocument/completion: module parameter port (1)",
          "documentation": {
             "kind": "markdown",
             "value": "Docstring for `FOO`."
-         }
+      }
       },
       {
          "label": "BaR ()",
          "detail": "parameter BaR = \"baz\"",
-         "kind": int(LspCkConstant)
-      },
-      {
-         "label": "LATE_DECLARATION ()",
-         "detail": "parameter LATE_DECLARATION = 32",
          "kind": int(LspCkConstant)
       }
    ])
