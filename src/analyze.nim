@@ -313,7 +313,7 @@ proc is_external_identifier(context: AstContext): bool =
 proc find_internal_declaration(unit: SourceUnit, context: AstContext, identifier: PIdentifier):
       tuple[declaration, identifier: PNode, filename: string] =
    log.debug("Looking up an internal declaration for '$1'.", identifier.s)
-   let (decl, id, _) = find_declaration(context, identifier)
+   let (decl, id, _, _) = find_declaration(context, identifier)
    if not is_nil(decl):
       let filename = unit.graph.locations.file_maps[id.loc.file - 1].filename
       result = (decl, id, filename)
@@ -515,7 +515,7 @@ proc find_references*(unit: SourceUnit, line, col: int, include_declaration: boo
            c.n.kind == NkModuleDecl and c.pos == find_first_index(c.n, NkModuleIdentifier):
          return find_module_references(unit, identifier.identifier, include_declaration)
 
-   let (_, declaration, declaration_context) = find_declaration(identifier_context, identifier.identifier)
+   let (declaration, _, _, declaration_context) = find_declaration(identifier_context, identifier.identifier)
    if is_nil(declaration):
       raise new_analyze_error("Failed to find the declaration of identifier '$1'.", identifier.identifier.s)
 
@@ -962,7 +962,7 @@ proc rename_external_symbol(unit: SourceUnit, context: AstContext, identifier: P
    # applies. Since we're looking to handle port and parameter port
    # declarations, the context will hold the AST for the full module
    # declaration. We'll use this tree to find the name of the module.
-   let (declaration, _, declaration_context) = find_declaration(context, identifier)
+   let (declaration, _, _, declaration_context) = find_declaration(context, identifier)
    if not is_nil(declaration) and declaration.kind in {NkPortDecl, NkParameterDecl}:
       let module = find_first(declaration_context.n, NkModuleIdentifier)
       if not is_nil(module):
@@ -1046,7 +1046,7 @@ proc find_external_hover(unit: SourceUnit, context: AstContext, identifier: PIde
 
 proc find_internal_hover(unit: SourceUnit, context: AstContext, identifier: PIdentifier,
                          highlight_location: Location): LspHover =
-   let (declaration, _, _) = find_declaration(context, identifier)
+   let (declaration, _, _, _) = find_declaration(context, identifier)
    if is_nil(declaration):
       raise new_analyze_error("Failed to find the declaration of identifier '$1'.", identifier.s)
    elif declaration.kind == NkModuleDecl:
@@ -1184,7 +1184,7 @@ proc find_internal_signature_help(unit: SourceUnit, context: AstContext, identif
    let name = find_first(context[^1].n, NkIdentifier)
    if is_nil(name):
       raise new_analyze_error("Failed to find the name of the function.")
-   let (declaration, _, _) = find_declaration(context, name.identifier)
+   let (declaration, _, _, _) = find_declaration(context, name.identifier)
    if is_nil(declaration):
       raise new_analyze_error("Failed to find the declaration of identifier '$1'.", name.identifier.s)
 
