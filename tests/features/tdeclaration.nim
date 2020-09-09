@@ -1046,7 +1046,7 @@ run_test("textDocument/declaration: goto include file (last quote)",
    }])
 )
 
-run_test("textDocument/declaration: module parameter port, declared in body",
+run_test("textDocument/declaration: module parameter port, declared in body (should be ignored)",
    new_lsp_request(15, "textDocument/declaration", %*{
       "textDocument": {
          "uri": "file://" & expand_filename(src4_path),
@@ -1056,30 +1056,24 @@ run_test("textDocument/declaration: module parameter port, declared in body",
          "character": 38
       }
    }),
-   new_lsp_response(132 + src5_path_len, 15, %*[{
-      "uri": "file://" & expand_filename(src5_path),
-      "range": {
-         "start": {"line": 21, "character": 14},
-         "end" : {"line": 21, "character": 30}
-      }
-   }])
+   new_lsp_response(39, 15, new_jnull())
 )
 
-run_test("textDocument/declaration: module parameter port, declared in body",
+run_test("textDocument/declaration: module parameter port, declared in body (should be listed)",
    new_lsp_request(15, "textDocument/declaration", %*{
       "textDocument": {
-         "uri": "file://" & expand_filename(src4_path),
+         "uri": "file://" & expand_filename(src3_path),
       },
       "position": {
-         "line": 14,
-         "character": 38
+         "line": 23,
+         "character": 18
       }
    }),
-   new_lsp_response(132 + src5_path_len, 15, %*[{
-      "uri": "file://" & expand_filename(src5_path),
+   new_lsp_response(132 + src4_path_len, 15, %*[{
+      "uri": "file://" & expand_filename(src4_path),
       "range": {
-         "start": {"line": 21, "character": 14},
-         "end" : {"line": 21, "character": 30}
+         "start": {"line": 22, "character": 14},
+         "end" : {"line": 22, "character": 31}
       }
    }])
 )

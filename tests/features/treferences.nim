@@ -901,8 +901,8 @@ run_test("textDocument/references: module instantiation",
    {
       "uri": "file://" & expand_filename(src3_path),
       "range": {
-         "start": {"line": 23, "character": 12},
-         "end" : {"line": 23, "character": 24}
+         "start": {"line": 23, "character": 38},
+         "end" : {"line": 23, "character": 50}
       }
    }
    ])
@@ -932,8 +932,8 @@ run_test("textDocument/references: module instantiation w/ declaration",
    {
       "uri": "file://" & expand_filename(src3_path),
       "range": {
-         "start": {"line": 23, "character": 12},
-         "end" : {"line": 23, "character": 24}
+         "start": {"line": 23, "character": 38},
+         "end" : {"line": 23, "character": 50}
       }
    },
    {
@@ -970,8 +970,8 @@ run_test("textDocument/references: module declaration",
    {
       "uri": "file://" & expand_filename(src3_path),
       "range": {
-         "start": {"line": 23, "character": 12},
-         "end" : {"line": 23, "character": 24}
+         "start": {"line": 23, "character": 38},
+         "end" : {"line": 23, "character": 50}
       }
    }
    ])
@@ -1001,8 +1001,8 @@ run_test("textDocument/references: module declaration w/ declaration",
    {
       "uri": "file://" & expand_filename(src3_path),
       "range": {
-         "start": {"line": 23, "character": 12},
-         "end" : {"line": 23, "character": 24}
+         "start": {"line": 23, "character": 38},
+         "end" : {"line": 23, "character": 50}
       }
    },
    {

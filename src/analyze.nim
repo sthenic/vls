@@ -276,11 +276,12 @@ proc find_external_module_parameter_port_declaration(unit: SourceUnit, module_id
       if is_nil(id) or id.identifier.s != module_id.s:
          continue
 
-      for parameter in walk_parameter_ports(module):
-         return_if_matching(parameter, parameter_id)
-
-      for parameter in walk_sons(module, NkParameterDecl):
-         return_if_matching(parameter, parameter_id)
+      if not is_nil(find_first(module, NkModuleParameterPortList)):
+         for parameter in walk_parameter_ports(module):
+            return_if_matching(parameter, parameter_id)
+      else:
+         for parameter in walk_sons(module, NkParameterDecl):
+            return_if_matching(parameter, parameter_id)
 
 
    raise new_analyze_error("Failed to find the declaration of parameter port '$1'.", parameter_id.s)

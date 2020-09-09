@@ -63,7 +63,7 @@ run_test("textDocument/documentSymbol",
          "uri": "file://" & expand_filename(src4_path),
       }
    }),
-   new_lsp_response(1124 + 8 * src4_path_len, 0, %*[
+   new_lsp_response(1270 + 9 * src4_path_len, 0, %*[
    {
       "name": "module4",
       "kind": 13,
@@ -179,6 +179,23 @@ run_test("textDocument/documentSymbol",
             "end": {
                "line": 12,
                "character": 18
+            }
+         }
+      }
+   },
+   {
+      "name": "MODULE4_PARAMETER",
+      "kind": 13,
+      "location": {
+         "uri": "file://" & expand_filename(src4_path),
+         "range": {
+            "start": {
+               "line": 22,
+               "character": 14
+            },
+            "end": {
+               "line": 22,
+               "character": 31
             }
          }
       }

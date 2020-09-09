@@ -20,4 +20,6 @@
         .split_port_i (6'b100101)
     );
 
+    parameter MODULE4_PARAMETER = 32;
+
 endmodule

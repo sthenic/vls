@@ -21,7 +21,7 @@ module module3 #(
     end
 
     wire from_module4;
-    module4 module4_inst (
+    module4 #(.MODULE4_PARAMETER (8)) module4_inst (
         (* some_attr = "true" *) .clk_i (clk_i),
         .data_o (from_module4)
     );
