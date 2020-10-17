@@ -338,15 +338,15 @@ proc run*(s: var LspServer): int =
    while true:
       # Receive a message from the input stream.
       log.debug("Waiting for an LSP message.")
-      let msg =
-         try:
-            recv(s)
-         except LspIoError as e:
-            send(s, new_lsp_response(0, RPC_INTERNAL_ERROR, e.msg, nil))
-            return -ESTREAM
-         except LspParseError as e:
-            send(s, new_lsp_response(0, RPC_PARSE_ERROR, e.msg, nil))
-            continue
+      var msg: LspMessage
+      try:
+         msg = recv(s)
+      except LspIoError as e:
+         send(s, new_lsp_response(0, RPC_INTERNAL_ERROR, e.msg, nil))
+         return -ESTREAM
+      except LspParseError as e:
+         send(s, new_lsp_response(0, RPC_PARSE_ERROR, e.msg, nil))
+         continue
       log.debug("Received an LSP message, length $1.", msg.length)
 
       # Handle the message. We protect against exceptions
