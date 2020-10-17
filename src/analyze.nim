@@ -222,7 +222,7 @@ proc check_syntax*(unit: SourceUnit): seq[LspDiagnostic] =
 proc find_external_module_declaration(unit: SourceUnit, identifier: PIdentifier):
       tuple[declaration, identifier: PNode, filename: string] =
    for filename, module in walk_module_declarations(unit.configuration.include_paths):
-      let id = find_first(module, NkModuleIdentifier)
+      let id = find_first(module, NkIdentifier)
       if not is_nil(id) and id.identifier.s == identifier.s:
          return (module, id, filename)
    raise new_analyze_error("Failed to find the declaration of module '$1'.", identifier.s)
@@ -232,7 +232,7 @@ proc find_external_module_port_declaration(unit: SourceUnit, module_id, port_id:
       tuple[declaration, identifier: PNode, filename: string] =
 
    for filename, module in walk_module_declarations(unit.configuration.include_paths):
-      let id = find_first(module, NkModuleIdentifier)
+      let id = find_first(module, NkIdentifier)
       if is_nil(id) or id.identifier.s != module_id.s:
          continue
 
@@ -240,20 +240,20 @@ proc find_external_module_port_declaration(unit: SourceUnit, module_id, port_id:
       for port in walk_ports(module):
          case port.kind
          of NkPortDecl:
-            let id = find_first(port, NkPortIdentifier)
+            let id = find_first(port, NkIdentifier)
             if not is_nil(id) and id.identifier.s == port_id.s:
                return (port, id, filename)
          of NkPort:
             # If we find a port identifier as the first node, that's the
             # name that this port is known by from the outside. Otherwise,
             # we're looking for the first identifier in a port reference.
-            let id = find_first(port, NkPortIdentifier)
+            let id = find_first(port, NkIdentifier)
             if not is_nil(id) and id.identifier.s == port_id.s:
                return (port, id, filename)
             else:
                let port_ref = find_first(port, NkPortReference)
                if not is_nil(port_ref):
-                  let id = find_first(port_ref, NkPortIdentifier)
+                  let id = find_first(port_ref, NkIdentifier)
                   if not is_nil(id) and id.identifier.s == port_id.s:
                      return (port, id, filename)
          else:
@@ -265,14 +265,14 @@ proc find_external_module_port_declaration(unit: SourceUnit, module_id, port_id:
 proc find_external_module_parameter_port_declaration(unit: SourceUnit, module_id, parameter_id: PIdentifier):
       tuple[declaration, identifier: PNode, filename: string] =
    template return_if_matching(parameter: PNode, parameter_id: PIdentifier) =
-      let assignment = find_first(parameter, NkParamAssignment)
+      let assignment = find_first(parameter, NkAssignment)
       if not is_nil(assignment):
-         let id = find_first(assignment, NkParameterIdentifier)
+         let id = find_first(assignment, NkIdentifier)
          if not is_nil(id) and id.identifier.s == parameter_id.s:
             return (parameter, id, filename)
 
    for filename, module in walk_module_declarations(unit.configuration.include_paths):
-      let id = find_first(module, NkModuleIdentifier)
+      let id = find_first(module, NkIdentifier)
       if is_nil(id) or id.identifier.s != module_id.s:
          continue
 
@@ -423,7 +423,7 @@ proc find_declaration*(unit: SourceUnit, line, col: int): LspLocation =
 proc find_module_references*(unit: SourceUnit, identifier: PIdentifier,
                              include_declaration: bool): seq[LspLocation] =
    for filename, module in walk_module_declarations(unit.configuration.include_paths):
-      let module_name = find_first(module, NkModuleIdentifier)
+      let module_name = find_first(module, NkIdentifier)
       if include_declaration and not is_nil(module_name) and module_name.identifier.s == identifier.s:
          # Recursive declarations are not expected. So if we find the target
          # module's declaration, we skip looking for instantiations.
@@ -513,7 +513,7 @@ proc find_references*(unit: SourceUnit, line, col: int, include_declaration: boo
             c.pos == find_first_index(c.n, NkIdentifier):
          raise new_analyze_error("Failed to find an identifer at the target location.")
       elif c.n.kind == NkModuleInstantiation or
-           c.n.kind == NkModuleDecl and c.pos == find_first_index(c.n, NkModuleIdentifier):
+           c.n.kind == NkModuleDecl and c.pos == find_first_index(c.n, NkIdentifier):
          return find_module_references(unit, identifier.identifier, include_declaration)
 
    let (declaration, _, _, declaration_context) = find_declaration(identifier_context, identifier.identifier)
@@ -700,21 +700,21 @@ proc add_declaration_information(unit: SourceUnit, item: var LspCompletionItem, 
 proc find_port_connection_completions(unit: SourceUnit, module_name, prefix: string): seq[LspCompletionItem] =
    # See comments in find_external_module_port_declaration().
    for filename, module in walk_module_declarations(unit.configuration.include_paths):
-      let id = find_first(module, NkModuleIdentifier)
+      let id = find_first(module, NkIdentifier)
       if is_nil(id) or id.identifier.s != module_name:
          continue
 
       for port in walk_ports(module):
          case port.kind
          of NkPortDecl:
-            let id = find_first(port, NkPortIdentifier)
+            let id = find_first(port, NkIdentifier)
             if not is_nil(id) and starts_with(id.identifier.s, prefix):
                var item = new_lsp_completion_item(id.identifier.s & " ()")
                add_declaration_information(unit, item, port)
                add(result, item)
          of NkPort:
-            var external_name = find_first(port, NkPortIdentifier)
-            let internal_name = find_first_chain(port, [NkPortReference, NkPortIdentifier])
+            var external_name = find_first(port, NkIdentifier)
+            let internal_name = find_first_chain(port, [NkPortReference, NkIdentifier])
             let internal_name_concat = find_first(port, NkPortReferenceConcat)
 
             # Resolve the internal names of a port.
@@ -754,16 +754,16 @@ proc find_port_connection_completions(unit: SourceUnit, module_name, prefix: str
 
 proc find_parameter_port_connection_completions(unit: SourceUnit, module_name, prefix: string): seq[LspCompletionItem] =
    template add_completion(parameter: PNode, prefix: string) =
-      let assignment = find_first(parameter, NkParamAssignment)
+      let assignment = find_first(parameter, NkAssignment)
       if not is_nil(assignment):
-         let id = find_first(assignment, NkParameterIdentifier)
+         let id = find_first(assignment, NkIdentifier)
          if not is_nil(id) and starts_with(id.identifier.s, prefix):
             var item = new_lsp_completion_item(id.identifier.s & " ()")
             add_declaration_information(unit, item, parameter)
             add(result, item)
 
    for filename, module in walk_module_declarations(unit.configuration.include_paths):
-      let id = find_first(module, NkModuleIdentifier)
+      let id = find_first(module, NkIdentifier)
       if is_nil(id) or id.identifier.s != module_name:
          continue
 
@@ -874,7 +874,7 @@ proc add(x: var seq[LspTextDocumentEdit], n: PNode, filename, s: string) =
 
 proc rename_external_module(unit: SourceUnit, identifier: PIdentifier, new_name: string): seq[LspTextDocumentEdit] =
    for (filename, module) in walk_module_declarations(unit.configuration.include_paths):
-      let module_name = find_first(module, NkModuleIdentifier)
+      let module_name = find_first(module, NkIdentifier)
       if not is_nil(module_name) and module_name.identifier.s == identifier.s:
          # We've encountered the definition of the module itself. Replace the
          # module name in the declaration and continue walking the verilog
@@ -892,7 +892,7 @@ proc rename_external_module(unit: SourceUnit, identifier: PIdentifier, new_name:
 proc rename_external_module_port(unit: SourceUnit, module_id, port_id: PIdentifier,
                                  new_name: string): seq[LspTextDocumentEdit] =
    for (filename, module) in walk_module_declarations(unit.configuration.include_paths):
-      let module_name = find_first(module, NkModuleIdentifier)
+      let module_name = find_first(module, NkIdentifier)
       if not is_nil(module_name) and module_name.identifier.s == module_id.s:
          for reference in find_references(module, port_id):
             add(result, reference, filename, new_name)
@@ -913,7 +913,7 @@ proc rename_external_module_port(unit: SourceUnit, module_id, port_id: PIdentifi
 proc rename_external_module_parameter_port(unit: SourceUnit, module_id, parameter_id: PIdentifier,
                                            new_name: string): seq[LspTextDocumentEdit] =
    for (filename, module) in walk_module_declarations(unit.configuration.include_paths):
-      let module_name = find_first(module, NkModuleIdentifier)
+      let module_name = find_first(module, NkIdentifier)
       if not is_nil(module_name) and module_name.identifier.s == module_id.s:
          for reference in find_references(module, parameter_id):
             add(result, reference, filename, new_name)
@@ -950,12 +950,12 @@ proc rename_external_symbol(unit: SourceUnit, context: AstContext, identifier: P
                return rename_external_module_parameter_port(unit, module.identifier, identifier, new_name)
 
    elif context[^1].n.kind == NkPortDecl:
-      let module = find_first(context[^3].n, NkModuleIdentifier)
+      let module = find_first(context[^3].n, NkIdentifier)
       if not is_nil(module):
          return rename_external_module_port(unit, module.identifier, identifier, new_name)
 
    elif len(context) >= 4 and context[^3].n.kind == NkModuleParameterPortList:
-      let module = find_first(context[^4].n, NkModuleIdentifier)
+      let module = find_first(context[^4].n, NkIdentifier)
       if not is_nil(module):
          return rename_external_module_parameter_port(unit, module.identifier, identifier, new_name)
 
@@ -965,7 +965,7 @@ proc rename_external_symbol(unit: SourceUnit, context: AstContext, identifier: P
    # declaration. We'll use this tree to find the name of the module.
    let (declaration, _, _, declaration_context) = find_declaration(context, identifier)
    if not is_nil(declaration) and declaration.kind in {NkPortDecl, NkParameterDecl}:
-      let module = find_first(declaration_context.n, NkModuleIdentifier)
+      let module = find_first(declaration_context.n, NkIdentifier)
       if not is_nil(module):
          if declaration.kind == NkPortDecl:
             return rename_external_module_port(unit, module.identifier, identifier, new_name)
