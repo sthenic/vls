@@ -2,6 +2,7 @@ import strutils
 import streams
 import os
 import vparse
+import vlint
 
 import ./protocol
 import ./source_unit
@@ -74,19 +75,19 @@ iterator walk_verilog_files(dir: string): string {.inline.} =
 iterator walk_module_declarations(filename: string): PNode {.inline.} =
    # Module declarations cannot be nested and must occur on the outer level in
    # the source text,
+   # FIXME: Refactor to work with the new module graph instead.
    let fs = new_file_stream(filename)
    if not is_nil(fs):
       let cache = new_ident_cache()
-      var graph: Graph
+      let graph = new_graph(cache)
       log.debug("Parsing file '$1'.", filename)
       let configuration = get_configuration(filename)
-      open_graph(graph, cache, fs, filename, configuration.include_paths, configuration.defines)
+      let root = parse(graph, fs, filename, configuration.include_paths, configuration.defines)
       close(fs)
-      if graph.root_node.kind == NkSourceText:
-         for s in graph.root_node.sons:
+      if root.kind == NkSourceText:
+         for s in root.sons:
             if s.kind == NkModuleDecl:
                yield s
-      close_graph(graph)
 
 
 iterator walk_module_declarations(include_paths: seq[string]): tuple[filename: string, n: PNode] {.inline.} =
@@ -216,7 +217,7 @@ proc check_syntax(n: PNode, locs: PLocations): seq[LspDiagnostic] =
 
 
 proc check_syntax*(unit: SourceUnit): seq[LspDiagnostic] =
-   result = check_syntax(unit.graph.root_node, unit.graph.locations)
+   result = check_syntax(unit.graph.root, unit.graph.locations)
 
 
 proc find_external_module_declaration(unit: SourceUnit, identifier: PIdentifier):
@@ -403,7 +404,7 @@ proc find_declaration*(unit: SourceUnit, line, col: int): LspLocation =
    # directive. If it's a valid path, we return the location to that file.
    var context: AstContext
    init(context, 32)
-   let identifier = find_identifier_physical(g.root_node, g.locations, loc, context)
+   let identifier = find_identifier_physical(g.root, g.locations, loc, context)
    if is_nil(identifier):
       return find_include_directive(unit, loc)
 
@@ -496,7 +497,7 @@ proc find_references*(unit: SourceUnit, line, col: int, include_declaration: boo
 
    var identifier_context: AstContext
    init(identifier_context, 32)
-   let identifier = find_identifier_physical(g.root_node, g.locations, loc, identifier_context)
+   let identifier = find_identifier_physical(g.root, g.locations, loc, identifier_context)
    if is_nil(identifier):
       raise new_analyze_error("Failed to find an identifer at the target location.")
 
@@ -804,7 +805,7 @@ proc find_completions*(unit: SourceUnit, line, col: int): seq[LspCompletionItem]
    # (2), we still want to return something. We run the lexer to manually
    # tokenize the file and attempt to find an identifier at the target location
    var context: AstContext
-   let identifier = find_identifier_physical(unit.graph.root_node, unit.graph.locations,
+   let identifier = find_identifier_physical(unit.graph.root, unit.graph.locations,
                                              loc, context, added_length = 1)
    if not is_nil(identifier):
       let prefix = substr(identifier.identifier.s, 0, loc.col - identifier.loc.col - 1)
@@ -834,7 +835,7 @@ proc find_completions*(unit: SourceUnit, line, col: int): seq[LspCompletionItem]
 
 proc find_symbols*(unit: SourceUnit): seq[LspSymbolInformation] =
    # Add an entry for each declaration in the AST.
-   for (_, n) in find_all_declarations(unit.graph.root_node, recursive = true):
+   for (_, n) in find_all_declarations(unit.graph.root, recursive = true):
       # Filter out declarations not in the current file.
       if n.loc.file != 1:
          continue
@@ -844,7 +845,7 @@ proc find_symbols*(unit: SourceUnit): seq[LspSymbolInformation] =
       add(result, new_lsp_symbol_information(n.identifier.s, LspSkVariable, loc))
 
    # Add an entry for each module instantiation in the AST.
-   for n in find_all_module_instantiations(unit.graph.root_node):
+   for n in find_all_module_instantiations(unit.graph.root):
       if n.loc.file != 1:
          continue
 
@@ -984,7 +985,7 @@ proc rename_symbol*(unit: SourceUnit, line, col: int, new_name: string): seq[Lsp
    # locating the identifier at the target location.
    var context: AstContext
    init(context, 32)
-   let identifier = find_identifier_physical(unit.graph.root_node, unit.graph.locations,
+   let identifier = find_identifier_physical(unit.graph.root, unit.graph.locations,
                                              new_location(1, line, col), context)
    if not is_nil(identifier):
       try:
@@ -1079,7 +1080,7 @@ proc hover*(unit: SourceUnit, line, col: int): LspHover =
 
    var context: AstContext
    init(context, 32)
-   let identifier = find_identifier_physical(g.root_node, g.locations, loc, context)
+   let identifier = find_identifier_physical(g.root, g.locations, loc, context)
    if is_nil(identifier):
       raise new_analyze_error("Failed to find an identifer at the target location.")
 
@@ -1222,7 +1223,7 @@ proc signature_help*(unit: SourceUnit, line, col: int): LspSignatureHelp =
    # the corresponding identifier node in the AST.
    var context: AstContext
    init(context, 32)
-   let identifier = find_identifier_physical(g.root_node, g.locations, tf_token.loc, context)
+   let identifier = find_identifier_physical(g.root, g.locations, tf_token.loc, context)
    if is_nil(identifier):
       raise new_analyze_error("Failed to find an identifer at the target location.")
 

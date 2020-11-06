@@ -31,10 +31,11 @@ proc get_configuration*(source_filename: string): Configuration =
 
 proc update*(unit: var SourceUnit, text: string) =
    unit.cache = new_ident_cache()
+   unit.graph = new_graph(unit.cache)
    unit.text = text
    let ss = new_string_stream(text)
-   open_graph(unit.graph, unit.cache, ss, unit.filename,
-              unit.configuration.include_paths, unit.configuration.defines)
+   discard parse(unit.graph, ss, unit.filename, unit.configuration.include_paths,
+                 unit.configuration.defines)
    close(ss)
 
 
@@ -45,4 +46,4 @@ proc open*(unit: var SourceUnit, filename, text: string) =
 
 
 proc close*(unit: var SourceUnit) =
-   close_graph(unit.graph)
+   discard
