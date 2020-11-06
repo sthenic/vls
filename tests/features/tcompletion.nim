@@ -358,14 +358,14 @@ run_test("textDocument/completion: module port (1)",
          "character": 34
       }
    }),
-   new_lsp_response(322, 0, %*[
+   new_lsp_response(364, 0, %*[
       {
          "label": "clk_i ()",
          "detail": "(* another_attr = \"false\" *) input wire clk_i",
          "kind": int(LspCkInterface),
          "documentation": {
             "kind": "markdown",
-            "value": "The clock input."
+            "value": "The clock input.\n\n---\nFile: src4.v"
          }
       },
       {
@@ -374,7 +374,7 @@ run_test("textDocument/completion: module port (1)",
          "kind": int(LspCkInterface),
          "documentation": {
             "kind": "markdown",
-            "value": "The 1-bit data output port."
+            "value": "The 1-bit data output port.\n\n---\nFile: src4.v"
          }
       }
    ])
@@ -391,14 +391,14 @@ run_test("textDocument/completion: module port (2)",
          "character": 10
       }
    }),
-   new_lsp_response(170, 0, %*[
+   new_lsp_response(191, 0, %*[
       {
          "label": "data_o ()",
          "detail": "output wire data_o",
          "kind": int(LspCkInterface),
          "documentation": {
             "kind": "markdown",
-            "value": "The 1-bit data output port."
+            "value": "The 1-bit data output port.\n\n---\nFile: src4.v"
          }
       }
    ])
@@ -428,26 +428,42 @@ run_test("textDocument/completion: module port (3), internal declarations",
          "character": 9
       }
    }),
-   new_lsp_response(283, 0, %*[
+   new_lsp_response(555, 0, %*[
       {
          "label": "clk_i ()",
          "detail": ".clk_i(clk_local)",
-         "kind": int(LspCkInterface)
+         "kind": int(LspCkInterface),
+         "documentation": {
+            "kind": "markdown",
+            "value": "\n\n---\nFile: src5.v"
+         }
       },
       {
          "label": "split_port_i ()",
          "detail": ".split_port_i({first_half, second_half})",
-         "kind": int(LspCkInterface)
+         "kind": int(LspCkInterface),
+         "documentation": {
+            "kind": "markdown",
+            "value": "\n\n---\nFile: src5.v"
+         }
       },
       {
          "label": "data_o ()",
          "detail": "data_o",
-         "kind": int(LspCkInterface)
+         "kind": int(LspCkInterface),
+         "documentation": {
+            "kind": "markdown",
+            "value": "\n\n---\nFile: src5.v"
+         }
       },
       {
          "label": "valid_o ()",
          "detail": "valid_o",
-         "kind": int(LspCkInterface)
+         "kind": int(LspCkInterface),
+         "documentation": {
+            "kind": "markdown",
+            "value": "\n\n---\nFile: src5.v"
+         }
       }
    ])
 )
@@ -463,11 +479,15 @@ run_test("textDocument/completion: module port (4), internal declarations",
          "character": 16
       }
    }),
-   new_lsp_response(86, 0, %*[
+   new_lsp_response(154, 0, %*[
       {
          "label": "valid_o ()",
          "detail": "valid_o",
-         "kind": int(LspCkInterface)
+         "kind": int(LspCkInterface),
+         "documentation": {
+            "kind": "markdown",
+            "value": "\n\n---\nFile: src5.v"
+         }
       }
    ])
 )
@@ -483,20 +503,24 @@ run_test("textDocument/completion: module parameter port (1)",
          "character": 9
       }
    }),
-   new_lsp_response(224, 0, %*[
+   new_lsp_response(313, 0, %*[
       {
          "label": "FOO ()",
          "detail": "parameter FOO = 0",
          "kind": int(LspCkConstant),
          "documentation": {
             "kind": "markdown",
-            "value": "Docstring for `FOO`."
-      }
+            "value": "Docstring for `FOO`.\n\n---\nFile: src5.v"
+         }
       },
       {
          "label": "BaR ()",
          "detail": "parameter BaR = \"baz\"",
-         "kind": int(LspCkConstant)
+         "kind": int(LspCkConstant),
+         "documentation": {
+            "kind": "markdown",
+            "value": "\n\n---\nFile: src5.v"
+         }
       }
    ])
 )
@@ -512,11 +536,15 @@ run_test("textDocument/completion: module parameter port (2)",
          "character": 23
       }
    }),
-   new_lsp_response(99, 0, %*[
+   new_lsp_response(167, 0, %*[
       {
          "label": "BaR ()",
          "detail": "parameter BaR = \"baz\"",
-         "kind": int(LspCkConstant)
+         "kind": int(LspCkConstant),
+         "documentation": {
+            "kind": "markdown",
+            "value": "\n\n---\nFile: src5.v"
+         }
       }
    ])
 )

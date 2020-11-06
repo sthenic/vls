@@ -2,7 +2,6 @@ import strutils
 import streams
 import os
 import vparse
-import vlint
 
 import ./protocol
 import ./source_unit
@@ -75,7 +74,6 @@ iterator walk_verilog_files(dir: string): string {.inline.} =
 iterator walk_module_declarations(filename: string): PNode {.inline.} =
    # Module declarations cannot be nested and must occur on the outer level in
    # the source text,
-   # FIXME: Refactor to work with the new module graph instead.
    let fs = new_file_stream(filename)
    if not is_nil(fs):
       let cache = new_ident_cache()
@@ -222,9 +220,13 @@ proc check_syntax*(unit: SourceUnit): seq[LspDiagnostic] =
 
 proc find_external_module_declaration(unit: SourceUnit, identifier: PIdentifier):
       tuple[declaration, identifier: PNode, filename: string] =
-   for filename, module in walk_module_declarations(unit.configuration.include_paths):
-      let id = find_first(module, NkIdentifier)
-      if not is_nil(id) and id.identifier.s == identifier.s:
+   for module, name, filename in walk_modules(unit.graph, WalkDefined):
+      # We use the indexed name to speed up the look-up but we still have to
+      # find the identifier node once we have a match. We skip the check w/ nil
+      # because if it's in the index to begin with, we can be sure that the
+      # identifier exists.
+      if not is_nil(module) and name == identifier.s:
+         let id = find_first(module, NkIdentifier)
          return (module, id, filename)
    raise new_analyze_error("Failed to find the declaration of module '$1'.", identifier.s)
 
@@ -232,7 +234,7 @@ proc find_external_module_declaration(unit: SourceUnit, identifier: PIdentifier)
 proc find_external_module_port_declaration(unit: SourceUnit, module_id, port_id: PIdentifier):
       tuple[declaration, identifier: PNode, filename: string] =
 
-   for filename, module in walk_module_declarations(unit.configuration.include_paths):
+   for module, name, filename in walk_modules(unit.graph, WalkDefined):
       let id = find_first(module, NkIdentifier)
       if is_nil(id) or id.identifier.s != module_id.s:
          continue
@@ -272,7 +274,7 @@ proc find_external_module_parameter_port_declaration(unit: SourceUnit, module_id
          if not is_nil(id) and id.identifier.s == parameter_id.s:
             return (parameter, id, filename)
 
-   for filename, module in walk_module_declarations(unit.configuration.include_paths):
+   for module, name, filename in walk_modules(unit.graph, WalkDefined):
       let id = find_first(module, NkIdentifier)
       if is_nil(id) or id.identifier.s != module_id.s:
          continue
@@ -700,7 +702,7 @@ proc add_declaration_information(unit: SourceUnit, item: var LspCompletionItem, 
 
 proc find_port_connection_completions(unit: SourceUnit, module_name, prefix: string): seq[LspCompletionItem] =
    # See comments in find_external_module_port_declaration().
-   for filename, module in walk_module_declarations(unit.configuration.include_paths):
+   for module, name, filename in walk_modules(unit.graph, WalkDefined):
       let id = find_first(module, NkIdentifier)
       if is_nil(id) or id.identifier.s != module_name:
          continue
@@ -763,7 +765,7 @@ proc find_parameter_port_connection_completions(unit: SourceUnit, module_name, p
             add_declaration_information(unit, item, parameter)
             add(result, item)
 
-   for filename, module in walk_module_declarations(unit.configuration.include_paths):
+   for module, name, filename in walk_modules(unit.graph, WalkDefined):
       let id = find_first(module, NkIdentifier)
       if is_nil(id) or id.identifier.s != module_name:
          continue
