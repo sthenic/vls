@@ -871,11 +871,30 @@ run_test("textDocument/declaration: module port connection lookup",
          "character": 44
       }
    }),
-   new_lsp_response(130 + src4_path_len, 15, %*[{
+   new_lsp_response(130 + src3_path_len, 15, %*[{
       "uri": "file://" & expand_filename(src3_path),
       "range": {
          "start": {"line": 3, "character": 15},
          "end" : {"line": 3, "character": 20}
+      }
+   }])
+)
+
+run_test("textDocument/declaration: module instance",
+   new_lsp_request(15, "textDocument/declaration", %*{
+      "textDocument": {
+         "uri": "file://" & expand_filename(src3_path),
+      },
+      "position": {
+         "line": 23,
+         "character": 49
+      }
+   }),
+   new_lsp_response(132 + src3_path_len, 15, %*[{
+      "uri": "file://" & expand_filename(src3_path),
+      "range": {
+         "start": {"line": 23, "character": 38},
+         "end" : {"line": 23, "character": 50}
       }
    }])
 )
