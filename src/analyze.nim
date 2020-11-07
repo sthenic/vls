@@ -218,78 +218,6 @@ proc check_syntax*(unit: SourceUnit): seq[LspDiagnostic] =
    result = check_syntax(unit.graph.root, unit.graph.locations)
 
 
-proc find_external_module_declaration(unit: SourceUnit, identifier: PIdentifier):
-      tuple[declaration, identifier: PNode, filename: string] =
-   for module, name, filename in walk_modules(unit.graph, WalkDefined):
-      # We use the indexed name to speed up the look-up but we still have to
-      # find the identifier node once we have a match. We skip the check w/ nil
-      # because if it's in the index to begin with, we can be sure that the
-      # identifier exists.
-      if not is_nil(module) and name == identifier.s:
-         let id = find_first(module, NkIdentifier)
-         return (module, id, filename)
-   raise new_analyze_error("Failed to find the declaration of module '$1'.", identifier.s)
-
-
-proc find_external_module_port_declaration(unit: SourceUnit, module_id, port_id: PIdentifier):
-      tuple[declaration, identifier: PNode, filename: string] =
-
-   for module, name, filename in walk_modules(unit.graph, WalkDefined):
-      let id = find_first(module, NkIdentifier)
-      if is_nil(id) or id.identifier.s != module_id.s:
-         continue
-
-      # We've found the module. Start going through the ports looking for a match.
-      for port in walk_ports(module):
-         case port.kind
-         of NkPortDecl:
-            let id = find_first(port, NkIdentifier)
-            if not is_nil(id) and id.identifier.s == port_id.s:
-               return (port, id, filename)
-         of NkPort:
-            # If we find a port identifier as the first node, that's the
-            # name that this port is known by from the outside. Otherwise,
-            # we're looking for the first identifier in a port reference.
-            let id = find_first(port, NkIdentifier)
-            if not is_nil(id) and id.identifier.s == port_id.s:
-               return (port, id, filename)
-            else:
-               let port_ref = find_first(port, NkPortReference)
-               if not is_nil(port_ref):
-                  let id = find_first(port_ref, NkIdentifier)
-                  if not is_nil(id) and id.identifier.s == port_id.s:
-                     return (port, id, filename)
-         else:
-            discard
-
-   raise new_analyze_error("Failed to find the declaration of port '$1'.", port_id.s)
-
-
-proc find_external_module_parameter_port_declaration(unit: SourceUnit, module_id, parameter_id: PIdentifier):
-      tuple[declaration, identifier: PNode, filename: string] =
-   template return_if_matching(parameter: PNode, parameter_id: PIdentifier) =
-      let assignment = find_first(parameter, NkAssignment)
-      if not is_nil(assignment):
-         let id = find_first(assignment, NkIdentifier)
-         if not is_nil(id) and id.identifier.s == parameter_id.s:
-            return (parameter, id, filename)
-
-   for module, name, filename in walk_modules(unit.graph, WalkDefined):
-      let id = find_first(module, NkIdentifier)
-      if is_nil(id) or id.identifier.s != module_id.s:
-         continue
-
-      if not is_nil(find_first(module, NkModuleParameterPortList)):
-         for parameter in walk_parameter_ports(module):
-            return_if_matching(parameter, parameter_id)
-      else:
-         for parameter in walk_sons(module, NkParameterDecl):
-            return_if_matching(parameter, parameter_id)
-
-
-   raise new_analyze_error("Failed to find the declaration of parameter port '$1'.", parameter_id.s)
-
-
 proc is_external_identifier(context: AstContext): bool =
    # An external identifier is either a module instantiation or.
    if len(context) > 0:
@@ -328,24 +256,9 @@ proc find_internal_declaration(unit: SourceUnit, context: AstContext, identifier
 proc find_external_declaration(unit: SourceUnit, context: AstContext, identifier: PIdentifier):
       tuple[declaration, identifier: PNode, filename: string] =
    log.debug("Looking up an external declaration for '$1'.", identifier.s)
-   case context[^1].n.kind
-   of NkModuleInstantiation:
-      result = find_external_module_declaration(unit, identifier)
-   of NkNamedPortConnection:
-      # We first need to find the name of the module before we can proceed with the lookup.
-      let module = find_first(context[^3].n, IdentifierTypes)
-      if not is_nil(module):
-         result = find_external_module_port_declaration(unit, module.identifier, identifier)
-      else:
-         raise new_analyze_error("Failed to find the module name needed for an external declaration lookup.")
-   of NkNamedParameterAssignment:
-      let module = find_first(context[^3].n, IdentifierTypes)
-      if not is_nil(module):
-         result = find_external_module_parameter_port_declaration(unit, module.identifier, identifier)
-      else:
-         raise new_analyze_error("Failed to find the module name needed for an external declaration lookup.")
-   else:
-      raise new_analyze_error("Invalid context for an external declaration lookup.")
+   result = find_external_declaration(unit.graph, context, identifier)
+   if is_nil(result.declaration):
+      raise new_analyze_error("External declaration lookup failed (no match).")
 
 
 proc get_include_file(unit: SourceUnit, filename: string): string =
@@ -1030,22 +943,14 @@ proc construct_hover(n: PNode, highlight_location: Location, highlight_length: i
 
 proc find_external_hover(unit: SourceUnit, context: AstContext, identifier: PIdentifier,
                          highlight_location: Location): LspHover =
-   case context[^1].n.kind
-   of NkModuleInstantiation:
-      # FIXME: Implement
+   if context[^1].n.kind == NkModuleInstantiation:
+      # FIXME: Implement later on.
       raise new_analyze_error("Not implemented.")
-   of NkNamedPortConnection:
-      let module = find_first(context[^3].n, IdentifierTypes)
-      if not is_nil(module):
-         let (n, _, _) = find_external_module_port_declaration(unit, module.identifier, identifier)
-         result = construct_hover(n, highlight_location, len(identifier.s))
-   of NkNamedParameterAssignment:
-      let module = find_first(context[^3].n, IdentifierTypes)
-      if not is_nil(module):
-         let (n, _, _) = find_external_module_parameter_port_declaration(unit, module.identifier, identifier)
-         result = construct_hover(n, highlight_location, len(identifier.s))
-   else:
-      raise new_analyze_error("Invalid context for an external declaration lookup.")
+
+   let (n, _, _) = find_external_declaration(unit.graph, context, identifier)
+   if is_nil(n):
+      raise new_analyze_error("External declaration lookup failed (no match).")
+   result = construct_hover(n, highlight_location, len(identifier.s))
 
 
 proc find_internal_hover(unit: SourceUnit, context: AstContext, identifier: PIdentifier,
