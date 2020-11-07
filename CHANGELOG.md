@@ -13,6 +13,8 @@ All notable changes to this project will be documented in this file.
 - Fix always listing the parameters declared in the module body in completion
   requests. According to the standard, these should only get included if the
   parameter port list is omitted.
+- Fix `textDocument/rename` when targeting an external port identifier in a
+  list of ports.
 
 ## [v0.2.2] - 2020-08-31
 

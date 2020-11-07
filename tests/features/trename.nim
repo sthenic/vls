@@ -1245,7 +1245,6 @@ run_test("textDocument/rename: localparam from parameter port connection",
    })
 )
 
-# FIXME: Tests for external side effects from targeting a port reference.
 
 run_test("textDocument/rename: port reference (internal)",
    new_lsp_request(0, "textDocument/rename", %*{
@@ -1365,6 +1364,54 @@ run_test("textDocument/rename: concatenated port reference (internal)",
                      "end" : {"line": 23, "character": 51}
                   },
                   "newText": "primary_half"
+               }
+            ]
+         }
+      ]
+   })
+)
+
+
+run_test("textDocument/rename: concatenated port reference (internal)",
+   new_lsp_request(0, "textDocument/rename", %*{
+      "textDocument": {
+         "uri": "file://" & expand_filename(src5_path),
+      },
+      "position": {
+         "line": 3,
+         "character": 27
+      },
+      "newName": "divided_port"
+   }),
+   new_lsp_response(382 + src4_path_len + src5_path_len, 0, %*{
+      "documentChanges": [
+         {
+            "textDocument": {
+               "uri": "file://" & expand_filename(src5_path),
+               "version": new_jnull()
+            },
+            "edits": [
+               {
+                  "range": {
+                     "start": {"line": 3, "character": 24},
+                     "end" : {"line": 3, "character": 36}
+                  },
+                  "newText": "divided_port"
+               }
+            ]
+         },
+         {
+            "textDocument": {
+               "uri": "file://" & expand_filename(src4_path),
+               "version": new_jnull()
+            },
+            "edits": [
+               {
+                  "range": {
+                     "start": {"line": 19, "character": 9},
+                     "end" : {"line": 19, "character": 21}
+                  },
+                  "newText": "divided_port"
                }
             ]
          }

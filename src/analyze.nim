@@ -810,6 +810,10 @@ proc rename_external_module_port(unit: SourceUnit, module_id, port_id: PIdentifi
    for (filename, module) in walk_module_declarations(unit.configuration.include_paths):
       let module_name = find_first(module, NkIdentifier)
       if not is_nil(module_name) and module_name.identifier.s == module_id.s:
+         # FIXME: If the port identifier only represents the external name for a
+         #        module which only has a list of ports, then internal
+         #        identifiers with the same name are renamed by mistake. See
+         #        comment in src5.v.
          for reference in find_references(module, port_id):
             add(result, reference, filename, new_name)
          continue
@@ -874,6 +878,12 @@ proc rename_external_symbol(unit: SourceUnit, context: AstContext, identifier: P
       let module = find_first(context[^4].n, NkIdentifier)
       if not is_nil(module):
          return rename_external_module_parameter_port(unit, module.identifier, identifier, new_name)
+
+   elif len(context) >= 3 and context[^1].n.kind == NkPort:
+      # Renaming a port by targeting a port identifier in a list of ports.
+      let module = find_first(context[^3].n, NkIdentifier)
+      if not is_nil(module):
+         return rename_external_module_port(unit, module.identifier, identifier, new_name)
 
    # We use the raw declaration search interface to get the context in which it
    # applies. Since we're looking to handle port and parameter port
