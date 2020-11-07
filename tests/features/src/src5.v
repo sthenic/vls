@@ -24,6 +24,12 @@
     input wire [LATE_DECLARATION/2-1: 0] first_half;
     input wire [LATE_DECLARATION/2-1: 0] second_half;
 
+    module7 module7_inst (
+        .clk_i (),
+        .data_i (),
+        .data_o ()
+    );
+
     /* FIXME: Rename operation in the port list renames this symbol too: */
     /* wire split_port_i; */
 

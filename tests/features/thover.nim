@@ -472,7 +472,7 @@ send(ifs, new_lsp_notification("textDocument/didOpen", %*{
 assert len(recv(ofs).parameters["diagnostics"]) == 0
 
 
-run_test("textDocument/declaration: port reference",
+run_test("textDocument/hover: port reference",
    new_lsp_request(15, "textDocument/hover", %*{
       "textDocument": {
          "uri": "file://" & expand_filename(src5_path),
@@ -498,7 +498,7 @@ input wire clk_local
 )
 
 
-run_test("textDocument/declaration: concatenated port reference",
+run_test("textDocument/hover: concatenated port reference",
    new_lsp_request(15, "textDocument/hover", %*{
       "textDocument": {
          "uri": "file://" & expand_filename(src5_path),
@@ -519,6 +519,42 @@ run_test("textDocument/declaration: concatenated port reference",
 ```verilog
 input wire [LATE_DECLARATION / 2 - 1:0] second_half
 ```"""
+      }
+   })
+)
+
+
+run_test("textDocument/hover: concatenated port reference",
+   new_lsp_request(15, "textDocument/hover", %*{
+      "textDocument": {
+         "uri": "file://" & expand_filename(src5_path),
+      },
+      "position": {
+         "line": 26,
+         "character": 5
+      }
+   }),
+   new_lsp_response(332, 15, %*{
+      "range": {
+         "start": {"line": 26, "character": 4},
+         "end" : {"line": 26, "character": 11}
+      },
+      "contents": {
+         "kind": "markdown",
+         "value": """
+```verilog
+module module7
+```
+
+This is the documentation for `module7`.
+
+    It features:
+    - this,
+    - *that*; and
+    - this **other** thing.
+
+---
+File: src7.v"""
       }
    })
 )

@@ -974,23 +974,38 @@ proc construct_hover(n: PNode, highlight_location: Location, highlight_length: i
       #       properly. In the worst case, the comment may need to inform us
       #       of the comment's indentation so we can subtrace accordingly.
       add(markdown, "\n\n" & comment.s)
-   result = new_lsp_hover(int(highlight_location.line - 1),
-                          int(highlight_location.col),
-                          highlight_length,
-                          LspMkMarkdown,
-                          markdown)
+   result = new_lsp_hover(int(highlight_location.line - 1), int(highlight_location.col),
+                          highlight_length, LspMkMarkdown, markdown)
+
+
+proc construct_module_hover(unit: SourceUnit, n: PNode, highlight_location: Location,
+                            highlight_length: int): LspHover =
+   ## Construct the LSP hover information for the module declaration ``n`` at the
+   ## highlight range specified by ``highlight_location`` and ``highlight_length``.
+   let name = find_first(n, NkIdentifier)
+   if is_nil(name):
+      raise new_analyze_error("Failed to find module name.")
+
+   var markdown = format("```verilog\nmodule $1\n```", name.identifier.s)
+   let comment = find_first(n, NkComment)
+   if not is_nil(comment):
+      add(markdown, "\n\n" & comment.s)
+
+   let filename = extract_filename(unit.graph.locations.file_maps[n.loc.file - 1].filename)
+   add(markdown, "\n\n---\nFile: " & filename)
+   result = new_lsp_hover(int(highlight_location.line - 1), int(highlight_location.col),
+                          highlight_length, LspMkMarkdown, markdown)
 
 
 proc find_external_hover(unit: SourceUnit, context: AstContext, identifier: PIdentifier,
                          highlight_location: Location): LspHover =
-   if context[^1].n.kind == NkModuleInstantiation:
-      # FIXME: Implement later on.
-      raise new_analyze_error("Not implemented.")
-
    let (n, _, _) = find_external_declaration(unit.graph, context, identifier)
    if is_nil(n):
       raise new_analyze_error("External declaration lookup failed (no match).")
-   result = construct_hover(n, highlight_location, len(identifier.s))
+   if n.kind == NkModuleDecl:
+      result = construct_module_hover(unit, n, highlight_location, len(identifier.s))
+   else:
+      result = construct_hover(n, highlight_location, len(identifier.s))
 
 
 proc find_internal_hover(unit: SourceUnit, context: AstContext, identifier: PIdentifier,

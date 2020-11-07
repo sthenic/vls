@@ -260,7 +260,7 @@ run_test_unordered_compare("textDocument/completion: include directive, browse p
          "character": 15
       }
    }),
-   new_lsp_response(268, 0, %*[
+   new_lsp_response(297, 0, %*[
       {
          "label": "src0.v",
          "kind": int(LspCkFile)
@@ -293,6 +293,10 @@ run_test_unordered_compare("textDocument/completion: include directive, browse p
          "label": "src6.v",
          "kind": int(LspCkFile)
       },
+      {
+         "label": "src7.v",
+         "kind": int(LspCkFile)
+      },
    ])
 )
 
@@ -307,7 +311,7 @@ run_test_unordered_compare("textDocument/completion: include directive, browse p
          "character": 14
       }
    }),
-   new_lsp_response(299, 0, %*[
+   new_lsp_response(328, 0, %*[
       {
          "label": "include/",
          "kind": int(LspCkFile)
@@ -342,6 +346,10 @@ run_test_unordered_compare("textDocument/completion: include directive, browse p
       },
       {
          "label": "src6.v",
+         "kind": int(LspCkFile)
+      },
+      {
+         "label": "src7.v",
          "kind": int(LspCkFile)
       },
    ])

@@ -4,6 +4,10 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+## Added
+
+- Enable hover requests for module instantiations.
+
 ## Changed
 
 - Require Nim v1.4.0.
