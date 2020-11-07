@@ -15,6 +15,9 @@ All notable changes to this project will be documented in this file.
   parameter port list is omitted.
 - Fix `textDocument/rename` when targeting an external port identifier in a
   list of ports.
+- Fix `textDocument/references` not including identifiers from the port
+  reference (in the list of ports) when targeting the port identifier from
+  within the module body.
 
 ## [v0.2.2] - 2020-08-31
 

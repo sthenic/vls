@@ -1047,6 +1047,110 @@ run_test("textDocument/references: localparam w/ same name as a parameter port",
 )
 
 
+# Open the file "./src/src5.v", expecting no parsing errors.
+const src5_text = static_read(src5_path)
+send(ifs, new_lsp_notification("textDocument/didOpen", %*{
+   "textDocument": {
+      "uri": "file://" & expand_filename(src5_path),
+      "languageId": "verilog",
+      "version": 0,
+      "text": src5_text
+   }
+}))
+assert len(recv(ofs).parameters["diagnostics"]) == 0
+
+
+run_test("textDocument/references: port reference (from reference)",
+   new_lsp_request(0, "textDocument/references", %*{
+      "textDocument": {
+         "uri": "file://" & expand_filename(src5_path),
+      },
+      "position": {
+         "line": 3,
+         "character": 19
+      },
+      "context": {
+         "includeDeclaration": true
+      }
+   }),
+   new_lsp_response(415 + 4 * src5_path_len, 0, %*[
+   {
+      "uri": "file://" & expand_filename(src5_path),
+      "range": {
+         "start": {"line": 3, "character": 11},
+         "end" : {"line": 3, "character": 20}
+      }
+   },
+   {
+      "uri": "file://" & expand_filename(src5_path),
+      "range": {
+         "start": {"line": 6, "character": 15},
+         "end" : {"line": 6, "character": 24}
+      }
+   },
+   {
+      "uri": "file://" & expand_filename(src5_path),
+      "range": {
+         "start": {"line": 11, "character": 21},
+         "end" : {"line": 11, "character": 30}
+      }
+   },
+   {
+      "uri": "file://" & expand_filename(src5_path),
+      "range": {
+         "start": {"line": 16, "character": 41},
+         "end" : {"line": 16, "character": 50}
+      }
+   }
+   ])
+)
+
+run_test("textDocument/references: port reference (from declaration)",
+   new_lsp_request(0, "textDocument/references", %*{
+      "textDocument": {
+         "uri": "file://" & expand_filename(src5_path),
+      },
+      "position": {
+         "line": 6,
+         "character": 15
+      },
+      "context": {
+         "includeDeclaration": true
+      }
+   }),
+   new_lsp_response(415 + 4 * src5_path_len, 0, %*[
+   {
+      "uri": "file://" & expand_filename(src5_path),
+      "range": {
+         "start": {"line": 3, "character": 11},
+         "end" : {"line": 3, "character": 20}
+      }
+   },
+   {
+      "uri": "file://" & expand_filename(src5_path),
+      "range": {
+         "start": {"line": 6, "character": 15},
+         "end" : {"line": 6, "character": 24}
+      }
+   },
+   {
+      "uri": "file://" & expand_filename(src5_path),
+      "range": {
+         "start": {"line": 11, "character": 21},
+         "end" : {"line": 11, "character": 30}
+      }
+   },
+   {
+      "uri": "file://" & expand_filename(src5_path),
+      "range": {
+         "start": {"line": 16, "character": 41},
+         "end" : {"line": 16, "character": 50}
+      }
+   }
+   ])
+)
+
+
 # Shut down the server.
 shutdown(ifs, ofs)
 

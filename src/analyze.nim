@@ -383,6 +383,30 @@ proc find_references(unit: SourceUnit, context: AstContextItem, identifier: PIde
             add(seen_locations, loc)
 
 
+proc find_references_in_list_of_ports(unit: SourceUnit, context: AstContext,
+                                      identifier: PIdentifier): seq[LspLocation] =
+   # This function exists to be able to locate the out-of-tree references to a
+   # port when targeting any of its identifiers within the module body. We have
+   # to detect if this function is called and the target identifier is within
+   # the list of ports. In this case it's not an out-of-tree reference and we
+   # should abort the search to avoid generating a duplicate entry.
+   var module: PNode = nil
+   for i in countdown(high(context), 0):
+      if context[i].n.kind == NkListOfPorts:
+         return
+      elif context[i].n.kind == NkModuleDecl:
+         module = context[i].n
+         break
+   if is_nil(module):
+      return
+
+   for port_ref in walk_port_references(module):
+      let id = find_first(port_ref, NkIdentifier)
+      if not is_nil(id) and id.identifier.s == identifier.s:
+         let uri = construct_uri(unit.graph.locations.file_maps[id.loc.file - 1].filename)
+         add(result, new_lsp_location(uri, int(id.loc.line - 1), int(id.loc.col), len(id.identifier.s)))
+
+
 proc find_references*(unit: SourceUnit, line, col: int, include_declaration: bool): seq[LspLocation] =
    # Before we can assume that the input location is pointing to an identifier,
    # we have to deal with the possibility that it's pointing to a macro.
@@ -437,6 +461,12 @@ proc find_references*(unit: SourceUnit, line, col: int, include_declaration: boo
       raise new_analyze_error("Failed to find the declaration of identifier '$1'.", identifier.identifier.s)
 
    result = find_references(unit, declaration_context, identifier.identifier, include_declaration)
+   # If we're targeting a port, we have to make an extra pass through the module
+   # declaration looking for references in a potential list of ports. This is
+   # the only legal out-of-tree reference that may occur.
+   if declaration.kind == NkPortDecl:
+      log.debug("Checking for extra things")
+      add(result, find_references_in_list_of_ports(unit, identifier_context, identifier.identifier))
 
 
 proc find_port_connection(p: var LocalParser, loc: Location): Token =
