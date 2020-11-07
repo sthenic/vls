@@ -1245,6 +1245,133 @@ run_test("textDocument/rename: localparam from parameter port connection",
    })
 )
 
+# FIXME: Tests for external side effects from targeting a port reference.
+
+run_test("textDocument/rename: port reference (internal)",
+   new_lsp_request(0, "textDocument/rename", %*{
+      "textDocument": {
+         "uri": "file://" & expand_filename(src5_path),
+      },
+      "position": {
+         "line": 3,
+         "character": 11
+      },
+      "newName": "data_out"
+   }),
+   new_lsp_response(695 + 4 * src5_path_len, 0, %*{
+      "documentChanges": [
+         {
+            "textDocument": {
+               "uri": "file://" & expand_filename(src5_path),
+               "version": new_jnull()
+            },
+            "edits": [
+               {
+                  "range": {
+                     "start": {"line": 3, "character": 11},
+                     "end" : {"line": 3, "character": 20}
+                  },
+                  "newText": "data_out"
+               }
+            ]
+         },
+         {
+            "textDocument": {
+               "uri": "file://" & expand_filename(src5_path),
+               "version": new_jnull()
+            },
+            "edits": [
+               {
+                  "range": {
+                     "start": {"line": 6, "character": 15},
+                     "end" : {"line": 6, "character": 24}
+                  },
+                  "newText": "data_out"
+               }
+            ]
+         },
+         {
+            "textDocument": {
+               "uri": "file://" & expand_filename(src5_path),
+               "version": new_jnull()
+            },
+            "edits": [
+               {
+                  "range": {
+                     "start": {"line": 11, "character": 21},
+                     "end" : {"line": 11, "character": 30}
+                  },
+                  "newText": "data_out"
+               }
+            ]
+         },
+         {
+            "textDocument": {
+               "uri": "file://" & expand_filename(src5_path),
+               "version": new_jnull()
+            },
+            "edits": [
+               {
+                  "range": {
+                     "start": {"line": 16, "character": 41},
+                     "end" : {"line": 16, "character": 50}
+                  },
+                  "newText": "data_out"
+               }
+            ]
+         }
+      ]
+   })
+)
+
+
+run_test("textDocument/rename: concatenated port reference (internal)",
+   new_lsp_request(0, "textDocument/rename", %*{
+      "textDocument": {
+         "uri": "file://" & expand_filename(src5_path),
+      },
+      "position": {
+         "line": 3,
+         "character": 38
+      },
+      "newName": "primary_half"
+   }),
+   new_lsp_response(383 + 2 * src5_path_len, 0, %*{
+      "documentChanges": [
+         {
+            "textDocument": {
+               "uri": "file://" & expand_filename(src5_path),
+               "version": new_jnull()
+            },
+            "edits": [
+               {
+                  "range": {
+                     "start": {"line": 3, "character": 38},
+                     "end" : {"line": 3, "character": 48}
+                  },
+                  "newText": "primary_half"
+               }
+            ]
+         },
+         {
+            "textDocument": {
+               "uri": "file://" & expand_filename(src5_path),
+               "version": new_jnull()
+            },
+            "edits": [
+               {
+                  "range": {
+                     "start": {"line": 23, "character": 41},
+                     "end" : {"line": 23, "character": 51}
+                  },
+                  "newText": "primary_half"
+               }
+            ]
+         }
+      ]
+   })
+)
+
 
 # Shut down the server.
 shutdown(ifs, ofs)

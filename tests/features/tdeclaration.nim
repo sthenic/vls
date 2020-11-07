@@ -1098,6 +1098,99 @@ run_test("textDocument/declaration: module parameter port, declared in body (sho
 )
 
 
+# Open the file "./src/src5.v", expecting no parsing errors.
+const src5_text = static_read(src5_path)
+send(ifs, new_lsp_notification("textDocument/didOpen", %*{
+   "textDocument": {
+      "uri": "file://" & expand_filename(src5_path),
+      "languageId": "verilog",
+      "version": 0,
+      "text": src5_text
+   }
+}))
+assert len(recv(ofs).parameters["diagnostics"]) == 0
+
+
+run_test("textDocument/declaration: port reference (1)",
+   new_lsp_request(15, "textDocument/declaration", %*{
+      "textDocument": {
+         "uri": "file://" & expand_filename(src5_path),
+      },
+      "position": {
+         "line": 3,
+         "character": 14
+      }
+   }),
+   new_lsp_response(130 + src5_path_len, 15, %*[{
+      "uri": "file://" & expand_filename(src5_path),
+      "range": {
+         "start": {"line": 6, "character": 15},
+         "end" : {"line": 6, "character": 24}
+      }
+   }])
+)
+
+
+run_test("textDocument/declaration: port reference (2)",
+   new_lsp_request(15, "textDocument/declaration", %*{
+      "textDocument": {
+         "uri": "file://" & expand_filename(src5_path),
+      },
+      "position": {
+         "line": 4,
+         "character": 18
+      }
+   }),
+   new_lsp_response(130 + src5_path_len, 15, %*[{
+      "uri": "file://" & expand_filename(src5_path),
+      "range": {
+         "start": {"line": 8, "character": 16},
+         "end" : {"line": 8, "character": 23}
+      }
+   }])
+)
+
+
+run_test("textDocument/declaration: concatenated port reference (1)",
+   new_lsp_request(15, "textDocument/declaration", %*{
+      "textDocument": {
+         "uri": "file://" & expand_filename(src5_path),
+      },
+      "position": {
+         "line": 3,
+         "character": 38
+      }
+   }),
+   new_lsp_response(132 + src5_path_len, 15, %*[{
+      "uri": "file://" & expand_filename(src5_path),
+      "range": {
+         "start": {"line": 23, "character": 41},
+         "end" : {"line": 23, "character": 51}
+      }
+   }])
+)
+
+
+run_test("textDocument/declaration: concatenated port reference (2)",
+   new_lsp_request(15, "textDocument/declaration", %*{
+      "textDocument": {
+         "uri": "file://" & expand_filename(src5_path),
+      },
+      "position": {
+         "line": 3,
+         "character": 51
+      }
+   }),
+   new_lsp_response(132 + src5_path_len, 15, %*[{
+      "uri": "file://" & expand_filename(src5_path),
+      "range": {
+         "start": {"line": 24, "character": 41},
+         "end" : {"line": 24, "character": 52}
+      }
+   }])
+)
+
+
 # Shut down the server.
 shutdown(ifs, ofs)
 

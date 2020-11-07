@@ -458,6 +458,72 @@ run_test("textDocument/hover: module instance",
 )
 
 
+# Open the file "./src/src5.v", expecting no parsing errors.
+const src5_path = "./src/src5.v"
+const src5_text = static_read(src5_path)
+send(ifs, new_lsp_notification("textDocument/didOpen", %*{
+   "textDocument": {
+      "uri": "file://" & expand_filename(src5_path),
+      "languageId": "verilog",
+      "version": 0,
+      "text": src5_text
+   }
+}))
+assert len(recv(ofs).parameters["diagnostics"]) == 0
+
+
+run_test("textDocument/declaration: port reference",
+   new_lsp_request(15, "textDocument/hover", %*{
+      "textDocument": {
+         "uri": "file://" & expand_filename(src5_path),
+      },
+      "position": {
+         "line": 3,
+         "character": 14
+      }
+   }),
+   new_lsp_response(191, 15, %*{
+      "range": {
+         "start": {"line": 3, "character": 11},
+         "end" : {"line": 3, "character": 20}
+      },
+      "contents": {
+         "kind": "markdown",
+         "value": """
+```verilog
+input wire clk_local
+```"""
+      }
+   })
+)
+
+
+run_test("textDocument/declaration: concatenated port reference",
+   new_lsp_request(15, "textDocument/hover", %*{
+      "textDocument": {
+         "uri": "file://" & expand_filename(src5_path),
+      },
+      "position": {
+         "line": 3,
+         "character": 56
+      }
+   }),
+   new_lsp_response(222, 15, %*{
+      "range": {
+         "start": {"line": 3, "character": 50},
+         "end" : {"line": 3, "character": 61}
+      },
+      "contents": {
+         "kind": "markdown",
+         "value": """
+```verilog
+input wire [LATE_DECLARATION / 2 - 1:0] second_half
+```"""
+      }
+   })
+)
+
+
 # Shut down the server.
 shutdown(ifs, ofs)
 
