@@ -85,6 +85,7 @@ proc publish_diagnostics(s: LspServer, unit: SourceUnit) =
    if limit > 0 and len(diagnostics) > limit:
       log.debug("Limiting the number of diagnostic messages to $1", limit)
       set_len(diagnostics, limit)
+   add(diagnostics, find_undeclared_identifiers(unit))
    let parameters = %*{
       "uri": construct_uri(unit.filename),
       "diagnostics": diagnostics

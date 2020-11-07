@@ -2,6 +2,7 @@ import strutils
 import streams
 import os
 import vparse
+import vlint
 
 import ./protocol
 import ./source_unit
@@ -216,6 +217,17 @@ proc check_syntax(n: PNode, locs: PLocations): seq[LspDiagnostic] =
 
 proc check_syntax*(unit: SourceUnit): seq[LspDiagnostic] =
    result = check_syntax(unit.graph.root, unit.graph.locations)
+
+
+proc find_undeclared_identifiers*(unit: SourceUnit): seq[LspDiagnostic] =
+   # FIXME: Find redeclared identifiers
+   for id in find_undeclared_identifiers(unit.graph):
+      if id.loc.file != 1:
+         continue
+      let message = format("$1:$2: Undeclared identifier '$3'", id.loc.line, id.loc.col + 1, id.identifier.s)
+      let start = new_lsp_position(int(id.loc.line - 1), int(id.loc.col))
+      let stop = start
+      add(result, new_lsp_diagnostic(start, stop, ERROR, message))
 
 
 proc is_external_identifier(context: AstContext): bool =

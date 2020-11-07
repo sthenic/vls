@@ -10,6 +10,7 @@ bin = @["vls"]
 requires "nim >= 1.4.0"
 requires "vparse >= 0.2.2"
 requires "vltoml >= 0.1.0"
+requires "vlint >= 0.1.0"
 
 
 task dbuild, "install":
