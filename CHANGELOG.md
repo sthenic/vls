@@ -4,6 +4,10 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+## Changed
+
+- Require Nim v1.4.0.
+
 ## Fixed
 
 - Fix always listing the parameters declared in the module body in completion

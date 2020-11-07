@@ -30,7 +30,7 @@ jobs:
         repository: 'sthenic/parsetoml'
         path: parsetoml
 
-    - uses: jiro4989/setup-nim-action@v1.1.2
+    - uses: jiro4989/setup-nim-action@v1.1.4
       with:
         nim-version: 'stable'
 
