@@ -444,6 +444,20 @@ Docstring for `WIDTH_FROM_HEADER`."""
 )
 
 
+run_test("textDocument/hover: module instance",
+   new_lsp_request(15, "textDocument/hover", %*{
+      "textDocument": {
+         "uri": "file://" & expand_filename(src3_path),
+      },
+      "position": {
+         "line": 23,
+         "character": 42
+      }
+   }),
+   new_lsp_response(39, 15, new_jnull())
+)
+
+
 # Shut down the server.
 shutdown(ifs, ofs)
 

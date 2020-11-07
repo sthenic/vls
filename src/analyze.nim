@@ -1053,7 +1053,7 @@ proc find_internal_hover(unit: SourceUnit, context: AstContext, identifier: PIde
    let (declaration, _, _, _) = find_declaration(context, identifier)
    if is_nil(declaration):
       raise new_analyze_error("Failed to find the declaration of identifier '$1'.", identifier.s)
-   elif declaration.kind == NkModuleDecl:
+   elif declaration.kind in {NkModuleDecl, NkModuleInstance}:
       # FIXME: Implement
       raise new_analyze_error("Not implemented.")
    result = construct_hover(declaration, highlight_location, len(identifier.s))
