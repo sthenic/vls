@@ -26,7 +26,7 @@ proc get_configuration*(source_filename: string): Configuration =
          log.debug("Using configuration file '$1'.", filename)
          log.debug($result)
       except ConfigurationParseError as e:
-         log.error("Failed to parse configuration file: '$1'", e.msg)
+         log.error("Failed to parse configuration file: '$1'.", e.msg)
 
 
 proc update*(unit: var SourceUnit, text: string) =
@@ -39,8 +39,20 @@ proc update*(unit: var SourceUnit, text: string) =
    close(ss)
 
 
-proc open*(unit: var SourceUnit, filename, text: string) =
-   unit.configuration = get_configuration(filename)
+proc open*(unit: var SourceUnit, filename, text, force_configuration_file: string) =
+   var search = len(force_configuration_file) == 0
+   if not search:
+      try:
+         unit.configuration = vltoml.parse_file(force_configuration_file)
+         log.debug("Using configuration file '$1'.", force_configuration_file)
+      except ConfigurationParseError:
+         log.error("Failed to parse the forced configuration file '$1', " &
+                   "falling back to the regular search strategy.", force_configuration_file)
+         search = true
+
+   if search:
+      unit.configuration = get_configuration(filename)
+
    unit.filename = filename
    update(unit, text)
 

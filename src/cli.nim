@@ -9,6 +9,7 @@ type
       print_help*: bool
       print_version*: bool
       force_diagnostics*: bool
+      force_configuration_file*: string
 
 
 proc parse_cli*(): CliState =
@@ -25,6 +26,10 @@ proc parse_cli*(): CliState =
             result.print_version = true
          of "force-diagnostics":
             result.force_diagnostics = true
+         of "force-configuration-file":
+            if val == "":
+               log.abort(CliValueError, "Option --force-configuration-file expects a filename.")
+            result.force_configuration_file = val
          else:
             log.abort(CliValueError, "Unknown option '$1'.", key)
 

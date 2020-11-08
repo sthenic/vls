@@ -37,6 +37,7 @@ type
       # TODO: This should really not be an option if Neovims language client
       #       correctly reported diagnostic capabilities.
       force_diagnostics*: bool
+      force_configuration_file*: string
 
 
 proc init(cc: var LspClientCapabilities) =
@@ -109,7 +110,7 @@ proc process_text(s: var LspServer, uri, text: string) =
    else:
       log.debug("Adding a new source unit for the file '$1' to the index.", uri)
       var unit: SourceUnit
-      open(unit, get_path_from_uri(uri), text)
+      open(unit, get_path_from_uri(uri), text, s.force_configuration_file)
       s.source_units[uri] = unit
 
    if s.client_capabilities.diagnostics or s.force_diagnostics:

@@ -6,6 +6,13 @@ options:
   -h, --help            Print this help message and exit.
   -v, --version         Print the version information and exit.
 
-  --force-diagnostics   Publish diagnostics using the
-                        "textDocument/publishDiagnostics" method regardless of
-                        the client's reported capabilities.
+  --force-configuration-file:FILE
+
+    Bypass the normal strategy to lookup the configuration file for a source
+    file by forcing the LSP server to use the target file. If the file does not
+    exist, the LSP falls back to the normal strategy.
+
+  --force-diagnostics
+
+    Publish diagnostics using the "textDocument/publishDiagnostics" method
+    regardless of the client's reported capabilities.

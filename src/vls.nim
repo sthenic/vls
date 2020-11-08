@@ -26,6 +26,7 @@ elif cli_state.print_version:
 
 var s: LspServer
 s.force_diagnostics = cli_state.force_diagnostics
+s.force_configuration_file = cli_state.force_configuration_file
 open(s, new_file_stream(stdin), new_file_stream(stdout))
 let exit_code = run(s)
 close(s)
