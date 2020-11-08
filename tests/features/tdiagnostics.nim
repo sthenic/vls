@@ -42,6 +42,7 @@ Test suite: diagnostics
 
 const src2_path = "./src/src2.v"
 const src2_text = static_read(src2_path)
+let src2_path_len = len(expand_filename(src2_path))
 run_test("src2.v",
    new_lsp_notification("textDocument/didOpen", %*{
       "textDocument": {
@@ -51,7 +52,7 @@ run_test("src2.v",
          "text": src2_text
       }
    }),
-   new_lsp_notification(1025, "textDocument/publishDiagnostics", %*{
+   new_lsp_notification(969 + src2_path_len, "textDocument/publishDiagnostics", %*{
       "uri": "file://" & expand_filename(src2_path),
       "diagnostics": [
          {
@@ -109,6 +110,7 @@ run_test("src2.v",
 
 const src3_path = "./src/src3.v"
 const src3_text = static_read(src3_path)
+let src3_path_len = len(expand_filename(src3_path))
 run_test("src3.v",
    new_lsp_notification("textDocument/didOpen", %*{
       "textDocument": {
@@ -118,7 +120,7 @@ run_test("src3.v",
          "text": src3_text
       }
    }),
-   new_lsp_notification(315, "textDocument/publishDiagnostics", %*{
+   new_lsp_notification(259 + src3_path_len, "textDocument/publishDiagnostics", %*{
       "uri": "file://" & expand_filename(src3_path),
       "diagnostics": [
          {
@@ -136,6 +138,7 @@ run_test("src3.v",
 
 const src4_path = "./src/src4.v"
 const src4_text = static_read(src4_path)
+let src4_path_len = len(expand_filename(src4_path))
 run_test("src4.v",
    new_lsp_notification("textDocument/didOpen", %*{
       "textDocument": {
@@ -145,7 +148,7 @@ run_test("src4.v",
          "text": src4_text
       }
    }),
-   new_lsp_notification(313, "textDocument/publishDiagnostics", %*{
+   new_lsp_notification(257 + src4_path_len, "textDocument/publishDiagnostics", %*{
       "uri": "file://" & expand_filename(src4_path),
       "diagnostics": [
          {
@@ -163,6 +166,7 @@ run_test("src4.v",
 
 const src5_path = "./src/src5.v"
 const src5_text = static_read(src5_path)
+let src5_path_len = len(expand_filename(src5_path))
 run_test("src5.v",
    new_lsp_notification("textDocument/didOpen", %*{
       "textDocument": {
@@ -172,7 +176,7 @@ run_test("src5.v",
          "text": src5_text
       }
    }),
-   new_lsp_notification(730, "textDocument/publishDiagnostics", %*{
+   new_lsp_notification(674 + src5_path_len, "textDocument/publishDiagnostics", %*{
       "uri": "file://" & expand_filename(src5_path),
       "diagnostics": [
          {
