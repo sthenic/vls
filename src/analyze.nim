@@ -243,14 +243,14 @@ proc find_port_connection_errors*(unit: SourceUnit):
       seq[LspDiagnostic] =
    # To avoid doing unnecessary work, check the configuration if these
    # diagnostics are both disabled.
-   if not unit.configuration.diagnostics.unlisted_ports and
+   if not unit.configuration.diagnostics.missing_ports and
       not unit.configuration.diagnostics.unconnected_ports:
       return
 
    for error in find_connection_errors(unit.graph):
       case error.kind
-      of CkUnlisted:
-         if unit.configuration.diagnostics.unlisted_ports:
+      of CkMissing:
+         if unit.configuration.diagnostics.missing_ports:
             add(result, construct_diagnostic(error.instance, ERROR, "Unlisted port '$1'.",
                                              error.identifier.s))
       of CkUnconnected:
