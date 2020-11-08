@@ -236,6 +236,18 @@ proc find_undeclared_identifiers*(unit: SourceUnit): seq[LspDiagnostic] =
       add(result, construct_diagnostic(id, ERROR, "Undeclared identifier '$1'", id.identifier.s))
 
 
+proc find_connection_errors*(unit: SourceUnit): seq[LspDiagnostic] =
+   for error in find_connection_errors(unit.graph):
+      case error.kind
+      of CkUnlisted:
+         add(result, construct_diagnostic(error.instance, ERROR, "Unlisted port '$1'.",
+                                          error.identifier.s))
+      of CkUnconnected:
+         let port = find_first(error.meta, NkIdentifier)
+         add(result, construct_diagnostic(port, ERROR, "Unconnected input port '$1'.",
+                                          port.identifier.s))
+
+
 proc is_external_identifier(context: AstContext): bool =
    # An external identifier is either a module instantiation or.
    if len(context) > 0:
@@ -668,6 +680,7 @@ proc find_port_connection_completions(unit: SourceUnit, module_name, prefix: str
       if is_nil(id) or id.identifier.s != module_name:
          continue
 
+      # TODO: Check if this could be simplified w/ the addition of vparse's walk_named_ports().
       for port in walk_ports(module):
          case port.kind
          of NkPortDecl:
