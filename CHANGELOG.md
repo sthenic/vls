@@ -6,6 +6,12 @@ All notable changes to this project will be documented in this file.
 
 ## Added
 
+- The diagnostic messages published for a source file now include:
+
+  - undeclared identifiers (disable with `diagnostics.undeclared_identifiers = false`),
+  - unconnected input ports of a module instance (disable with `diagnostics.unconnected_ports = false`); and
+  - ports missing from a module instance (disable with `diagnostics.missing_ports = false`).
+
 - Enable hover requests for module instantiations.
 
 ## Changed
