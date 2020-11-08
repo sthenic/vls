@@ -219,15 +219,21 @@ proc check_syntax*(unit: SourceUnit): seq[LspDiagnostic] =
    result = check_syntax(unit.graph.root, unit.graph.locations)
 
 
+proc construct_diagnostic(n: PNode, severity: LspSeverity,
+                          msg: string, args: varargs[string, `$`]): LspDiagnostic =
+   var lmsg = format("$1:$2: ", n.loc.line, n.loc.col + 1) & format(msg, args)
+   let start = new_lsp_position(int(n.loc.line - 1), int(n.loc.col))
+   let stop = start
+   result = new_lsp_diagnostic(start, stop, severity, lmsg)
+
+
 proc find_undeclared_identifiers*(unit: SourceUnit): seq[LspDiagnostic] =
-   # FIXME: Find redeclared identifiers
-   for id in find_undeclared_identifiers(unit.graph):
+   # FIXME: Find redeclared identifiers.
+   let (internal, external) = find_undeclared_identifiers(unit.graph)
+   for id in internal & external:
       if id.loc.file != 1:
          continue
-      let message = format("$1:$2: Undeclared identifier '$3'", id.loc.line, id.loc.col + 1, id.identifier.s)
-      let start = new_lsp_position(int(id.loc.line - 1), int(id.loc.col))
-      let stop = start
-      add(result, new_lsp_diagnostic(start, stop, ERROR, message))
+      add(result, construct_diagnostic(id, ERROR, "Undeclared identifier '$1'", id.identifier.s))
 
 
 proc is_external_identifier(context: AstContext): bool =
