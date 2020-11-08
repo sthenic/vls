@@ -228,6 +228,9 @@ proc construct_diagnostic(n: PNode, severity: LspSeverity,
 
 
 proc find_undeclared_identifiers*(unit: SourceUnit): seq[LspDiagnostic] =
+   if not unit.configuration.diagnostics.undeclared_identifiers:
+      return
+
    # FIXME: Find redeclared identifiers.
    let (internal, external) = find_undeclared_identifiers(unit.graph)
    for id in internal & external:
@@ -236,16 +239,25 @@ proc find_undeclared_identifiers*(unit: SourceUnit): seq[LspDiagnostic] =
       add(result, construct_diagnostic(id, ERROR, "Undeclared identifier '$1'", id.identifier.s))
 
 
-proc find_connection_errors*(unit: SourceUnit): seq[LspDiagnostic] =
+proc find_port_connection_errors*(unit: SourceUnit):
+      seq[LspDiagnostic] =
+   # To avoid doing unnecessary work, check the configuration if these
+   # diagnostics are both disabled.
+   if not unit.configuration.diagnostics.unlisted_ports and
+      not unit.configuration.diagnostics.unconnected_ports:
+      return
+
    for error in find_connection_errors(unit.graph):
       case error.kind
       of CkUnlisted:
-         add(result, construct_diagnostic(error.instance, ERROR, "Unlisted port '$1'.",
-                                          error.identifier.s))
+         if unit.configuration.diagnostics.unlisted_ports:
+            add(result, construct_diagnostic(error.instance, ERROR, "Unlisted port '$1'.",
+                                             error.identifier.s))
       of CkUnconnected:
-         let port = find_first(error.meta, NkIdentifier)
-         add(result, construct_diagnostic(port, ERROR, "Unconnected input port '$1'.",
-                                          port.identifier.s))
+         if unit.configuration.diagnostics.unconnected_ports:
+            let port = find_first(error.meta, NkIdentifier)
+            add(result, construct_diagnostic(port, ERROR, "Unconnected input port '$1'.",
+                                             port.identifier.s))
 
 
 proc is_external_identifier(context: AstContext): bool =
