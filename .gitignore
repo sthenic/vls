@@ -6,6 +6,7 @@ tests/protocol/trecv
 tests/protocol/tsend
 tests/configuration/tconfiguration
 tests/features/tsyntax
+tests/features/tdiagnostics
 tests/features/tdeclaration
 tests/features/treferences
 tests/features/tcompletion

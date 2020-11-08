@@ -18,7 +18,7 @@ let ofs = output_stream(vls)
 # Iniitalize the server, as if we were an LSP client.
 initialize(ifs, ofs)
 
-# Open the file "./src/src2.v", expecting no parsing errors.
+# Open the file "./src/src2.v".
 const src2_path = "./src/src2.v"
 const src2_text = static_read(src2_path)
 send(ifs, new_lsp_notification("textDocument/didOpen", %*{
@@ -29,7 +29,7 @@ send(ifs, new_lsp_notification("textDocument/didOpen", %*{
       "text": src2_text
    }
 }))
-assert len(recv(ofs).parameters["diagnostics"]) == 0
+discard recv(ofs)
 
 template run_test(title: string, stimuli, reference: LspMessage) =
    send(ifs, stimuli)
@@ -131,7 +131,7 @@ run_test("textDocument/documentHighlight: port (2)",
    ])
 )
 
-# Open the file "./src/src3.v", expecting no parsing errors.
+# Open the file "./src/src3.v".
 const src3_path = "./src/src3.v"
 const src3_text = static_read(src3_path)
 send(ifs, new_lsp_notification("textDocument/didOpen", %*{
@@ -142,7 +142,7 @@ send(ifs, new_lsp_notification("textDocument/didOpen", %*{
       "text": src3_text
    }
 }))
-assert len(recv(ofs).parameters["diagnostics"]) == 0
+discard recv(ofs)
 
 
 run_test("textDocument/documentHighlight: reg (also used as macro argument)",

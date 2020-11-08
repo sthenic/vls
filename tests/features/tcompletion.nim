@@ -18,7 +18,7 @@ let ofs = output_stream(vls)
 # Iniitalize the server, as if we were an LSP client.
 initialize(ifs, ofs)
 
-# Open the file "./src/src3.v", expecting no parsing errors.
+# Open the file "./src/src3.v".
 const src3_path = "./src/src3.v"
 const src3_text = static_read(src3_path)
 send(ifs, new_lsp_notification("textDocument/didOpen", %*{
@@ -29,7 +29,7 @@ send(ifs, new_lsp_notification("textDocument/didOpen", %*{
       "text": src3_text
    }
 }))
-assert len(recv(ofs).parameters["diagnostics"]) == 0
+discard recv(ofs)
 
 template run_test(title: string, stimuli, reference: LspMessage) =
    send(ifs, stimuli)
@@ -412,7 +412,7 @@ run_test("textDocument/completion: module port (2)",
    ])
 )
 
-# Open the file "./src/src4.v", expecting no parsing errors.
+# Open the file "./src/src4.v".
 const src4_path = "./src/src4.v"
 const src4_text = static_read(src4_path)
 send(ifs, new_lsp_notification("textDocument/didOpen", %*{
@@ -423,7 +423,7 @@ send(ifs, new_lsp_notification("textDocument/didOpen", %*{
       "text": src4_text
    }
 }))
-assert len(recv(ofs).parameters["diagnostics"]) == 0
+discard recv(ofs)
 
 
 run_test("textDocument/completion: module port (3), internal declarations",

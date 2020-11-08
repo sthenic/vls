@@ -18,7 +18,7 @@ let ofs = output_stream(vls)
 # Iniitalize the server, as if we were an LSP client.
 initialize(ifs, ofs)
 
-# Open the file "./src/src3.v", expecting no parsing errors.
+# Open the file "./src/src3.v".
 const src3_path = "./src/src3.v"
 const src3_text = static_read(src3_path)
 let src3_path_len = len(expand_filename(src3_path))
@@ -32,7 +32,7 @@ send(ifs, new_lsp_notification("textDocument/didOpen", %*{
       "text": src3_text
    }
 }))
-assert len(recv(ofs).parameters["diagnostics"]) == 0
+discard recv(ofs)
 
 
 template run_test(title: string, stimuli, reference: LspMessage) =
@@ -592,7 +592,7 @@ run_test("textDocument/rename: module port (clk_i)",
    })
 )
 
-# Open the file "./src/src4.v", expecting no parsing errors.
+# Open the file "./src/src4.v".
 const src4_text = static_read(src4_path)
 send(ifs, new_lsp_notification("textDocument/didOpen", %*{
    "textDocument": {
@@ -602,7 +602,7 @@ send(ifs, new_lsp_notification("textDocument/didOpen", %*{
       "text": src4_text
    }
 }))
-assert len(recv(ofs).parameters["diagnostics"]) == 0
+discard recv(ofs)
 
 
 run_test("textDocument/rename: module parameter port (FOO)",
@@ -1059,7 +1059,7 @@ run_test("textDocument/rename: localparam",
 )
 
 
-# Open the file "./src/src5.v", expecting no parsing errors.
+# Open the file "./src/src5.v".
 const src5_text = static_read(src5_path)
 send(ifs, new_lsp_notification("textDocument/didOpen", %*{
    "textDocument": {
@@ -1069,7 +1069,7 @@ send(ifs, new_lsp_notification("textDocument/didOpen", %*{
       "text": src5_text
    }
 }))
-assert len(recv(ofs).parameters["diagnostics"]) == 0
+discard recv(ofs)
 
 
 run_test("textDocument/rename: module parameter port, direct",

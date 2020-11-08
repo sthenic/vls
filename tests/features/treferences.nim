@@ -18,7 +18,7 @@ let ofs = output_stream(vls)
 # Iniitalize the server, as if we were an LSP client.
 initialize(ifs, ofs)
 
-# Open the file "./src/src2.v", expecting no parsing errors.
+# Open the file "./src/src2.v".
 const src2_path = "./src/src2.v"
 const src2_text = static_read(src2_path)
 let src2_path_len = len(expand_filename(src2_path))
@@ -30,7 +30,7 @@ send(ifs, new_lsp_notification("textDocument/didOpen", %*{
       "text": src2_text
    }
 }))
-assert len(recv(ofs).parameters["diagnostics"]) == 0
+discard recv(ofs)
 
 template run_test(title: string, stimuli, reference: LspMessage) =
    send(ifs, stimuli)
@@ -163,7 +163,7 @@ run_test("textDocument/references: port (3) w/ declaration",
    ])
 )
 
-# Open the file "./src/src3.v", expecting no parsing errors.
+# Open the file "./src/src3.v".
 const src3_path = "./src/src3.v"
 const src3_header_path = "./src/src3.vh"
 const src3_text = static_read(src3_path)
@@ -177,7 +177,7 @@ send(ifs, new_lsp_notification("textDocument/didOpen", %*{
       "text": src3_text
    }
 }))
-assert len(recv(ofs).parameters["diagnostics"]) == 0
+discard recv(ofs)
 
 run_test("textDocument/references: reg (also used as macro argument)",
    new_lsp_request(0, "textDocument/references", %*{
@@ -860,7 +860,7 @@ run_test("textDocument/references: module port (2)",
 )
 
 
-# Open the file "./src/src4.v", expecting no parsing errors.
+# Open the file "./src/src4.v".
 const src4_path = "./src/src4.v"
 const src4_text = static_read(src4_path)
 let src4_path_len = len(expand_filename(src4_path))
@@ -872,7 +872,7 @@ send(ifs, new_lsp_notification("textDocument/didOpen", %*{
       "text": src4_text
    }
 }))
-assert len(recv(ofs).parameters["diagnostics"]) == 0
+discard recv(ofs)
 
 const src5_path = "./src/src5.v"
 let src5_path_len = len(expand_filename(src5_path))
@@ -1047,7 +1047,7 @@ run_test("textDocument/references: localparam w/ same name as a parameter port",
 )
 
 
-# Open the file "./src/src5.v", expecting no parsing errors.
+# Open the file "./src/src5.v".
 const src5_text = static_read(src5_path)
 send(ifs, new_lsp_notification("textDocument/didOpen", %*{
    "textDocument": {
@@ -1057,7 +1057,7 @@ send(ifs, new_lsp_notification("textDocument/didOpen", %*{
       "text": src5_text
    }
 }))
-assert len(recv(ofs).parameters["diagnostics"]) == 0
+discard recv(ofs)
 
 
 run_test("textDocument/references: port reference (from reference)",

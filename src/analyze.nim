@@ -236,7 +236,7 @@ proc find_undeclared_identifiers*(unit: SourceUnit): seq[LspDiagnostic] =
    for id in internal & external:
       if id.loc.file != 1:
          continue
-      add(result, construct_diagnostic(id, ERROR, "Undeclared identifier '$1'", id.identifier.s))
+      add(result, construct_diagnostic(id, ERROR, "Undeclared identifier '$1'.", id.identifier.s))
 
 
 proc find_port_connection_errors*(unit: SourceUnit):

@@ -26,8 +26,7 @@
 
     module7 module7_inst (
         .clk_i (),
-        .data_i (),
-        .data_o ()
+        .data_i ()
     );
 
     /* FIXME: Rename operation in the port list renames this symbol too: */
