@@ -23,6 +23,13 @@ jobs:
         repository: 'sthenic/vltoml'
         path: vltoml
 
+    - name: Checkout vlint
+      uses: actions/checkout@v2
+      with:
+        repository: 'sthenic/vlint'
+        path: vlint
+        token: ${{ secrets.TOKEN }}
+
     # Manually choose a patched fork of parsetoml until the library is fixed.
     - name: Checkout parsetoml
       uses: actions/checkout@v2
@@ -43,6 +50,9 @@ jobs:
         nimble install -y
         popd
         pushd vltoml
+        nimble install -y
+        popd
+        pushd vlint
         nimble install -y
         popd
 
