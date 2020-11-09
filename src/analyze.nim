@@ -251,7 +251,7 @@ proc find_port_connection_errors*(unit: SourceUnit):
       case error.kind
       of CkMissing:
          if unit.configuration.diagnostics.missing_ports:
-            add(result, construct_diagnostic(error.instance, ERROR, "Unlisted port '$1'.",
+            add(result, construct_diagnostic(error.instance, ERROR, "Missing port '$1'.",
                                              error.identifier.s))
       of CkUnconnected:
          if unit.configuration.diagnostics.unconnected_ports:
