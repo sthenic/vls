@@ -29,6 +29,21 @@
         .data_i ()
     );
 
+    initial begin : thing
+        fork : foo
+            tmp = 1'b0;
+        join
+        $display(FOOBAR, "Show this to the user!");
+    end
+
+    genvar k;
+    for (k = 0; k < 8; k = k + 1) begin : loop
+        localparam BAZ = 1'b0;
+    end
+
+    module7 module7_inst (
+    );
+
     /* FIXME: Rename operation in the port list renames this symbol too: */
     /* wire split_port_i; */
 

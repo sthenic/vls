@@ -176,7 +176,7 @@ run_test("src5.v",
          "text": src5_text
       }
    }),
-   new_lsp_notification(674 + src5_path_len, "textDocument/publishDiagnostics", %*{
+   new_lsp_notification(1221 + src5_path_len, "textDocument/publishDiagnostics", %*{
       "uri": "file://" & expand_filename(src5_path),
       "diagnostics": [
          {
@@ -188,7 +188,15 @@ run_test("src5.v",
             },
          },
          {
-            "message": "27:13: Unlisted port 'data_o'.",
+            "message": "36:18: Undeclared identifier 'FOOBAR'.",
+            "severity": int(ERROR),
+            "range": {
+               "start": {"line": 35, "character": 17},
+               "end" : {"line": 35, "character": 17}
+            },
+         },
+         {
+            "message": "27:13: Missing port 'data_o'.",
             "severity": int(ERROR),
             "range": {
                "start": {"line": 26, "character": 12},
@@ -209,6 +217,30 @@ run_test("src5.v",
             "range": {
                "start": {"line": 28, "character": 9},
                "end" : {"line": 28, "character": 9}
+            },
+         },
+         {
+            "message": "44:13: Missing port 'clk_i'.",
+            "severity": int(ERROR),
+            "range": {
+               "start": {"line": 43, "character": 12},
+               "end" : {"line": 43, "character": 12}
+            },
+         },
+         {
+            "message": "44:13: Missing port 'data_i'.",
+            "severity": int(ERROR),
+            "range": {
+               "start": {"line": 43, "character": 12},
+               "end" : {"line": 43, "character": 12}
+            },
+         },
+         {
+            "message": "44:13: Missing port 'data_o'.",
+            "severity": int(ERROR),
+            "range": {
+               "start": {"line": 43, "character": 12},
+               "end" : {"line": 43, "character": 12}
             },
          }
       ]
