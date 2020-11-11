@@ -686,84 +686,30 @@ proc add_declaration_information(unit: SourceUnit, item: var LspCompletionItem, 
 
 
 proc find_port_connection_completions(unit: SourceUnit, module_name, prefix: string): seq[LspCompletionItem] =
-   # See comments in find_external_module_port_declaration().
+   # FIXME: Faster lookup by name instead of going through all the modules.
    for module, name, filename in walk_modules(unit.graph, WalkDefined):
-      let id = find_first(module, NkIdentifier)
-      if is_nil(id) or id.identifier.s != module_name:
+      if name != module_name:
          continue
 
-      # TODO: Check if this could be simplified w/ the addition of vparse's walk_named_ports().
-      for port in walk_ports(module):
-         case port.kind
-         of NkPortDecl:
-            let id = find_first(port, NkIdentifier)
-            if not is_nil(id) and starts_with(id.identifier.s, prefix):
-               var item = new_lsp_completion_item(id.identifier.s & " ()")
-               add_declaration_information(unit, item, port)
-               add(result, item)
-         of NkPort:
-            var external_name = find_first(port, NkIdentifier)
-            let internal_name = find_first_chain(port, [NkPortReference, NkIdentifier])
-            let internal_name_concat = find_first(port, NkPortReferenceConcat)
-
-            # Resolve the internal names of a port.
-            var internal_names: seq[PNode]
-            if not is_nil(internal_name):
-               add(internal_names, internal_name)
-            elif not is_nil(internal_name_concat):
-               for s in walk_sons(internal_name_concat, NkPortReference):
-                  let name = find_first(s, NkIdentifier)
-                  if not is_nil(name):
-                     add(internal_names, name)
-            else:
-               continue
-
-            if is_nil(external_name):
-               if is_nil(internal_name):
-                  # Port reference concatenations w/o a specific external name
-                  # are not addressable.
-                  continue
-               else:
-                  # Port references w/o a specific name are known by their
-                  # internal name from the outside.
-                  external_name = internal_name
-
-            if not starts_with(external_name.identifier.s, prefix):
-               continue
-
-            # TODO: We could potentially show the declarations of the internal
-            #       names if we wanted to.
-            var item = new_lsp_completion_item(external_name.identifier.s & " ()")
+      for port, id in walk_ports(module):
+         if starts_with(id.identifier.s, prefix):
+            var item = new_lsp_completion_item(id.identifier.s & " ()")
             add_declaration_information(unit, item, port)
             add(result, item)
-         else:
-            discard
       return
 
 
 proc find_parameter_port_connection_completions(unit: SourceUnit, module_name, prefix: string): seq[LspCompletionItem] =
-   template add_completion(parameter: PNode, prefix: string) =
-      let assignment = find_first(parameter, NkAssignment)
-      if not is_nil(assignment):
-         let id = find_first(assignment, NkIdentifier)
-         if not is_nil(id) and starts_with(id.identifier.s, prefix):
-            var item = new_lsp_completion_item(id.identifier.s & " ()")
-            add_declaration_information(unit, item, parameter)
-            add(result, item)
-
+   # FIXME: Faster lookup by name instead of going through all the modules.
    for module, name, filename in walk_modules(unit.graph, WalkDefined):
-      let id = find_first(module, NkIdentifier)
-      if is_nil(id) or id.identifier.s != module_name:
+      if name != module_name:
          continue
 
-      # According to the standard, parameters declared in the module body should
-      # only be listed if the parameter port list is omitted.
-      if not is_nil(find_first(module, NkModuleParameterPortList)):
-         for parameter in walk_parameter_ports(module):
-            add_completion(parameter, prefix)
-      else:
-         for parameter in walk_sons(module, NkParameterDecl):
-            add_completion(parameter, prefix)
+      for declaration, id in walk_parameters(module):
+         if starts_with(id.identifier.s, prefix):
+            var item = new_lsp_completion_item(id.identifier.s & " ()")
+            add_declaration_information(unit, item, declaration)
+            add(result, item)
       return
 
 

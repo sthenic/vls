@@ -436,7 +436,7 @@ run_test("textDocument/completion: module port (3), internal declarations",
          "character": 9
       }
    }),
-   new_lsp_response(555, 0, %*[
+   new_lsp_response(579, 0, %*[
       {
          "label": "clk_i ()",
          "detail": ".clk_i(clk_local)",
@@ -457,7 +457,7 @@ run_test("textDocument/completion: module port (3), internal declarations",
       },
       {
          "label": "data_o ()",
-         "detail": "data_o",
+         "detail": "output wire data_o",
          "kind": int(LspCkInterface),
          "documentation": {
             "kind": "markdown",
@@ -466,7 +466,7 @@ run_test("textDocument/completion: module port (3), internal declarations",
       },
       {
          "label": "valid_o ()",
-         "detail": "valid_o",
+         "detail": "output wire valid_o",
          "kind": int(LspCkInterface),
          "documentation": {
             "kind": "markdown",
@@ -487,10 +487,10 @@ run_test("textDocument/completion: module port (4), internal declarations",
          "character": 16
       }
    }),
-   new_lsp_response(154, 0, %*[
+   new_lsp_response(166, 0, %*[
       {
          "label": "valid_o ()",
-         "detail": "valid_o",
+         "detail": "output wire valid_o",
          "kind": int(LspCkInterface),
          "documentation": {
             "kind": "markdown",

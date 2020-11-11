@@ -316,7 +316,7 @@ run_test("textDocument/hover: port of external module, list of ports (2)",
          "character": 9
       }
    }),
-   new_lsp_response(178, 15, %*{
+   new_lsp_response(190, 15, %*{
       "range": {
          "start": {"line": 17, "character": 9},
          "end" : {"line": 17, "character": 15}
@@ -325,7 +325,7 @@ run_test("textDocument/hover: port of external module, list of ports (2)",
          "kind": "markdown",
          "value": """
 ```verilog
-data_o
+output wire data_o
 ```"""
       }
    })
