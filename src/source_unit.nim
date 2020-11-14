@@ -1,13 +1,17 @@
 import streams
 import vltoml
 import vparse
+import os
+when defined(logdebug):
+   import times
+   import strutils
 
 import ./log
 
 type
    SourceUnit* = object
       filename*: string
-      cache*: IdentifierCache
+      identifier_cache*: IdentifierCache
       graph*: Graph
       configuration*: Configuration
       text*: string
@@ -29,17 +33,24 @@ proc get_configuration*(source_filename: string): Configuration =
          log.error("Failed to parse configuration file: '$1'.", e.msg)
 
 
-proc update*(unit: var SourceUnit, text: string) =
-   unit.cache = new_ident_cache()
-   unit.graph = new_graph(unit.cache)
+proc update*(unit: var SourceUnit, module_cache: ModuleCache, locations: Locations, text: string,
+             cache_submodules: bool) =
+   unit.identifier_cache = new_ident_cache()
+   unit.graph = new_graph(unit.identifier_cache, module_cache, locations)
    unit.text = text
    let ss = new_string_stream(text)
+   when defined(logdebug):
+      let t_start = cpu_time()
    discard parse(unit.graph, ss, unit.filename, unit.configuration.include_paths,
-                 unit.configuration.defines)
+                 unit.configuration.defines, cache_submodules)
+   when defined(logdebug):
+      let t_diff_ms = (cpu_time() - t_start) * 1000
+      log.debug("Parsed '$1' in $2 ms.", unit.filename, format_float(t_diff_ms, ffDecimal, 1))
    close(ss)
 
 
-proc open*(unit: var SourceUnit, filename, text, force_configuration_file: string) =
+proc open*(unit: var SourceUnit, module_cache: ModuleCache, locations: Locations,
+           filename, text, force_configuration_file: string) =
    var search = len(force_configuration_file) == 0
    if not search:
       try:
@@ -54,7 +65,10 @@ proc open*(unit: var SourceUnit, filename, text, force_configuration_file: strin
       unit.configuration = get_configuration(filename)
 
    unit.filename = filename
-   update(unit, text)
+   let parent_dir = parent_dir(filename)
+   if parent_dir notin unit.configuration.include_paths:
+      add(unit.configuration.include_paths, parent_dir)
+   update(unit, module_cache, locations, text, cache_submodules = true)
 
 
 proc close*(unit: var SourceUnit) =

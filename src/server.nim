@@ -32,7 +32,8 @@ type
       should_exit: bool
       root_uri: string
       source_units: Table[string, SourceUnit]
-      cache: IdentifierCache
+      module_cache: ModuleCache
+      locations: Locations
       client_capabilities: LspClientCapabilities
       # TODO: This should really not be an option if Neovims language client
       #       correctly reported diagnostic capabilities.
@@ -52,13 +53,15 @@ proc open*(s: var LspServer, ifs, ofs : Stream) =
    s.is_shut_down = false
    set_len(s.root_uri, 0)
    s.source_units = init_table[string, SourceUnit](64)
+   s.module_cache = new_module_cache()
+   s.locations = new_locations()
    init(s.client_capabilities)
 
    # The syslog facilities are only available on Linux and macOS. If the server
    # is compiled in release mode and we're not on Windows, we redirect the log
    # messages to syslog. Otherwise, log messages are written to stderr.
-   if defined(release):
-      set_log_target(HOMEDIR)
+   # if defined(release):
+   set_log_target(HOMEDIR)
    log.debug("Opened server.")
 
 
@@ -106,11 +109,11 @@ proc process_text(s: var LspServer, uri, text: string) =
    # one.
    if has_key(s.source_units, uri):
       log.debug("Updating the source unit for the file '$1'.", uri)
-      update(s.source_units[uri], text)
+      update(s.source_units[uri], s.module_cache, s.locations, text, cache_submodules = false)
    else:
       log.debug("Adding a new source unit for the file '$1' to the index.", uri)
       var unit: SourceUnit
-      open(unit, get_path_from_uri(uri), text, s.force_configuration_file)
+      open(unit, s.module_cache, s.locations, get_path_from_uri(uri), text, s.force_configuration_file)
       s.source_units[uri] = unit
 
    if s.client_capabilities.diagnostics or s.force_diagnostics:
@@ -326,6 +329,15 @@ proc handle_notification(s: var LspServer, msg: LspMessage) =
       let uri = decode_url(get_str(msg.parameters["textDocument"]["uri"]))
       let text = get_str(msg.parameters["contentChanges"][0]["text"])
       process_text(s, uri, text)
+   of "textDocument/didSave":
+      let uri = decode_url(get_str(msg.parameters["textDocument"]["uri"]))
+      if has_key(s.source_units, uri):
+         log.debug("Save notification for file '$1'. Recaching submodules.", uri)
+         let unit = s.source_units[uri]
+         # FIXME: Better proc to not loop back unit.text here. Improve process_text()?
+         update(s.source_units[uri], s.module_cache, s.locations, unit.text, cache_submodules = true)
+         if s.client_capabilities.diagnostics or s.force_diagnostics:
+            publish_diagnostics(s, s.source_units[uri])
    of "textDocument/didClose":
       let uri = decode_url(get_str(msg.parameters["textDocument"]["uri"]))
       if has_key(s.source_units, uri):

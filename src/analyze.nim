@@ -39,10 +39,11 @@ proc get_token(p: var LocalParser) =
          get_token(p.lex, p.next_tok)
 
 
-proc open_local_parser(p: var LocalParser, cache: IdentifierCache, s: Stream, filename: string) =
+proc open_local_parser(p: var LocalParser, cache: IdentifierCache, s: Stream,
+                       filename: string, file: int) =
    init(p.tok)
    init(p.next_tok)
-   open_lexer(p.lex, cache, s, filename, 1)
+   open_lexer(p.lex, cache, s, filename, file)
    get_token(p)
 
 
@@ -56,7 +57,7 @@ template run_local_parser(unit: SourceUnit, cache: IdentifierCache, parser, body
       raise new_analyze_error("Failed to create a stream for file '$1'.", unit.filename)
 
    var parser: LocalParser
-   open_local_parser(parser, cache, ss, unit.filename)
+   open_local_parser(parser, cache, ss, unit.filename, unit.graph.root.loc.file)
    get_token(parser)
    while parser.tok.kind != TkEndOfFile:
       body
@@ -72,13 +73,14 @@ iterator walk_verilog_files(dir: string): string {.inline.} =
          yield path
 
 
-iterator walk_module_declarations(filename: string): PNode {.inline.} =
+iterator walk_module_declarations(module_cache: ModuleCache, locations: Locations, filename: string):
+      PNode {.inline.} =
    # Module declarations cannot be nested and must occur on the outer level in
    # the source text,
    let fs = new_file_stream(filename)
    if not is_nil(fs):
       let cache = new_ident_cache()
-      let graph = new_graph(cache)
+      let graph = new_graph(cache, module_cache, locations)
       log.debug("Parsing file '$1'.", filename)
       let configuration = get_configuration(filename)
       let root = parse(graph, fs, filename, configuration.include_paths, configuration.defines)
@@ -90,9 +92,12 @@ iterator walk_module_declarations(filename: string): PNode {.inline.} =
 
 
 iterator walk_module_declarations(include_paths: seq[string]): tuple[filename: string, n: PNode] {.inline.} =
+   # FIXME: Probably extend the servers graph and location objects?
+   let module_cache = new_module_cache()
+   let locations = new_locations()
    for dir in include_paths:
       for filename in walk_verilog_files(dir):
-         for module in walk_module_declarations(filename):
+         for module in walk_module_declarations(module_cache, locations, filename):
             yield (filename, module)
 
 
@@ -124,7 +129,7 @@ iterator walk_include_paths_starting_with(unit: SourceUnit, prefix: string): str
                   yield(last_dir & "/")
 
 
-proc check_syntax(n: PNode, locs: PLocations): seq[LspDiagnostic] =
+proc check_syntax(n: PNode, locs: Locations, file: int32): seq[LspDiagnostic] =
    case n.kind
    of {NkTokenError, NkCritical}:
       # Create a diagnostic message representing the error node.
@@ -133,7 +138,7 @@ proc check_syntax(n: PNode, locs: PLocations): seq[LspDiagnostic] =
       if n.loc.file == 0:
          # A zero-valued file index is invalid (and unexpected).
          return
-      elif n.loc.file == 1:
+      elif n.loc.file == file:
          # The error node originates in the current file. Put the diagnostic
          # message at the location in the buffer.
          add(message, format("$1:$2: ", n.loc.line, n.loc.col + 1))
@@ -177,7 +182,7 @@ proc check_syntax(n: PNode, locs: PLocations): seq[LspDiagnostic] =
          var map = locs.file_maps[n.loc.file - 1]
          var inverted_file_trace: seq[string]
          while true:
-            if map.loc.file == 1:
+            if map.loc.file == file:
                # The search is complete, we've found a location in the current
                # file. Set the start location to the location reported by the map.
                add(inverted_file_trace, format("In file $1\n", map.filename))
@@ -212,11 +217,11 @@ proc check_syntax(n: PNode, locs: PLocations): seq[LspDiagnostic] =
 
    else:
       for s in n.sons:
-         add(result, check_syntax(s, locs))
+         add(result, check_syntax(s, locs, file))
 
 
 proc check_syntax*(unit: SourceUnit): seq[LspDiagnostic] =
-   result = check_syntax(unit.graph.root, unit.graph.locations)
+   result = check_syntax(unit.graph.root, unit.graph.locations, unit.graph.root.loc.file)
 
 
 proc construct_diagnostic(n: PNode, severity: LspSeverity,
@@ -234,7 +239,7 @@ proc find_undeclared_identifiers*(unit: SourceUnit): seq[LspDiagnostic] =
    # FIXME: Find redeclared identifiers.
    let (internal, external) = find_undeclared_identifiers(unit.graph)
    for id in internal & external:
-      if id.loc.file != 1:
+      if id.loc.file != unit.graph.root.loc.file:
          continue
       add(result, construct_diagnostic(id, ERROR, "Undeclared identifier '$1'.", id.identifier.s))
 
@@ -346,7 +351,7 @@ proc find_declaration*(unit: SourceUnit, line, col: int): LspLocation =
 
    # Before we can assume that the input location is pointing to an identifier,
    # we have to deal with the possibility that it's pointing to a macro.
-   let loc = new_location(1, line, col)
+   let loc = new_location(g.root.loc.file, line, col)
    for map in g.locations.macro_maps:
       # +1 is to compensate for the expansion location starting at the backtick.
       if in_bounds(loc, map.expansion_loc, len(map.name) + 1):
@@ -365,6 +370,7 @@ proc find_declaration*(unit: SourceUnit, line, col: int): LspLocation =
    if is_nil(identifier):
       return find_include_directive(unit, loc)
 
+   log.debug("Got identifier $1", identifier.identifier.s)
    # We have to determine if we should look for an internal (in the context) or
    # an external declaration. In the case of the latter, we only support lookup
    # of module instantiations and their ports.
@@ -453,7 +459,7 @@ proc find_references*(unit: SourceUnit, line, col: int, include_declaration: boo
    # Before we can assume that the input location is pointing to an identifier,
    # we have to deal with the possibility that it's pointing to a macro.
    let g = unit.graph
-   let loc = new_location(1, line, col)
+   let loc = new_location(g.root.loc.file, line, col)
    for map in g.locations.macro_maps:
       # +1 is to compensate for the expansion location starting at the backtick.
       if in_bounds(loc, map.define_loc, len(map.name)) or in_bounds(loc, map.expansion_loc, len(map.name) + 1):
@@ -687,11 +693,11 @@ proc add_declaration_information(unit: SourceUnit, item: var LspCompletionItem, 
 
 proc find_port_connection_completions(unit: SourceUnit, module_name, prefix: string): seq[LspCompletionItem] =
    # FIXME: Faster lookup by name instead of going through all the modules.
-   for module, name, filename in walk_modules(unit.graph, WalkDefined):
-      if name != module_name:
+   for module in walk_modules(unit.graph, WalkDefined):
+      if module.name != module_name:
          continue
 
-      for port, id in walk_ports(module):
+      for port, id in walk_ports(module.n):
          if starts_with(id.identifier.s, prefix):
             var item = new_lsp_completion_item(id.identifier.s & " ()")
             add_declaration_information(unit, item, port)
@@ -701,11 +707,11 @@ proc find_port_connection_completions(unit: SourceUnit, module_name, prefix: str
 
 proc find_parameter_port_connection_completions(unit: SourceUnit, module_name, prefix: string): seq[LspCompletionItem] =
    # FIXME: Faster lookup by name instead of going through all the modules.
-   for module, name, filename in walk_modules(unit.graph, WalkDefined):
-      if name != module_name:
+   for module in walk_modules(unit.graph, WalkDefined):
+      if module.name != module_name:
          continue
 
-      for declaration, id in walk_parameters(module):
+      for declaration, id in walk_parameters(module.n):
          if starts_with(id.identifier.s, prefix):
             var item = new_lsp_completion_item(id.identifier.s & " ()")
             add_declaration_information(unit, item, declaration)
@@ -718,7 +724,7 @@ proc find_completions*(unit: SourceUnit, line, col: int): seq[LspCompletionItem]
    # Before we do anything else, we check if the target location is pointing to
    # a port connection. If the module is on the include path, we fetch the
    # completion information from the external file and return early.
-   let loc = new_location(1, line, col)
+   let loc = new_location(unit.graph.root.loc.file, line, col)
    let (module, cursor, is_parameter) = find_module_port_connection(unit, loc)
    if module.kind != TkInvalid:
       let prefix = if cursor.kind == TkSymbol:
@@ -771,7 +777,7 @@ proc find_symbols*(unit: SourceUnit): seq[LspSymbolInformation] =
    # Add an entry for each declaration in the AST.
    for (_, n) in find_all_declarations(unit.graph.root, recursive = true):
       # Filter out declarations not in the current file.
-      if n.loc.file != 1:
+      if n.loc.file != unit.graph.root.loc.file:
          continue
       let loc = new_lsp_location(construct_uri(unit.filename),
                                  int(n.loc.line - 1),
@@ -780,7 +786,7 @@ proc find_symbols*(unit: SourceUnit): seq[LspSymbolInformation] =
 
    # Add an entry for each module instantiation in the AST.
    for n in find_all_module_instantiations(unit.graph.root):
-      if n.loc.file != 1:
+      if n.loc.file != unit.graph.root.loc.file:
          continue
 
       let module_name = find_first(n, NkIdentifier)
@@ -930,7 +936,8 @@ proc rename_symbol*(unit: SourceUnit, line, col: int, new_name: string): seq[Lsp
    var context: AstContext
    init(context, 32)
    let identifier = find_identifier_physical(unit.graph.root, unit.graph.locations,
-                                             new_location(1, line, col), context)
+                                             new_location(unit.graph.root.loc.file, line, col),
+                                             context)
    if not is_nil(identifier):
       try:
          return rename_external_symbol(unit, context, identifier.identifier, new_name)
@@ -1016,7 +1023,7 @@ proc hover*(unit: SourceUnit, line, col: int): LspHover =
 
    # Before we can assume that the input location is pointing to an identifier,
    # we have to deal with the possibility that it's pointing to a macro.
-   let loc = new_location(1, line, col)
+   let loc = new_location(g.root.loc.file, line, col)
    for map in g.locations.macro_maps:
       # +1 is to compensate for the expansion location starting at the backtick.
       if in_bounds(loc, map.expansion_loc, len(map.name) + 1):
@@ -1155,7 +1162,7 @@ proc signature_help*(unit: SourceUnit, line, col: int): LspSignatureHelp =
 
    # TODO: Implement for macros. We need some more information from the
    # preprocessor, just as for hover requests.
-   let loc = new_location(1, line, col)
+   let loc = new_location(g.root.loc.file, line, col)
    for map in g.locations.macro_maps:
       # +1 is to compensate for the expansion location starting at the backtick.
       if in_bounds(loc, map.expansion_loc, len(map.name) + 1):
