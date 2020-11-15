@@ -216,15 +216,44 @@ proc construct_diagnostic(n: PNode, severity: LspSeverity,
 
 
 proc find_undeclared_identifiers*(unit: SourceUnit): seq[LspDiagnostic] =
+   # FIXME: Find redeclared identifiers.
    if not unit.configuration.diagnostics.undeclared_identifiers:
       return
 
-   # FIXME: Find redeclared identifiers.
-   let (internal, external) = find_undeclared_identifiers(unit.graph)
-   for id in internal & external:
-      if id.loc.file != unit.graph.root.loc.file:
+   # We have to make two passes through the list of undeclared identifiers since
+   # if an entire module declaration is missing. We assume that it's a black box
+   # and suppress the inevitable errors for the named port connections.
+   let undeclared_identifiers = find_undeclared_identifiers(unit.graph)
+   var undeclared_modules: seq[string]
+   for uid in undeclared_identifiers:
+      if uid.identifier.loc.file != unit.graph.root.loc.file:
          continue
-      add(result, construct_diagnostic(id, ERROR, "Undeclared identifier '$1'.", id.identifier.s))
+
+      case uid.kind
+      of UkInternal:
+         add(result, construct_diagnostic(uid.identifier, ERROR, "Undeclared identifier '$1'.",
+                                          uid.identifier.identifier.s))
+      of UkModule:
+         add(result, construct_diagnostic(uid.identifier, WARNING,
+                                          "Undeclared module '$1', assuming black box.",
+                                          uid.identifier.identifier.s))
+         add(undeclared_modules, uid.identifier.identifier.s)
+      else:
+         discard
+
+   for uid in undeclared_identifiers:
+      if uid.identifier.loc.file != unit.graph.root.loc.file:
+         continue
+
+      case uid.kind
+      of UkModulePort, UkModuleParameterPort:
+         # The meta node contains the module name.
+         if not is_nil(uid.meta) and uid.meta.identifier.s notin undeclared_modules:
+            add(result, construct_diagnostic(uid.identifier, ERROR, "Undeclared port '$1'.",
+                                             uid.identifier.identifier.s))
+      else:
+         discard
+
 
 
 proc find_port_connection_errors*(unit: SourceUnit):

@@ -52,9 +52,17 @@ run_test("src2.v",
          "text": src2_text
       }
    }),
-   new_lsp_notification(969 + src2_path_len, "textDocument/publishDiagnostics", %*{
+   new_lsp_notification(985 + src2_path_len, "textDocument/publishDiagnostics", %*{
       "uri": "file://" & expand_filename(src2_path),
       "diagnostics": [
+         {
+            "message": "13:9: Undeclared module 'ERROR_WIDTH_IS_BAD_VALUE', assuming black box.",
+            "severity": int(WARNING),
+            "range": {
+               "start": {"line": 12, "character": 8},
+               "end" : {"line": 12, "character": 8}
+            },
+         },
          {
             "message": "78:9: Undeclared identifier 'tmp'.",
             "severity": int(ERROR),
@@ -77,14 +85,6 @@ run_test("src2.v",
             "range": {
                "start": {"line": 87, "character": 15},
                "end" : {"line": 87, "character": 15}
-            },
-         },
-         {
-            "message": "13:9: Undeclared identifier 'ERROR_WIDTH_IS_BAD_VALUE'.",
-            "severity": int(ERROR),
-            "range": {
-               "start": {"line": 12, "character": 8},
-               "end" : {"line": 12, "character": 8}
             },
          },
          {
@@ -148,11 +148,11 @@ run_test("src4.v",
          "text": src4_text
       }
    }),
-   new_lsp_notification(257 + src4_path_len, "textDocument/publishDiagnostics", %*{
+   new_lsp_notification(251 + src4_path_len, "textDocument/publishDiagnostics", %*{
       "uri": "file://" & expand_filename(src4_path),
       "diagnostics": [
          {
-            "message": "15:34: Undeclared identifier 'LATE_DECLARATION'.",
+            "message": "15:34: Undeclared port 'LATE_DECLARATION'.",
             "severity": int(ERROR),
             "range": {
                "start": {"line": 14, "character": 33},
