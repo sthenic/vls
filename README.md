@@ -78,28 +78,60 @@ Install the [`vls-vscode`](https://github.com/sthenic/vls-vscode) extension.
 
 https://github.com/prabirshrestha/vim-lsp
 
-    augroup vim_lsp_vls
-      autocmd!
-      autocmd User lsp_setup call lsp#register_server(
-            \ {
-            \ 'name': 'vls',
-            \ 'cmd': {server_info->['vls', '--force-diagnostics']},
-            \ 'whitelist': ['verilog'],
-            \ })
-    augroup END
+```vim
+augroup vim_lsp_vls
+    autocmd!
+    autocmd User lsp_setup call lsp#register_server(
+        \ {
+        \ 'name': 'vls',
+        \ 'cmd': {server_info->['vls', '--force-diagnostics']},
+        \ 'whitelist': ['verilog'],
+        \ })
+augroup END
+```
 
 ### vim-lsc
 
 https://github.com/natebosch/vim-lsc
 
-    let g:lsc_server_commands['verilog'] = 'vls --force-diagnostics'
-
+```vim
+let g:lsc_server_commands['verilog'] = 'vls --force-diagnostics'
+```
 
 ### nvim-lsp
 
 https://github.com/hekwall/nvim-lsp
 
-    lua require 'nvim_lsp'.vls.setup {}
+```lua
+lua require 'nvim_lsp'.vls.setup {}
+```
+
+### Emacs
+
+```lisp
+(use-package lsp-mode
+  :hook (verilog-mode . lsp)
+  :commands lsp)
+
+
+(use-package company-capf
+  :config (push 'company-capf company-backends))
+
+
+(use-package verilog-mode
+  :defer t
+  :config
+  (require 'lsp)
+  (lsp-register-client
+   (make-lsp-client :new-connection (lsp-stdio-connection '("vls"))
+   :major-modes '(verilog-mode)
+   :priority -1
+   ))
+  :hook (verilog-mode . (lambda()
+      (lsp)
+      (flycheck-mode t)
+      (add-to-list 'lsp-language-id-configuration '(verilog-mode . "verilog")))
+```
 
 ## Configuration
 
