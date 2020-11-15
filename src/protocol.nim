@@ -112,6 +112,7 @@ type
       detail*: string
       documentation*: LspMarkupContent
       kind*: LspCompletionKind
+      insert_text*: string
 
    LspSymbolKind* = enum
       LspSkFile = 1
@@ -240,6 +241,7 @@ proc new_lsp_diagnostic*(start, stop: LspPosition, severity: LspSeverity,
 proc new_lsp_completion_item*(label: string): LspCompletionItem =
    result.label = label
    result.kind = LspCkText
+   set_len(result.insert_text, 0)
    set_len(result.detail, 0)
    set_len(result.documentation.value, 0)
 
@@ -401,6 +403,8 @@ proc `%`*(o: LspCompletionItem): JsonNode =
       result["detail"] = %o.detail
    if len(o.documentation.value) > 0:
       result["documentation"] = %o.documentation
+   if len(o.insert_text) > 0:
+      result["insertText"] = %o.insert_text
 
 
 proc `$`*(kind: LspMessageKind): string =

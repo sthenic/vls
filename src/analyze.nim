@@ -157,7 +157,7 @@ proc check_syntax(n: PNode, locs: Locations, file: int32): seq[LspDiagnostic] =
          for i in countdown(high(inverted_macro_trace), 0):
             add(message, inverted_macro_trace[i])
 
-      elif n.loc.file > 1:
+      else:
          # The error node originates from an external file. We have to use the
          # file map to discern where to put the diagnostic message in the
          # current file. Starting at the file index n.loc.file, there should
@@ -688,7 +688,7 @@ proc add_declaration_information(unit: SourceUnit, item: var LspCompletionItem, 
    if not is_nil(comment):
       item.documentation.value = comment.s
 
-   if n.loc.file > 1:
+   if n.loc.file != unit.graph.root.loc.file:
       let filename = extract_filename(unit.graph.locations.file_maps[n.loc.file - 1].filename)
       add(item.documentation.value, "\n\n---\nFile: " & filename)
 
@@ -727,6 +727,26 @@ proc find_parameter_port_connection_completions(unit: SourceUnit, module_name, p
       return
 
 
+proc find_module_completions(unit: SourceUnit, prefix: string): seq[LspCompletionItem] =
+   log.debug("Looking up module completions for the prefix '$1'.", prefix)
+   for module in walk_modules(unit.graph, WalkDefined):
+      if starts_with(module.name, prefix):
+         var item = new_lsp_completion_item(module.name)
+         item.kind = LspCkModule
+         # FIXME: Add port summary to item.detail.
+         item.detail = "module " & module.name
+         # FIXME: Improve the inserted text.
+         item.insert_text = format("$1 $1_inst();", module.name)
+
+         let comment = find_first(module.n, NkComment)
+         item.documentation.kind = LspMkMarkdown
+         if not is_nil(comment):
+            item.documentation.value = comment.s
+
+         add(item.documentation.value, "\n\n---\nFile: " & extract_filename(module.filename))
+         add(result, item)
+
+
 proc find_completions*(unit: SourceUnit, line, col: int): seq[LspCompletionItem] =
    # TODO: We should perhaps add some fuzzy matching?
    # Before we do anything else, we check if the target location is pointing to
@@ -757,11 +777,14 @@ proc find_completions*(unit: SourceUnit, line, col: int): seq[LspCompletionItem]
                                              loc, context, added_length = 1)
    if not is_nil(identifier):
       let prefix = substr(identifier.identifier.s, 0, loc.col - identifier.loc.col - 1)
-      for (declaration, identifier) in find_all_declarations(context):
-         if starts_with(identifier.identifier.s, prefix):
-            var item = new_lsp_completion_item(identifier.identifier.s)
-            add_declaration_information(unit, item, declaration)
-            add(result, item)
+      if is_external_identifier(context):
+         return find_module_completions(unit, prefix)
+      else:
+         for (declaration, identifier) in find_all_declarations(context):
+            if starts_with(identifier.identifier.s, prefix):
+               var item = new_lsp_completion_item(identifier.identifier.s)
+               add_declaration_information(unit, item, declaration)
+               add(result, item)
    else:
       let cache = new_ident_cache()
       let tok = find_completable_token_at(unit, loc, cache)
