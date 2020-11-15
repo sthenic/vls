@@ -703,12 +703,10 @@ proc add_declaration_information(unit: SourceUnit, item: var LspCompletionItem, 
       item.kind = LspCkVariable
 
 
-proc find_port_connection_completions(unit: SourceUnit, module_name, prefix: string): seq[LspCompletionItem] =
-   # FIXME: Faster lookup by name instead of going through all the modules.
-   for module in walk_modules(unit.graph, WalkDefined):
-      if module.name != module_name:
-         continue
-
+proc find_port_connection_completions(unit: SourceUnit, module_name, prefix: string):
+      seq[LspCompletionItem] =
+   let module = get_module(unit.graph, module_name)
+   if not is_nil(module):
       for port, id in walk_ports(module.n):
          if starts_with(id.identifier.s, prefix):
             var item = new_lsp_completion_item(id.identifier.s & " ()")
@@ -717,12 +715,10 @@ proc find_port_connection_completions(unit: SourceUnit, module_name, prefix: str
       return
 
 
-proc find_parameter_port_connection_completions(unit: SourceUnit, module_name, prefix: string): seq[LspCompletionItem] =
-   # FIXME: Faster lookup by name instead of going through all the modules.
-   for module in walk_modules(unit.graph, WalkDefined):
-      if module.name != module_name:
-         continue
-
+proc find_parameter_port_connection_completions(unit: SourceUnit, module_name, prefix: string):
+      seq[LspCompletionItem] =
+   let module = get_module(unit.graph, module_name)
+   if not is_nil(module):
       for declaration, id in walk_parameters(module.n):
          if starts_with(id.identifier.s, prefix):
             var item = new_lsp_completion_item(id.identifier.s & " ()")
