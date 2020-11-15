@@ -4,6 +4,8 @@ import json
 import uri
 import tables
 import vparse
+when defined(logdebug):
+   import times
 
 import ./log
 import ./protocol
@@ -250,6 +252,8 @@ proc handle_request(s: var LspServer, msg: LspMessage) =
          send(s, new_lsp_response(msg.id, RPC_SERVER_NOT_INITIALIZED, "", nil))
       return
 
+   when defined(logdebug):
+      let t_start = cpu_time()
    case msg.m
    of "shutdown":
       shutdown(s, msg)
@@ -275,6 +279,9 @@ proc handle_request(s: var LspServer, msg: LspMessage) =
    else:
       let str = format("Unsupported method '$1'.", msg.m)
       send(s, new_lsp_response(msg.id, RPC_INVALID_REQUEST, str, nil))
+   when defined(logdebug):
+      let t_diff_ms = (cpu_time() - t_start) * 1000
+      log.debug("Request '$1' handled in $2 ms.", msg.m, format_float(t_diff_ms, ffDecimal, 1))
 
 
 proc initialized(s: LspServer) =
