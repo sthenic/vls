@@ -3,6 +3,8 @@ import streams
 import os
 import vparse
 import vlint
+when defined(logdebug):
+   import times
 
 import ./protocol
 import ./source_unit
@@ -20,10 +22,6 @@ type
       module: Token
       cursor: Token
       is_parameter: bool
-
-
-const
-   VERILOG_EXTENSIONS = [".v"]
 
 
 proc new_analyze_error(msg: string, args: varargs[string, `$`]): ref AnalyzeError =
@@ -66,38 +64,23 @@ template run_local_parser(unit: SourceUnit, cache: IdentifierCache, parser, body
    close(ss)
 
 
-iterator walk_verilog_files(dir: string): string {.inline.} =
-   for kind, path in walk_dir(dir):
-      let (_, _, ext) = split_file(path)
-      if kind == pcFile and ext in VERILOG_EXTENSIONS:
-         yield path
-
-
-iterator walk_module_declarations(module_cache: ModuleCache, locations: Locations, filename: string):
-      PNode {.inline.} =
-   # Module declarations cannot be nested and must occur on the outer level in
-   # the source text,
-   let fs = new_file_stream(filename)
-   if not is_nil(fs):
-      let cache = new_ident_cache()
-      let graph = new_graph(cache, module_cache, locations)
-      log.debug("Parsing file '$1'.", filename)
-      let configuration = get_configuration(filename)
-      let root = parse(graph, fs, filename, configuration.include_paths, configuration.defines)
-      close(fs)
-      if root.kind == NkSourceText:
-         for s in root.sons:
-            if s.kind == NkModuleDecl:
-               yield s
-
-
-iterator walk_module_declarations(include_paths: seq[string]): tuple[filename: string, n: PNode] {.inline.} =
-   # FIXME: Probably extend the servers graph and location objects?
-   let module_cache = new_module_cache()
-   let locations = new_locations()
-   for dir in include_paths:
-      for filename in walk_verilog_files(dir):
-         for module in walk_module_declarations(module_cache, locations, filename):
+iterator walk_module_declarations(unit: SourceUnit): tuple[filename: string, n: PNode] {.inline.} =
+   for filename in walk_verilog_files(unit.configuration.include_paths):
+      let fs = new_file_stream(filename)
+      if not is_nil(fs):
+         let cache = new_ident_cache()
+         let graph = new_graph(cache, unit.graph.module_cache, unit.graph.locations)
+         when defined(logdebug):
+            let t_start = cpu_time()
+         let root = parse(graph, fs, filename, unit.configuration.include_paths,
+                           unit.configuration.defines)
+         when defined(logdebug):
+            let t_diff_ms = (cpu_time() - t_start) * 1000
+            log.debug("Parsed '$1' in $2 ms.", filename, format_float(t_diff_ms, ffDecimal, 1))
+         close(fs)
+         # Module declarations cannot be nested and must occur on the outer level in
+         # the source text,
+         for module in walk_sons(root, NkModuleDecl):
             yield (filename, module)
 
 
@@ -386,7 +369,7 @@ proc find_declaration*(unit: SourceUnit, line, col: int): LspLocation =
 
 proc find_module_references*(unit: SourceUnit, identifier: PIdentifier,
                              include_declaration: bool): seq[LspLocation] =
-   for filename, module in walk_module_declarations(unit.configuration.include_paths):
+   for filename, module in walk_module_declarations(unit):
       let module_name = find_first(module, NkIdentifier)
       if include_declaration and not is_nil(module_name) and module_name.identifier.s == identifier.s:
          # Recursive declarations are not expected. So if we find the target
@@ -814,7 +797,7 @@ proc add(x: var seq[LspTextDocumentEdit], n: PNode, filename, s: string) =
 
 
 proc rename_external_module(unit: SourceUnit, identifier: PIdentifier, new_name: string): seq[LspTextDocumentEdit] =
-   for (filename, module) in walk_module_declarations(unit.configuration.include_paths):
+   for (filename, module) in walk_module_declarations(unit):
       let module_name = find_first(module, NkIdentifier)
       if not is_nil(module_name) and module_name.identifier.s == identifier.s:
          # We've encountered the definition of the module itself. Replace the
@@ -832,7 +815,7 @@ proc rename_external_module(unit: SourceUnit, identifier: PIdentifier, new_name:
 
 proc rename_external_module_port(unit: SourceUnit, module_id, port_id: PIdentifier,
                                  new_name: string): seq[LspTextDocumentEdit] =
-   for (filename, module) in walk_module_declarations(unit.configuration.include_paths):
+   for (filename, module) in walk_module_declarations(unit):
       let module_name = find_first(module, NkIdentifier)
       if not is_nil(module_name) and module_name.identifier.s == module_id.s:
          # FIXME: If the port identifier only represents the external name for a
@@ -857,7 +840,7 @@ proc rename_external_module_port(unit: SourceUnit, module_id, port_id: PIdentifi
 
 proc rename_external_module_parameter_port(unit: SourceUnit, module_id, parameter_id: PIdentifier,
                                            new_name: string): seq[LspTextDocumentEdit] =
-   for (filename, module) in walk_module_declarations(unit.configuration.include_paths):
+   for (filename, module) in walk_module_declarations(unit):
       let module_name = find_first(module, NkIdentifier)
       if not is_nil(module_name) and module_name.identifier.s == module_id.s:
          for reference in find_references(module, parameter_id):
