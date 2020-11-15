@@ -41,7 +41,7 @@ jobs:
       with:
         nim-version: 'stable'
 
-    - name: Install vparse and vltoml
+    - name: Install vparse, vltoml and vlint
       run: |
         pushd parsetoml
         nimble install -y
