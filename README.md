@@ -106,7 +106,7 @@ https://github.com/hekwall/nvim-lsp
 lua require 'nvim_lsp'.vls.setup {}
 ```
 
-### Emacs
+### Emacs ([lsp-mode](https://github.com/emacs-lsp/lsp-mode))
 
 ```lisp
 (use-package lsp-mode
