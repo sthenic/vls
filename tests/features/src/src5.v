@@ -31,7 +31,7 @@
 
     initial begin : thing
         fork : foo
-            tmp = 1'b0;
+            tmp = 1'b0 + $rtoi(3.14);
         join
         $display(FOOBAR, "Show this to the user!");
     end
