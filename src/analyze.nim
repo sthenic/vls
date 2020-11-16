@@ -709,7 +709,11 @@ proc find_port_connection_completions(unit: SourceUnit, module_name, prefix: str
    if not is_nil(module):
       for port, id in walk_ports(module.n):
          if starts_with(id.identifier.s, prefix):
-            var item = new_lsp_completion_item(id.identifier.s & " ()")
+            var item = new_lsp_completion_item(id.identifier.s)
+            if unit.configuration.space_in_named_connection:
+                add(item.label, " ()")
+            else:
+                add(item.label, "()")
             add_declaration_information(unit, item, port)
             add(result, item)
       return
@@ -721,10 +725,58 @@ proc find_parameter_port_connection_completions(unit: SourceUnit, module_name, p
    if not is_nil(module):
       for declaration, id in walk_parameters(module.n):
          if starts_with(id.identifier.s, prefix):
-            var item = new_lsp_completion_item(id.identifier.s & " ()")
+            var item = new_lsp_completion_item(id.identifier.s)
+            if unit.configuration.space_in_named_connection:
+                add(item.label, " ()")
+            else:
+                add(item.label, "()")
             add_declaration_information(unit, item, declaration)
             add(result, item)
       return
+
+
+proc construct_module_instantiation(unit: SourceUnit, module: PModule): string =
+   ## Construct the text inserted into a source file when a module completion is
+   ## selected.
+   template indent: string =
+      if unit.configuration.tabs_to_spaces:
+         repeat(' ', unit.configuration.indent_size)
+      else:
+         "\t"
+
+   template named_connection(s: string): string =
+      if unit.configuration.space_in_named_connection:
+         format(".$1 ()", s)
+      else:
+         format(".$1()", s)
+
+   result = module.name
+
+   # Add named parameter assignments.
+   var i = 0
+   for _, identifier in walk_parameters(module.n):
+      if i == 0:
+         add(result, " #(")
+      if i > 0:
+         add(result, ",")
+      add(result, "\n" & indent & named_connection(identifier.identifier.s))
+      inc(i)
+
+   if i > 0:
+      add(result, "\n)")
+      i = 0
+
+   # Add named port connections.
+   add(result, " " & module.name & "_inst (")
+   for _, identifier in walk_ports(module.n):
+      if i > 0:
+         add(result, ",")
+      add(result, "\n" & indent & named_connection(identifier.identifier.s))
+      inc(i)
+
+   if i > 0:
+      add(result, "\n")
+   add(result, ");")
 
 
 proc find_module_completions(unit: SourceUnit, prefix: string): seq[LspCompletionItem] =
@@ -735,8 +787,7 @@ proc find_module_completions(unit: SourceUnit, prefix: string): seq[LspCompletio
          item.kind = LspCkModule
          # FIXME: Add port summary to item.detail.
          item.detail = "module " & module.name
-         # FIXME: Improve the inserted text.
-         item.insert_text = format("$1 $1_inst();", module.name)
+         item.insert_text = construct_module_instantiation(unit, module)
 
          let comment = find_first(module.n, NkComment)
          item.documentation.kind = LspMkMarkdown

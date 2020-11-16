@@ -366,9 +366,9 @@ run_test("textDocument/completion: module port (1)",
          "character": 34
       }
    }),
-   new_lsp_response(364, 0, %*[
+   new_lsp_response(362, 0, %*[
       {
-         "label": "clk_i ()",
+         "label": "clk_i()",
          "detail": "(* another_attr = \"false\" *) input wire clk_i",
          "kind": int(LspCkInterface),
          "documentation": {
@@ -377,7 +377,7 @@ run_test("textDocument/completion: module port (1)",
          }
       },
       {
-         "label": "data_o ()",
+         "label": "data_o()",
          "detail": "output wire data_o",
          "kind": int(LspCkInterface),
          "documentation": {
@@ -399,9 +399,9 @@ run_test("textDocument/completion: module port (2)",
          "character": 10
       }
    }),
-   new_lsp_response(191, 0, %*[
+   new_lsp_response(190, 0, %*[
       {
-         "label": "data_o ()",
+         "label": "data_o()",
          "detail": "output wire data_o",
          "kind": int(LspCkInterface),
          "documentation": {
@@ -436,9 +436,9 @@ run_test("textDocument/completion: module port (3), internal declarations",
          "character": 9
       }
    }),
-   new_lsp_response(579, 0, %*[
+   new_lsp_response(575, 0, %*[
       {
-         "label": "clk_i ()",
+         "label": "clk_i()",
          "detail": ".clk_i(clk_local)",
          "kind": int(LspCkInterface),
          "documentation": {
@@ -447,7 +447,7 @@ run_test("textDocument/completion: module port (3), internal declarations",
          }
       },
       {
-         "label": "split_port_i ()",
+         "label": "split_port_i()",
          "detail": ".split_port_i({first_half, second_half})",
          "kind": int(LspCkInterface),
          "documentation": {
@@ -456,7 +456,7 @@ run_test("textDocument/completion: module port (3), internal declarations",
          }
       },
       {
-         "label": "data_o ()",
+         "label": "data_o()",
          "detail": "output wire data_o",
          "kind": int(LspCkInterface),
          "documentation": {
@@ -465,7 +465,7 @@ run_test("textDocument/completion: module port (3), internal declarations",
          }
       },
       {
-         "label": "valid_o ()",
+         "label": "valid_o()",
          "detail": "output wire valid_o",
          "kind": int(LspCkInterface),
          "documentation": {
@@ -487,9 +487,9 @@ run_test("textDocument/completion: module port (4), internal declarations",
          "character": 16
       }
    }),
-   new_lsp_response(166, 0, %*[
+   new_lsp_response(165, 0, %*[
       {
-         "label": "valid_o ()",
+         "label": "valid_o()",
          "detail": "output wire valid_o",
          "kind": int(LspCkInterface),
          "documentation": {
@@ -511,9 +511,9 @@ run_test("textDocument/completion: module parameter port (1)",
          "character": 9
       }
    }),
-   new_lsp_response(313, 0, %*[
+   new_lsp_response(311, 0, %*[
       {
-         "label": "FOO ()",
+         "label": "FOO()",
          "detail": "parameter FOO = 0",
          "kind": int(LspCkConstant),
          "documentation": {
@@ -522,7 +522,7 @@ run_test("textDocument/completion: module parameter port (1)",
          }
       },
       {
-         "label": "BaR ()",
+         "label": "BaR()",
          "detail": "parameter BaR = \"baz\"",
          "kind": int(LspCkConstant),
          "documentation": {
@@ -544,9 +544,9 @@ run_test("textDocument/completion: module parameter port (2)",
          "character": 23
       }
    }),
-   new_lsp_response(167, 0, %*[
+   new_lsp_response(166, 0, %*[
       {
-         "label": "BaR ()",
+         "label": "BaR()",
          "detail": "parameter BaR = \"baz\"",
          "kind": int(LspCkConstant),
          "documentation": {
@@ -630,6 +630,53 @@ run_test("textDocument/completion: ignore declarations in local scope",
             "kind": "markdown",
             "value": "This is the docstring for `a_common_wire`."
          }
+      }
+   ])
+)
+
+# Open the file "./src/src7.v".
+const src7_path = "./src/src7.v"
+const src7_text = static_read(src7_path)
+send(ifs, new_lsp_notification("textDocument/didOpen", %*{
+   "textDocument": {
+      "uri": "file://" & expand_filename(src7_path),
+      "languageId": "verilog",
+      "version": 0,
+      "text": src7_text
+   }
+}))
+discard recv(ofs)
+
+
+run_test("textDocument/completion: module completion",
+   new_lsp_request(0, "textDocument/completion", %*{
+      "textDocument": {
+         "uri": "file://" & expand_filename(src7_path),
+      },
+      "position": {
+         "line": 21,
+         "character": 11
+      }
+   }),
+   new_lsp_response(304, 0, %*[
+      {
+         "label": "mymodule",
+         "detail": "module mymodule",
+         "kind": int(LspCkModule),
+         "documentation": {
+            "kind": "markdown",
+            "value": "\n\n---\nFile: src2.v"
+         },
+         "insertText": """
+mymodule #(
+    .WIDTH(),
+    .SOMETHING()
+) mymodule_inst (
+    .clk_i(),
+    .rst_i(),
+    .data_i(),
+    .data_o()
+);"""
       }
    ])
 )

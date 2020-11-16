@@ -14,6 +14,8 @@ All notable changes to this project will be documented in this file.
 
 - Enable hover requests for module instantiations.
 
+- Module completions, inserting an instantiation of the selected module.
+
 ## Changed
 
 - Require Nim v1.4.0.
