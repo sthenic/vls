@@ -52,7 +52,7 @@ run_test("src2.v",
          "text": src2_text
       }
    }),
-   new_lsp_notification(985 + src2_path_len, "textDocument/publishDiagnostics", %*{
+   new_lsp_notification(1125 + src2_path_len, "textDocument/publishDiagnostics", %*{
       "uri": "file://" & expand_filename(src2_path),
       "diagnostics": [
          {
@@ -85,6 +85,14 @@ run_test("src2.v",
             "range": {
                "start": {"line": 87, "character": 15},
                "end" : {"line": 87, "character": 15}
+            },
+         },
+         {
+            "message": "84:5: Missing parameter 'SOMETHING'.",
+            "severity": int(WARNING),
+            "range": {
+               "start": {"line": 83, "character": 4},
+               "end" : {"line": 83, "character": 4}
             },
          },
          {
@@ -176,7 +184,7 @@ run_test("src5.v",
          "text": src5_text
       }
    }),
-   new_lsp_notification(1221 + src5_path_len, "textDocument/publishDiagnostics", %*{
+   new_lsp_notification(1647 + src5_path_len, "textDocument/publishDiagnostics", %*{
       "uri": "file://" & expand_filename(src5_path),
       "diagnostics": [
          {
@@ -193,6 +201,22 @@ run_test("src5.v",
             "range": {
                "start": {"line": 35, "character": 17},
                "end" : {"line": 35, "character": 17}
+            },
+         },
+         {
+            "message": "16:5: Missing parameter 'MODULE4_PARAMETER'.",
+            "severity": int(WARNING),
+            "range": {
+               "start": {"line": 15, "character": 4},
+               "end" : {"line": 15, "character": 4}
+            },
+         },
+         {
+            "message": "27:5: Missing parameter 'WIDTH'.",
+            "severity": int(WARNING),
+            "range": {
+               "start": {"line": 26, "character": 4},
+               "end" : {"line": 26, "character": 4}
             },
          },
          {
@@ -220,27 +244,35 @@ run_test("src5.v",
             },
          },
          {
-            "message": "44:13: Missing port 'clk_i'.",
+            "message": "44:16: Unassigned parameter 'WIDTH'.",
             "severity": int(ERROR),
             "range": {
-               "start": {"line": 43, "character": 12},
-               "end" : {"line": 43, "character": 12}
+               "start": {"line": 43, "character": 15},
+               "end" : {"line": 43, "character": 15}
             },
          },
          {
-            "message": "44:13: Missing port 'data_i'.",
+            "message": "44:25: Missing port 'clk_i'.",
             "severity": int(ERROR),
             "range": {
-               "start": {"line": 43, "character": 12},
-               "end" : {"line": 43, "character": 12}
+               "start": {"line": 43, "character": 24},
+               "end" : {"line": 43, "character": 24}
             },
          },
          {
-            "message": "44:13: Missing port 'data_o'.",
+            "message": "44:25: Missing port 'data_i'.",
             "severity": int(ERROR),
             "range": {
-               "start": {"line": 43, "character": 12},
-               "end" : {"line": 43, "character": 12}
+               "start": {"line": 43, "character": 24},
+               "end" : {"line": 43, "character": 24}
+            },
+         },
+         {
+            "message": "44:25: Missing port 'data_o'.",
+            "severity": int(ERROR),
+            "range": {
+               "start": {"line": 43, "character": 24},
+               "end" : {"line": 43, "character": 24}
             },
          }
       ]

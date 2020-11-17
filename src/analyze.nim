@@ -266,15 +266,25 @@ proc find_port_connection_errors*(unit: SourceUnit):
 
    for error in find_connection_errors(unit.graph):
       case error.kind
-      of CkMissing:
+      of CkMissingPort:
          if unit.configuration.diagnostics.missing_ports:
             add(result, construct_diagnostic(error.instance, ERROR, "Missing port '$1'.",
                                              error.identifier.s))
-      of CkUnconnected:
+      of CkUnconnectedPort:
          if unit.configuration.diagnostics.unconnected_ports:
             let port = find_first(error.meta, NkIdentifier)
             add(result, construct_diagnostic(port, ERROR, "Unconnected input port '$1'.",
                                              port.identifier.s))
+      of CkMissingParameter:
+         if unit.configuration.diagnostics.missing_parameters:
+            log.debug(pretty(error.instance))
+            add(result, construct_diagnostic(error.instance, WARNING, "Missing parameter '$1'.",
+                                             error.identifier.s))
+      of CkUnassignedParameter:
+         if unit.configuration.diagnostics.unassigned_parameters:
+            let parameter = find_first(error.meta, NkIdentifier)
+            add(result, construct_diagnostic(parameter, ERROR, "Unassigned parameter '$1'.",
+                                             parameter.identifier.s))
 
 
 proc is_external_identifier(context: AstContext): bool =

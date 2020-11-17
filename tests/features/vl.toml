@@ -5,3 +5,6 @@ include_paths = [
 
 [vls]
 max_nof_diagnostics = 5
+
+[diagnostics]
+missing_parameters = true

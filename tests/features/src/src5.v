@@ -41,7 +41,7 @@
         localparam BAZ = 1'b0;
     end
 
-    module7 module7_inst (
+    module7 #(.WIDTH()) module7_inst (
     );
 
     /* FIXME: Rename operation in the port list renames this symbol too: */
