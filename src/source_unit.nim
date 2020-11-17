@@ -46,6 +46,7 @@ proc update*(unit: var SourceUnit, module_cache: ModuleCache, locations: Locatio
    when defined(logdebug):
       let t_diff_ms = (cpu_time() - t_start) * 1000
       log.debug("Parsed '$1' in $2 ms.", unit.filename, format_float(t_diff_ms, ffDecimal, 1))
+      log.debug("The module cache contains $1 objects.", module_cache.count)
    close(ss)
 
 

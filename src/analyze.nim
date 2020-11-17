@@ -277,7 +277,6 @@ proc find_port_connection_errors*(unit: SourceUnit):
                                              port.identifier.s))
       of CkMissingParameter:
          if unit.configuration.diagnostics.missing_parameters:
-            log.debug(pretty(error.instance))
             add(result, construct_diagnostic(error.instance, WARNING, "Missing parameter '$1'.",
                                              error.identifier.s))
       of CkUnassignedParameter:
