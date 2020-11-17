@@ -154,66 +154,9 @@ the order of precedence):
 
 In short, the configuration file can have two different names: `.vl.toml` or
 `vl.toml` and can reside immediately on the ascended path, or inside a directory
-named: `.vl/` or `vl/`.
-
-### Example
-
-```toml
-[verilog]
-include_paths = [
-    "/path/to/some/directory",
-    "/path/to/another/directory",
-    "../a/relative/path"
-]
-
-defines = [
-    "FOO",
-    "WIDTH=8",
-    "ONES(x) = {(x){1'b1}}"
-]
-
-[vls]
-max_nof_diagnostics = 10
-
-[diagnostics]
-undeclared_identifiers = true
-unconnected_ports = true
-missing_ports = true
-```
-
-### Top-level tables
-
-- The `verilog` table collects language-specific settings.
-- The `vls` table collects settings specific to the language server.
-- The `diagnostics` table collects settings specific to diagnostic messages.
-
-### `verilog` table
-
-- `include_paths` is an array of strings expressing the include paths where
-  `vls` should look for externally defined modules and files targeted by ``
-  `include`` directives.
-- `defines` is an array of strings expressing the defines that should be passed
-  to `vls`. The rules follow that of the `-D` option for
-  [`vparse`](https://github.com/sthenic/vparse). It's possible to specify a
-  macro by using the character `=` to separate the macro name from its body.
-
-### `vls` table
-
-- `max_nof_diagnostics` specifies the maximum number of diagnostic messages
-  passed in a `textDocument/publishDiagnostics` notification.
-
-### `diagnostics` table
-
-- `undeclared_identifiers` specifies whether or not to publish diagnostic
-  messages for undeclared identifiers. The default value is `true`.
-- `unconnected_ports` specifies whether or not to publish diagnostic messages if
-  a module instance has unconnected input ports. The default value is `true`.
-- `missing_ports` specifies whether or not to publish diagnostic messages if a
-  module instance doesn't list all the available ports. The default value is
-  `true`.
-
-In the future, configuration may also be handled through the LSP [workspace configuration](https://microsoft.github.io/language-server-protocol/specifications/specification-current/#workspace_configuration) interface.
-
+named: `.vl/` or `vl/`. Refer to the README of the
+[`vltoml`](https://github.com/sthenic/vltoml) library for information about the
+structure and contents of the configuration file.
 
 ## Building
 
