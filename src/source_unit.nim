@@ -17,6 +17,26 @@ type
       text*: string
 
 
+proc cache_workspace(unit: SourceUnit) =
+   # TODO: Think about doing this in another thread and updating/merging the
+   #       module cache once the operation is complete.
+   log.debug("Caching workspace.")
+   when defined(logdebug):
+      let t_start = cpu_time()
+   let cache = new_ident_cache()
+   let graph = new_graph(cache, unit.graph.module_cache, unit.graph.locations)
+   for filename in walk_verilog_files(unit.configuration.include_paths):
+      let fs = new_file_stream(filename)
+      if not is_nil(fs):
+         discard parse(graph, fs, filename, unit.configuration.include_paths,
+                       unit.configuration.defines, cache_submodules = false)
+         close(fs)
+   when defined(logdebug):
+      let t_diff_ms = (cpu_time() - t_start) * 1000
+      log.debug("Cached workspace in $1 ms.", format_float(t_diff_ms, ffDecimal, 1))
+      log.debug("The module cache contains $1 objects.", unit.graph.module_cache.count)
+
+
 proc get_configuration*(source_filename: string): Configuration =
    # Search for a configuration file starting at the ``source_filename`` and
    # walking up to the root directory. If we find a file but fail to parse it,

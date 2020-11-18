@@ -65,15 +65,15 @@ template run_local_parser(unit: SourceUnit, cache: IdentifierCache, parser, body
 
 
 iterator walk_module_declarations(unit: SourceUnit): tuple[filename: string, n: PNode] {.inline.} =
+   let cache = new_ident_cache()
+   let graph = new_graph(cache, unit.graph.module_cache, unit.graph.locations)
    for filename in walk_verilog_files(unit.configuration.include_paths):
       let fs = new_file_stream(filename)
       if not is_nil(fs):
-         let cache = new_ident_cache()
-         let graph = new_graph(cache, unit.graph.module_cache, unit.graph.locations)
          when defined(logdebug):
             let t_start = cpu_time()
          let root = parse(graph, fs, filename, unit.configuration.include_paths,
-                           unit.configuration.defines)
+                          unit.configuration.defines)
          when defined(logdebug):
             let t_diff_ms = (cpu_time() - t_start) * 1000
             log.debug("Parsed '$1' in $2 ms.", filename, format_float(t_diff_ms, ffDecimal, 1))
