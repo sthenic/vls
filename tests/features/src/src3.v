@@ -61,4 +61,9 @@ module module3 #(
     wire some_wire = `FOO;
     wire another_wire = `FOO;
 
+`ifndef VLS
+    /* The test for diagnostic messages covers this case. */
+    wire hidden_from_vls = an_undeclared_wire;
+`endif
+
 endmodule

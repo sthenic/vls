@@ -8,13 +8,25 @@ All notable changes to this project will be documented in this file.
 
 - The diagnostic messages published for a source file now include:
 
-  - undeclared identifiers (disable with `diagnostics.undeclared_identifiers = false`),
-  - unconnected input ports of a module instance (disable with `diagnostics.unconnected_ports = false`); and
-  - ports missing from a module instance (disable with `diagnostics.missing_ports = false`).
+  - undeclared identifiers (disable with `diagnostics.undeclared_identifiers =
+    false`),
+  - unconnected input ports of a module instance (disable with
+    `diagnostics.unconnected_ports = false`),
+  - ports missing from a module instance (disable with
+    `diagnostics.missing_ports = false`),
+  - parameters missing from a module instance (enable with
+    `diagnostics.missing_parameters = true`); and
+  - unassigned parameters, e.g. `.WIDTH()` (disable with
+    `diagnostics.unassigned_parameters = false`).
 
 - Enable hover requests for module instantiations.
 
 - Module completions, inserting an instantiation of the selected module.
+
+- The define `VLS` is always present when the language server processes a file.
+  Add code that should only be seen by the language server by using `` `ifdef
+  VLS ... `endif ``. Hide code from the the language server by using `` `ifndef
+  VLS ... `endif``.
 
 ## Changed
 
