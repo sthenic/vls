@@ -2,6 +2,7 @@ import streams
 import vltoml
 import vparse
 import os
+import tables
 when defined(logdebug):
    import times
    import strutils
@@ -27,10 +28,15 @@ proc cache_workspace(unit: SourceUnit) =
    let graph = new_graph(cache, unit.graph.module_cache, unit.graph.locations)
    for filename in walk_verilog_files(unit.configuration.include_paths):
       let fs = new_file_stream(filename)
-      if not is_nil(fs):
+      if is_nil(fs):
+         continue
+      elif (
+         has_key(unit.graph.module_cache.checksums, filename) and
+         compute_md5(fs) != unit.graph.module_cache.checksums[filename]
+      ):
          discard parse(graph, fs, filename, unit.configuration.include_paths,
                        unit.configuration.defines, cache_submodules = false)
-         close(fs)
+      close(fs)
    when defined(logdebug):
       let t_diff_ms = (cpu_time() - t_start) * 1000
       log.debug("Cached workspace in $1 ms.", format_float(t_diff_ms, ffDecimal, 1))
@@ -93,6 +99,7 @@ proc open*(unit: var SourceUnit, module_cache: ModuleCache, locations: Locations
    if parent_dir notin unit.configuration.include_paths:
       add(unit.configuration.include_paths, parent_dir)
    update(unit, module_cache, locations, text, cache_submodules = true)
+   cache_workspace(unit)
 
 
 proc close*(unit: var SourceUnit) =
