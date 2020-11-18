@@ -30,6 +30,8 @@ All notable changes to this project will be documented in this file.
 - Fix `textDocument/references` not including identifiers from the port
   reference (in the list of ports) when targeting the port identifier from
   within the module body.
+- Fix not showing named port and parameter completion suggestions when the dot
+  was immediately followed by e.g. a left parenthesis `)`.
 
 ## [v0.2.2] - 2020-08-31
 

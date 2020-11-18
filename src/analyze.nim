@@ -550,7 +550,7 @@ proc find_port_connection(p: var LocalParser, loc: Location): Token =
          if p.tok.kind == TkSymbol and in_bounds(loc, p.tok.loc, len(p.tok.identifier.s) + 1):
             result = p.tok
             return
-         elif p.tok.loc > loc:
+         elif p.tok.loc >= loc:
             result.kind = TkDot
             return
       elif p.tok.loc >= loc:

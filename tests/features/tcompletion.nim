@@ -682,6 +682,39 @@ mymodule #(
 )
 
 
+run_test("textDocument/completion: port completion, dot followed by ')'",
+   new_lsp_request(0, "textDocument/completion", %*{
+      "textDocument": {
+         "uri": "file://" & expand_filename(src7_path),
+      },
+      "position": {
+         "line": 21,
+         "character": 16
+      }
+   }),
+   new_lsp_response(317, 0, %*[
+      {
+         "label": "WIDTH()",
+         "detail": "parameter integer WIDTH = 0",
+         "kind": int(LspCkConstant),
+         "documentation": {
+            "kind": "markdown",
+            "value": "\n\n---\nFile: src2.v"
+         }
+      },
+      {
+         "label": "SOMETHING()",
+         "detail": "parameter integer SOMETHING = 0",
+         "kind": int(LspCkConstant),
+         "documentation": {
+            "kind": "markdown",
+            "value": "\n\n---\nFile: src2.v"
+         }
+      }
+   ])
+)
+
+
 # Shut down the server.
 shutdown(ifs, ofs)
 

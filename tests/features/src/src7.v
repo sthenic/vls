@@ -19,6 +19,6 @@ module module7 #(
     output wire [WIDTH-1:0] data_o
 );
 
-    mymodule mymodule_inst ();
+    mymodule #(.)
 
 endmodule
