@@ -21,9 +21,10 @@ initialize(ifs, ofs)
 # Open the file "./src/src3.v".
 const src3_path = "./src/src3.v"
 const src3_text = static_read(src3_path)
+let src3_uri = construct_uri(expand_filename(src3_path))
 send(ifs, new_lsp_notification("textDocument/didOpen", %*{
    "textDocument": {
-      "uri": "file://" & expand_filename(src3_path),
+      "uri": src3_uri,
       "languageId": "verilog",
       "version": 0,
       "text": src3_text
@@ -56,7 +57,7 @@ Test suite: hover
 run_test("textDocument/hover: port identifier",
    new_lsp_request(15, "textDocument/hover", %*{
       "textDocument": {
-         "uri": "file://" & expand_filename(src3_path),
+         "uri": src3_uri,
       },
       "position": {
          "line": 17,
@@ -82,7 +83,7 @@ input wire clk_i
 run_test("textDocument/hover: reg identifier",
    new_lsp_request(15, "textDocument/hover", %*{
       "textDocument": {
-         "uri": "file://" & expand_filename(src3_path),
+         "uri": src3_uri,
       },
       "position": {
          "line": 19,
@@ -108,7 +109,7 @@ reg [WIDTH_FROM_HEADER - 1:0] wider_reg = 0
 run_test("textDocument/hover: identifier in macro",
    new_lsp_request(15, "textDocument/hover", %*{
       "textDocument": {
-         "uri": "file://" & expand_filename(src3_path),
+         "uri": src3_uri,
       },
       "position": {
          "line": 37,
@@ -136,7 +137,7 @@ This is the docstring for `a_common_wire`."""
 run_test("textDocument/hover: expanded macro in declaration",
    new_lsp_request(15, "textDocument/hover", %*{
       "textDocument": {
-         "uri": "file://" & expand_filename(src3_path),
+         "uri": src3_uri,
       },
       "position": {
          "line": 51,
@@ -162,7 +163,7 @@ wire baz = (my_reg & one) || (wider_reg[0] & wider_reg[1])
 run_test("textDocument/hover: macro at expansion location",
    new_lsp_request(15, "textDocument/hover", %*{
       "textDocument": {
-         "uri": "file://" & expand_filename(src3_path),
+         "uri": src3_uri,
       },
       "position": {
          "line": 45,
@@ -185,7 +186,7 @@ run_test("textDocument/hover: macro at expansion location",
 run_test("textDocument/hover: port of external module (1)",
    new_lsp_request(15, "textDocument/hover", %*{
       "textDocument": {
-         "uri": "file://" & expand_filename(src3_path),
+         "uri": src3_uri,
       },
       "position": {
          "line": 25,
@@ -213,7 +214,7 @@ The 1-bit data output port."""
 run_test("textDocument/hover: port of external module (2)",
    new_lsp_request(15, "textDocument/hover", %*{
       "textDocument": {
-         "uri": "file://" & expand_filename(src3_path),
+         "uri": src3_uri,
       },
       "position": {
          "line": 24,
@@ -241,9 +242,10 @@ The clock input."""
 # Open the file "./src/src4.v".
 const src4_path = "./src/src4.v"
 const src4_text = static_read(src4_path)
+let src4_uri = construct_uri(expand_filename(src4_path))
 send(ifs, new_lsp_notification("textDocument/didOpen", %*{
    "textDocument": {
-      "uri": "file://" & expand_filename(src4_path),
+      "uri": src4_uri,
       "languageId": "verilog",
       "version": 0,
       "text": src4_text
@@ -255,7 +257,7 @@ discard recv(ofs)
 run_test("textDocument/hover: parameter port of external module",
    new_lsp_request(15, "textDocument/hover", %*{
       "textDocument": {
-         "uri": "file://" & expand_filename(src4_path),
+         "uri": src4_uri,
       },
       "position": {
          "line": 14,
@@ -283,7 +285,7 @@ Docstring for `FOO`."""
 run_test("textDocument/hover: port of external module, list of ports (1)",
    new_lsp_request(15, "textDocument/hover", %*{
       "textDocument": {
-         "uri": "file://" & expand_filename(src4_path),
+         "uri": src4_uri,
       },
       "position": {
          "line": 16,
@@ -309,7 +311,7 @@ run_test("textDocument/hover: port of external module, list of ports (1)",
 run_test("textDocument/hover: port of external module, list of ports (2)",
    new_lsp_request(15, "textDocument/hover", %*{
       "textDocument": {
-         "uri": "file://" & expand_filename(src4_path),
+         "uri": src4_uri,
       },
       "position": {
          "line": 17,
@@ -335,9 +337,10 @@ output wire data_o
 # Open the file "./src/src2.v".
 const src2_path = "./src/src2.v"
 const src2_text = static_read(src2_path)
+let src2_uri = construct_uri(expand_filename(src2_path))
 send(ifs, new_lsp_notification("textDocument/didOpen", %*{
    "textDocument": {
-      "uri": "file://" & expand_filename(src2_path),
+      "uri": src2_uri,
       "languageId": "verilog",
       "version": 0,
       "text": src2_text
@@ -349,7 +352,7 @@ discard recv(ofs)
 run_test("textDocument/hover: function",
    new_lsp_request(15, "textDocument/hover", %*{
       "textDocument": {
-         "uri": "file://" & expand_filename(src2_path),
+         "uri": src2_uri,
       },
       "position": {
          "line": 50,
@@ -377,7 +380,7 @@ Docstring to function `add_one`."""
 run_test("textDocument/hover: task",
    new_lsp_request(15, "textDocument/hover", %*{
       "textDocument": {
-         "uri": "file://" & expand_filename(src2_path),
+         "uri": src2_uri,
       },
       "position": {
          "line": 44,
@@ -405,7 +408,7 @@ Docstring to `an_empty_task`."""
 run_test("textDocument/hover: top-level module declaration",
    new_lsp_request(15, "textDocument/hover", %*{
       "textDocument": {
-         "uri": "file://" & expand_filename(src3_path),
+         "uri": src3_uri,
       },
       "position": {
          "line": 0,
@@ -419,7 +422,7 @@ run_test("textDocument/hover: top-level module declaration",
 run_test("textDocument/hover: localparam",
    new_lsp_request(15, "textDocument/hover", %*{
       "textDocument": {
-         "uri": "file://" & expand_filename(src3_path),
+         "uri": src3_uri,
       },
       "position": {
          "line": 15,
@@ -447,7 +450,7 @@ Docstring for `WIDTH_FROM_HEADER`."""
 run_test("textDocument/hover: module instance",
    new_lsp_request(15, "textDocument/hover", %*{
       "textDocument": {
-         "uri": "file://" & expand_filename(src3_path),
+         "uri": src3_uri,
       },
       "position": {
          "line": 23,
@@ -461,9 +464,10 @@ run_test("textDocument/hover: module instance",
 # Open the file "./src/src5.v".
 const src5_path = "./src/src5.v"
 const src5_text = static_read(src5_path)
+let src5_uri = construct_uri(expand_filename(src5_path))
 send(ifs, new_lsp_notification("textDocument/didOpen", %*{
    "textDocument": {
-      "uri": "file://" & expand_filename(src5_path),
+      "uri": src5_uri,
       "languageId": "verilog",
       "version": 0,
       "text": src5_text
@@ -475,7 +479,7 @@ discard recv(ofs)
 run_test("textDocument/hover: port reference",
    new_lsp_request(15, "textDocument/hover", %*{
       "textDocument": {
-         "uri": "file://" & expand_filename(src5_path),
+         "uri": src5_uri,
       },
       "position": {
          "line": 3,
@@ -501,7 +505,7 @@ input wire clk_local
 run_test("textDocument/hover: concatenated port reference",
    new_lsp_request(15, "textDocument/hover", %*{
       "textDocument": {
-         "uri": "file://" & expand_filename(src5_path),
+         "uri": src5_uri,
       },
       "position": {
          "line": 3,
@@ -527,7 +531,7 @@ input wire [LATE_DECLARATION / 2 - 1:0] second_half
 run_test("textDocument/hover: concatenated port reference",
    new_lsp_request(15, "textDocument/hover", %*{
       "textDocument": {
-         "uri": "file://" & expand_filename(src5_path),
+         "uri": src5_uri,
       },
       "position": {
          "line": 26,

@@ -21,9 +21,10 @@ initialize(ifs, ofs)
 # Open the file "./src/src3.v".
 const src3_path = "./src/src3.v"
 const src3_text = static_read(src3_path)
+let src3_uri = construct_uri(expand_filename(src3_path))
 send(ifs, new_lsp_notification("textDocument/didOpen", %*{
    "textDocument": {
-      "uri": "file://" & expand_filename(src3_path),
+      "uri": src3_uri,
       "languageId": "verilog",
       "version": 0,
       "text": src3_text
@@ -82,7 +83,7 @@ Test suite: completion
 run_test("textDocument/completion: c(lk_i)",
    new_lsp_request(0, "textDocument/completion", %*{
       "textDocument": {
-         "uri": "file://" & expand_filename(src3_path),
+         "uri": src3_uri,
       },
       "position": {
          "line": 17,
@@ -102,7 +103,7 @@ run_test("textDocument/completion: c(lk_i)",
 run_test("textDocument/completion: WIDTH",
    new_lsp_request(0, "textDocument/completion", %*{
       "textDocument": {
-         "uri": "file://" & expand_filename(src3_path),
+         "uri": src3_uri,
       },
       "position": {
          "line": 15,
@@ -131,7 +132,7 @@ run_test("textDocument/completion: WIDTH",
 run_test("textDocument/completion: WIDTH_",
    new_lsp_request(0, "textDocument/completion", %*{
       "textDocument": {
-         "uri": "file://" & expand_filename(src3_path),
+         "uri": src3_uri,
       },
       "position": {
          "line": 15,
@@ -155,7 +156,7 @@ run_test("textDocument/completion: WIDTH_",
 run_test("textDocument/completion: macro argument (1)",
    new_lsp_request(0, "textDocument/completion", %*{
       "textDocument": {
-         "uri": "file://" & expand_filename(src3_path),
+         "uri": src3_uri,
       },
       "position": {
          "line": 18,
@@ -175,7 +176,7 @@ run_test("textDocument/completion: macro argument (1)",
 run_test("textDocument/completion: macro argument (2)",
    new_lsp_request(0, "textDocument/completion", %*{
       "textDocument": {
-         "uri": "file://" & expand_filename(src3_path),
+         "uri": src3_uri,
       },
       "position": {
          "line": 53,
@@ -195,7 +196,7 @@ run_test("textDocument/completion: macro argument (2)",
 run_test("textDocument/completion: macro argument (3)",
    new_lsp_request(0, "textDocument/completion", %*{
       "textDocument": {
-         "uri": "file://" & expand_filename(src3_path),
+         "uri": src3_uri,
       },
       "position": {
          "line": 52,
@@ -215,7 +216,7 @@ run_test("textDocument/completion: macro argument (3)",
 run_test("textDocument/completion: macro name (1)",
    new_lsp_request(0, "textDocument/completion", %*{
       "textDocument": {
-         "uri": "file://" & expand_filename(src3_path),
+         "uri": src3_uri,
       },
       "position": {
          "line": 18,
@@ -234,7 +235,7 @@ run_test("textDocument/completion: macro name (1)",
 run_test("textDocument/completion: macro name (2)",
    new_lsp_request(0, "textDocument/completion", %*{
       "textDocument": {
-         "uri": "file://" & expand_filename(src3_path),
+         "uri": src3_uri,
       },
       "position": {
          "line": 45,
@@ -253,7 +254,7 @@ run_test("textDocument/completion: macro name (2)",
 run_test_unordered_compare("textDocument/completion: include directive, browse path (1)",
    new_lsp_request(0, "textDocument/completion", %*{
       "textDocument": {
-         "uri": "file://" & expand_filename(src3_path),
+         "uri": src3_uri,
       },
       "position": {
          "line": 13,
@@ -304,7 +305,7 @@ run_test_unordered_compare("textDocument/completion: include directive, browse p
 run_test_unordered_compare("textDocument/completion: include directive, browse path (2)",
    new_lsp_request(0, "textDocument/completion", %*{
       "textDocument": {
-         "uri": "file://" & expand_filename(src3_path),
+         "uri": src3_uri,
       },
       "position": {
          "line": 13,
@@ -359,7 +360,7 @@ run_test_unordered_compare("textDocument/completion: include directive, browse p
 run_test("textDocument/completion: module port (1)",
    new_lsp_request(0, "textDocument/completion", %*{
       "textDocument": {
-         "uri": "file://" & expand_filename(src3_path),
+         "uri": src3_uri,
       },
       "position": {
          "line": 24,
@@ -392,7 +393,7 @@ run_test("textDocument/completion: module port (1)",
 run_test("textDocument/completion: module port (2)",
    new_lsp_request(0, "textDocument/completion", %*{
       "textDocument": {
-         "uri": "file://" & expand_filename(src3_path),
+         "uri": src3_uri,
       },
       "position": {
          "line": 25,
@@ -415,9 +416,10 @@ run_test("textDocument/completion: module port (2)",
 # Open the file "./src/src4.v".
 const src4_path = "./src/src4.v"
 const src4_text = static_read(src4_path)
+let src4_uri = construct_uri(expand_filename(src4_path))
 send(ifs, new_lsp_notification("textDocument/didOpen", %*{
    "textDocument": {
-      "uri": "file://" & expand_filename(src4_path),
+      "uri": src4_uri,
       "languageId": "verilog",
       "version": 0,
       "text": src4_text
@@ -429,7 +431,7 @@ discard recv(ofs)
 run_test("textDocument/completion: module port (3), internal declarations",
    new_lsp_request(0, "textDocument/completion", %*{
       "textDocument": {
-         "uri": "file://" & expand_filename(src4_path),
+         "uri": src4_uri,
       },
       "position": {
          "line": 16,
@@ -480,7 +482,7 @@ run_test("textDocument/completion: module port (3), internal declarations",
 run_test("textDocument/completion: module port (4), internal declarations",
    new_lsp_request(0, "textDocument/completion", %*{
       "textDocument": {
-         "uri": "file://" & expand_filename(src4_path),
+         "uri": src4_uri,
       },
       "position": {
          "line": 18,
@@ -504,7 +506,7 @@ run_test("textDocument/completion: module port (4), internal declarations",
 run_test("textDocument/completion: module parameter port (1)",
    new_lsp_request(0, "textDocument/completion", %*{
       "textDocument": {
-         "uri": "file://" & expand_filename(src4_path),
+         "uri": src4_uri,
       },
       "position": {
          "line": 14,
@@ -537,7 +539,7 @@ run_test("textDocument/completion: module parameter port (1)",
 run_test("textDocument/completion: module parameter port (2)",
    new_lsp_request(0, "textDocument/completion", %*{
       "textDocument": {
-         "uri": "file://" & expand_filename(src4_path),
+         "uri": src4_uri,
       },
       "position": {
          "line": 14,
@@ -561,7 +563,7 @@ run_test("textDocument/completion: module parameter port (2)",
 run_test("textDocument/completion: w/ documentation",
    new_lsp_request(0, "textDocument/completion", %*{
       "textDocument": {
-         "uri": "file://" & expand_filename(src3_path),
+         "uri": src3_uri,
       },
       "position": {
          "line": 37,
@@ -585,7 +587,7 @@ run_test("textDocument/completion: w/ documentation",
 run_test("textDocument/completion: local scope",
    new_lsp_request(0, "textDocument/completion", %*{
       "textDocument": {
-         "uri": "file://" & expand_filename(src3_path),
+         "uri": src3_uri,
       },
       "position": {
          "line": 41,
@@ -614,7 +616,7 @@ run_test("textDocument/completion: local scope",
 run_test("textDocument/completion: ignore declarations in local scope",
    new_lsp_request(0, "textDocument/completion", %*{
       "textDocument": {
-         "uri": "file://" & expand_filename(src3_path),
+         "uri": src3_uri,
       },
       "position": {
          "line": 61,
@@ -637,9 +639,10 @@ run_test("textDocument/completion: ignore declarations in local scope",
 # Open the file "./src/src7.v".
 const src7_path = "./src/src7.v"
 const src7_text = static_read(src7_path)
+let src7_uri = construct_uri(expand_filename(src7_path))
 send(ifs, new_lsp_notification("textDocument/didOpen", %*{
    "textDocument": {
-      "uri": "file://" & expand_filename(src7_path),
+      "uri": src7_uri,
       "languageId": "verilog",
       "version": 0,
       "text": src7_text
@@ -651,7 +654,7 @@ discard recv(ofs)
 run_test("textDocument/completion: module completion",
    new_lsp_request(0, "textDocument/completion", %*{
       "textDocument": {
-         "uri": "file://" & expand_filename(src7_path),
+         "uri": src7_uri,
       },
       "position": {
          "line": 21,
@@ -685,7 +688,7 @@ mymodule #(
 run_test("textDocument/completion: port completion, dot followed by ')'",
    new_lsp_request(0, "textDocument/completion", %*{
       "textDocument": {
-         "uri": "file://" & expand_filename(src7_path),
+         "uri": src7_uri,
       },
       "position": {
          "line": 21,

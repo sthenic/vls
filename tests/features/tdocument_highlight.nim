@@ -21,9 +21,10 @@ initialize(ifs, ofs)
 # Open the file "./src/src2.v".
 const src2_path = "./src/src2.v"
 const src2_text = static_read(src2_path)
+let src2_uri = construct_uri(expand_filename(src2_path))
 send(ifs, new_lsp_notification("textDocument/didOpen", %*{
    "textDocument": {
-      "uri": "file://" & expand_filename(src2_path),
+      "uri": src2_uri,
       "languageId": "verilog",
       "version": 0,
       "text": src2_text
@@ -56,7 +57,7 @@ Test suite: document highlight
 run_test("textDocument/documentHighlight: port (1)",
    new_lsp_request(0, "textDocument/documentHighlight", %*{
       "textDocument": {
-         "uri": "file://" & expand_filename(src2_path),
+         "uri": src2_uri,
       },
       "position": {
          "line": 20,
@@ -99,7 +100,7 @@ run_test("textDocument/documentHighlight: port (1)",
 run_test("textDocument/documentHighlight: port (2)",
    new_lsp_request(0, "textDocument/documentHighlight", %*{
       "textDocument": {
-         "uri": "file://" & expand_filename(src2_path),
+         "uri": src2_uri,
       },
       "position": {
          "line": 5,
@@ -134,9 +135,10 @@ run_test("textDocument/documentHighlight: port (2)",
 # Open the file "./src/src3.v".
 const src3_path = "./src/src3.v"
 const src3_text = static_read(src3_path)
+let src3_uri = construct_uri(expand_filename(src3_path))
 send(ifs, new_lsp_notification("textDocument/didOpen", %*{
    "textDocument": {
-      "uri": "file://" & expand_filename(src3_path),
+      "uri": src3_uri,
       "languageId": "verilog",
       "version": 0,
       "text": src3_text
@@ -148,7 +150,7 @@ discard recv(ofs)
 run_test("textDocument/documentHighlight: reg (also used as macro argument)",
    new_lsp_request(0, "textDocument/documentHighlight", %*{
       "textDocument": {
-         "uri": "file://" & expand_filename(src3_path),
+         "uri": src3_uri,
       },
       "position": {
          "line": 18,
@@ -205,7 +207,7 @@ run_test("textDocument/documentHighlight: reg (also used as macro argument)",
 run_test("textDocument/documentHighlight: reg (also used as an argument in a nested macro)",
    new_lsp_request(0, "textDocument/documentHighlight", %*{
       "textDocument": {
-         "uri": "file://" & expand_filename(src3_path),
+         "uri": src3_uri,
       },
       "position": {
          "line": 32,
@@ -255,7 +257,7 @@ run_test("textDocument/documentHighlight: reg (also used as an argument in a nes
 run_test("textDocument/documentHighlight: reg (also used as an argument in a nested macro)",
    new_lsp_request(0, "textDocument/documentHighlight", %*{
       "textDocument": {
-         "uri": "file://" & expand_filename(src3_path),
+         "uri": src3_uri,
       },
       "position": {
          "line": 59,
@@ -312,7 +314,7 @@ run_test("textDocument/documentHighlight: reg (also used as an argument in a nes
 run_test("textDocument/documentHighlight: macro usage (1)",
    new_lsp_request(0, "textDocument/documentHighlight", %*{
       "textDocument": {
-         "uri": "file://" & expand_filename(src3_path),
+         "uri": src3_uri,
       },
       "position": {
          "line": 60,
@@ -348,7 +350,7 @@ run_test("textDocument/documentHighlight: macro usage (1)",
 run_test("textDocument/documentHighlight: macro definition (1)",
    new_lsp_request(0, "textDocument/documentHighlight", %*{
       "textDocument": {
-         "uri": "file://" & expand_filename(src3_path),
+         "uri": src3_uri,
       },
       "position": {
          "line": 59,
@@ -384,7 +386,7 @@ run_test("textDocument/documentHighlight: macro definition (1)",
 run_test("textDocument/documentHighlight: macro usage (2)",
    new_lsp_request(0, "textDocument/documentHighlight", %*{
       "textDocument": {
-         "uri": "file://" & expand_filename(src3_path),
+         "uri": src3_uri,
       },
       "position": {
          "line": 52,
@@ -427,7 +429,7 @@ run_test("textDocument/documentHighlight: macro usage (2)",
 run_test("textDocument/documentHighlight: macro usage (3)",
    new_lsp_request(0, "textDocument/documentHighlight", %*{
       "textDocument": {
-         "uri": "file://" & expand_filename(src3_path),
+         "uri": src3_uri,
       },
       "position": {
          "line": 57,
@@ -456,7 +458,7 @@ run_test("textDocument/documentHighlight: macro usage (3)",
 run_test("textDocument/documentHighlight: integer in local scope (w/ declaration)",
    new_lsp_request(0, "textDocument/documentHighlight", %*{
       "textDocument": {
-         "uri": "file://" & expand_filename(src3_path),
+         "uri": src3_uri,
       },
       "position": {
          "line": 42,
@@ -506,7 +508,7 @@ run_test("textDocument/documentHighlight: integer in local scope (w/ declaration
 run_test("textDocument/documentHighlight: undeclared)",
    new_lsp_request(0, "textDocument/documentHighlight", %*{
       "textDocument": {
-         "uri": "file://" & expand_filename(src3_path),
+         "uri": src3_uri,
       },
       "position": {
          "line": 48,
@@ -520,7 +522,7 @@ run_test("textDocument/documentHighlight: undeclared)",
 run_test("textDocument/documentHighlight: module port (1)",
    new_lsp_request(0, "textDocument/documentHighlight", %*{
       "textDocument": {
-         "uri": "file://" & expand_filename(src3_path),
+         "uri": src3_uri,
       },
       "position": {
          "line": 24,
@@ -534,7 +536,7 @@ run_test("textDocument/documentHighlight: module port (1)",
 run_test("textDocument/documentHighlight: module port connection",
    new_lsp_request(0, "textDocument/documentHighlight", %*{
       "textDocument": {
-         "uri": "file://" & expand_filename(src3_path),
+         "uri": src3_uri,
       },
       "position": {
          "line": 24,
@@ -570,7 +572,7 @@ run_test("textDocument/documentHighlight: module port connection",
 run_test("textDocument/documentHighlight: module port (2)",
    new_lsp_request(0, "textDocument/documentHighlight", %*{
       "textDocument": {
-         "uri": "file://" & expand_filename(src3_path),
+         "uri": src3_uri,
       },
       "position": {
          "line": 25,

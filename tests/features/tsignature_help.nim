@@ -21,9 +21,10 @@ initialize(ifs, ofs)
 # Open the file "./src/src2.v".
 const src2_path = "./src/src2.v"
 const src2_text = static_read(src2_path)
+let src2_uri = construct_uri(expand_filename(src2_path))
 send(ifs, new_lsp_notification("textDocument/didOpen", %*{
    "textDocument": {
-      "uri": "file://" & expand_filename(src2_path),
+      "uri": src2_uri,
       "languageId": "verilog",
       "version": 0,
       "text": src2_text
@@ -56,7 +57,7 @@ Test suite: signature help
 run_test("textDocument/signatureHelp: task",
    new_lsp_request(15, "textDocument/signatureHelp", %*{
       "textDocument": {
-         "uri": "file://" & expand_filename(src2_path),
+         "uri": src2_uri,
       },
       "position": {
          "line": 44,
@@ -83,7 +84,7 @@ run_test("textDocument/signatureHelp: task",
 run_test("textDocument/signatureHelp: function name",
    new_lsp_request(15, "textDocument/signatureHelp", %*{
       "textDocument": {
-         "uri": "file://" & expand_filename(src2_path),
+         "uri": src2_uri,
       },
       "position": {
          "line": 50,
@@ -115,7 +116,7 @@ run_test("textDocument/signatureHelp: function name",
 run_test("textDocument/signatureHelp: function parameter",
    new_lsp_request(15, "textDocument/signatureHelp", %*{
       "textDocument": {
-         "uri": "file://" & expand_filename(src2_path),
+         "uri": src2_uri,
       },
       "position": {
          "line": 50,
@@ -147,9 +148,10 @@ run_test("textDocument/signatureHelp: function parameter",
 # of what we want to test.
 const src6_path = "./src/src6.v"
 const src6_text = static_read(src6_path)
+let src6_uri = construct_uri(expand_filename(src6_path))
 send(ifs, new_lsp_notification("textDocument/didOpen", %*{
    "textDocument": {
-      "uri": "file://" & expand_filename(src6_path),
+      "uri": src6_uri,
       "languageId": "verilog",
       "version": 0,
       "text": src6_text
@@ -161,7 +163,7 @@ discard recv(ofs)
 run_test("textDocument/signatureHelp: function w/ multiple parameters (1)",
    new_lsp_request(15, "textDocument/signatureHelp", %*{
       "textDocument": {
-         "uri": "file://" & expand_filename(src6_path),
+         "uri": src6_uri,
       },
       "position": {
          "line": 22,
@@ -197,7 +199,7 @@ run_test("textDocument/signatureHelp: function w/ multiple parameters (1)",
 run_test("textDocument/signatureHelp: function w/ multiple parameters (2)",
    new_lsp_request(15, "textDocument/signatureHelp", %*{
       "textDocument": {
-         "uri": "file://" & expand_filename(src6_path),
+         "uri": src6_uri,
       },
       "position": {
          "line": 22,
@@ -233,7 +235,7 @@ run_test("textDocument/signatureHelp: function w/ multiple parameters (2)",
 run_test("textDocument/signatureHelp: task w/ multiple parameters (1)",
    new_lsp_request(15, "textDocument/signatureHelp", %*{
       "textDocument": {
-         "uri": "file://" & expand_filename(src6_path),
+         "uri": src6_uri,
       },
       "position": {
          "line": 23,
@@ -273,7 +275,7 @@ run_test("textDocument/signatureHelp: task w/ multiple parameters (1)",
 run_test("textDocument/signatureHelp: task w/ multiple parameters (2)",
    new_lsp_request(15, "textDocument/signatureHelp", %*{
       "textDocument": {
-         "uri": "file://" & expand_filename(src6_path),
+         "uri": src6_uri,
       },
       "position": {
          "line": 23,
@@ -313,7 +315,7 @@ run_test("textDocument/signatureHelp: task w/ multiple parameters (2)",
 run_test("textDocument/signatureHelp: task w/ multiple parameters (3)",
    new_lsp_request(15, "textDocument/signatureHelp", %*{
       "textDocument": {
-         "uri": "file://" & expand_filename(src6_path),
+         "uri": src6_uri,
       },
       "position": {
          "line": 23,
@@ -353,7 +355,7 @@ run_test("textDocument/signatureHelp: task w/ multiple parameters (3)",
 run_test("textDocument/signatureHelp: task signature, concatenated argument",
    new_lsp_request(15, "textDocument/signatureHelp", %*{
       "textDocument": {
-         "uri": "file://" & expand_filename(src6_path),
+         "uri": src6_uri,
       },
       "position": {
          "line": 27,
@@ -393,7 +395,7 @@ run_test("textDocument/signatureHelp: task signature, concatenated argument",
 run_test("textDocument/signatureHelp: task signature w/ broken AST",
    new_lsp_request(15, "textDocument/signatureHelp", %*{
       "textDocument": {
-         "uri": "file://" & expand_filename(src6_path),
+         "uri": src6_uri,
       },
       "position": {
          "line": 27,

@@ -42,18 +42,19 @@ Test suite: syntax
 
 const src0_path = "./src/src0.v"
 const src0_text = static_read(src0_path)
-let src0_path_len = len(expand_filename(src0_path))
+let src0_uri = construct_uri(expand_filename(src0_path))
+let src0_uri_len = len(src0_uri)
 run_test("textDocument/didOpen: src0.v",
    new_lsp_notification("textDocument/didOpen", %*{
       "textDocument": {
-         "uri": "file://" & expand_filename(src0_path),
+         "uri": src0_uri,
          "languageId": "verilog",
          "version": 0,
          "text": src0_text
       }
    }),
-   new_lsp_notification(233 + src0_path_len, "textDocument/publishDiagnostics", %*{
-      "uri": "file://" & expand_filename(src0_path),
+   new_lsp_notification(226 + src0_uri_len, "textDocument/publishDiagnostics", %*{
+      "uri": src0_uri,
       "diagnostics": [
          new_lsp_diagnostic(new_lsp_position(0, 0), new_lsp_position(0, 0), ERROR,
             "1:1: Unexpected token 'mod'."
@@ -65,18 +66,19 @@ run_test("textDocument/didOpen: src0.v",
 
 const src1_path = "./src/src1.v"
 const src1_text = static_read(src1_path)
-let src1_path_len = len(expand_filename(src1_path))
+let src1_uri = construct_uri(expand_filename(src1_path))
+let src1_uri_len = len(src1_uri)
 run_test("textDocument/didOpen: src1.v",
    new_lsp_notification("textDocument/didOpen", %*{
       "textDocument": {
-         "uri": "file://" & expand_filename(src1_path),
+         "uri": src1_uri,
          "languageId": "verilog",
          "version": 0,
          "text": src1_text
       }
    }),
-   new_lsp_notification(677 + src1_path_len, "textDocument/publishDiagnostics", %*{
-      "uri": "file://" & expand_filename(src1_path),
+   new_lsp_notification(670 + src1_uri_len, "textDocument/publishDiagnostics", %*{
+      "uri": src1_uri,
       "diagnostics": [
          new_lsp_diagnostic(new_lsp_position(3, 0), new_lsp_position(3, 0), ERROR,
             "4:1: Expected token Symbol, got 'endmodule'."

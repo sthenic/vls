@@ -42,18 +42,19 @@ Test suite: diagnostics
 
 const src2_path = "./src/src2.v"
 const src2_text = static_read(src2_path)
-let src2_path_len = len(expand_filename(src2_path))
+let src2_uri = construct_uri(expand_filename(src2_path))
+let src2_uri_len = len(src2_uri)
 run_test("src2.v",
    new_lsp_notification("textDocument/didOpen", %*{
       "textDocument": {
-         "uri": "file://" & expand_filename(src2_path),
+         "uri": src2_uri,
          "languageId": "verilog",
          "version": 0,
          "text": src2_text
       }
    }),
-   new_lsp_notification(1125 + src2_path_len, "textDocument/publishDiagnostics", %*{
-      "uri": "file://" & expand_filename(src2_path),
+   new_lsp_notification(1118 + src2_uri_len, "textDocument/publishDiagnostics", %*{
+      "uri": src2_uri,
       "diagnostics": [
          {
             "message": "13:9: Undeclared module 'ERROR_WIDTH_IS_BAD_VALUE', assuming black box.",
@@ -118,18 +119,19 @@ run_test("src2.v",
 
 const src3_path = "./src/src3.v"
 const src3_text = static_read(src3_path)
-let src3_path_len = len(expand_filename(src3_path))
+let src3_uri = construct_uri(expand_filename(src3_path))
+let src3_uri_len = len(src3_uri)
 run_test("src3.v",
    new_lsp_notification("textDocument/didOpen", %*{
       "textDocument": {
-         "uri": "file://" & expand_filename(src3_path),
+         "uri": src3_uri,
          "languageId": "verilog",
          "version": 0,
          "text": src3_text
       }
    }),
-   new_lsp_notification(259 + src3_path_len, "textDocument/publishDiagnostics", %*{
-      "uri": "file://" & expand_filename(src3_path),
+   new_lsp_notification(252 + src3_uri_len, "textDocument/publishDiagnostics", %*{
+      "uri": src3_uri,
       "diagnostics": [
          {
             "message": "49:16: Undeclared identifier 'an_undeclared_wire'.",
@@ -146,18 +148,19 @@ run_test("src3.v",
 
 const src4_path = "./src/src4.v"
 const src4_text = static_read(src4_path)
-let src4_path_len = len(expand_filename(src4_path))
+let src4_uri = construct_uri(expand_filename(src4_path))
+let src4_uri_len = len(src4_uri)
 run_test("src4.v",
    new_lsp_notification("textDocument/didOpen", %*{
       "textDocument": {
-         "uri": "file://" & expand_filename(src4_path),
+         "uri": src4_uri,
          "languageId": "verilog",
          "version": 0,
          "text": src4_text
       }
    }),
-   new_lsp_notification(251 + src4_path_len, "textDocument/publishDiagnostics", %*{
-      "uri": "file://" & expand_filename(src4_path),
+   new_lsp_notification(244 + src4_uri_len, "textDocument/publishDiagnostics", %*{
+      "uri": src4_uri,
       "diagnostics": [
          {
             "message": "15:34: Undeclared port 'LATE_DECLARATION'.",
@@ -174,18 +177,19 @@ run_test("src4.v",
 
 const src5_path = "./src/src5.v"
 const src5_text = static_read(src5_path)
-let src5_path_len = len(expand_filename(src5_path))
+let src5_uri = construct_uri(expand_filename(src5_path))
+let src5_uri_len = len(src5_uri)
 run_test("src5.v",
    new_lsp_notification("textDocument/didOpen", %*{
       "textDocument": {
-         "uri": "file://" & expand_filename(src5_path),
+         "uri": src5_uri,
          "languageId": "verilog",
          "version": 0,
          "text": src5_text
       }
    }),
-   new_lsp_notification(1647 + src5_path_len, "textDocument/publishDiagnostics", %*{
-      "uri": "file://" & expand_filename(src5_path),
+   new_lsp_notification(1640 + src5_uri_len, "textDocument/publishDiagnostics", %*{
+      "uri": src5_uri,
       "diagnostics": [
          {
             "message": "18:18: Undeclared identifier 'from_module4'.",

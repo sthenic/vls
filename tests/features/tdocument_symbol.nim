@@ -21,10 +21,11 @@ initialize(ifs, ofs)
 # Open the file "./src/src4.v".
 const src4_path = "./src/src4.v"
 const src4_text = static_read(src4_path)
-let src4_path_len = len(expand_filename(src4_path))
+let src4_uri = construct_uri(expand_filename(src4_path))
+let src4_uri_len = len(src4_uri)
 send(ifs, new_lsp_notification("textDocument/didOpen", %*{
    "textDocument": {
-      "uri": "file://" & expand_filename(src4_path),
+      "uri": src4_uri,
       "languageId": "verilog",
       "version": 0,
       "text": src4_text
@@ -60,15 +61,15 @@ Test suite: document symbols
 run_test("textDocument/documentSymbol",
    new_lsp_request(0, "textDocument/documentSymbol", %*{
       "textDocument": {
-         "uri": "file://" & expand_filename(src4_path),
+         "uri": src4_uri,
       }
    }),
-   new_lsp_response(1270 + 9 * src4_path_len, 0, %*[
+   new_lsp_response(1207 + 9 * src4_uri_len, 0, %*[
    {
       "name": "module4",
       "kind": 13,
       "location": {
-         "uri": "file://" & expand_filename(src4_path),
+         "uri": src4_uri,
          "range": {
             "start": {
                "line": 0,
@@ -85,7 +86,7 @@ run_test("textDocument/documentSymbol",
       "name": "clk_i",
       "kind": 13,
       "location": {
-         "uri": "file://" & expand_filename(src4_path),
+         "uri": src4_uri,
          "range": {
             "start": {
                "line": 1,
@@ -102,7 +103,7 @@ run_test("textDocument/documentSymbol",
       "name": "data_o",
       "kind": 13,
       "location": {
-         "uri": "file://" & expand_filename(src4_path),
+         "uri": src4_uri,
          "range": {
             "start": {
                "line": 3,
@@ -119,7 +120,7 @@ run_test("textDocument/documentSymbol",
       "name": "tmp",
       "kind": 13,
       "location": {
-         "uri": "file://" & expand_filename(src4_path),
+         "uri": src4_uri,
          "range": {
             "start": {
                "line": 6,
@@ -136,7 +137,7 @@ run_test("textDocument/documentSymbol",
       "name": "BAR",
       "kind": 13,
       "location": {
-         "uri": "file://" & expand_filename(src4_path),
+         "uri": src4_uri,
          "range": {
             "start": {
                "line": 11,
@@ -153,7 +154,7 @@ run_test("textDocument/documentSymbol",
       "name": "FOO",
       "kind": 13,
       "location": {
-         "uri": "file://" & expand_filename(src4_path),
+         "uri": src4_uri,
          "range": {
             "start": {
                "line": 11,
@@ -170,7 +171,7 @@ run_test("textDocument/documentSymbol",
       "name": "out",
       "kind": 13,
       "location": {
-         "uri": "file://" & expand_filename(src4_path),
+         "uri": src4_uri,
          "range": {
             "start": {
                "line": 12,
@@ -187,7 +188,7 @@ run_test("textDocument/documentSymbol",
       "name": "MODULE4_PARAMETER",
       "kind": 13,
       "location": {
-         "uri": "file://" & expand_filename(src4_path),
+         "uri": src4_uri,
          "range": {
             "start": {
                "line": 22,
@@ -204,7 +205,7 @@ run_test("textDocument/documentSymbol",
       "name": "module5",
       "kind": 2,
       "location": {
-         "uri": "file://" & expand_filename(src4_path),
+         "uri": src4_uri,
          "range": {
             "start": {
                "line": 15,
