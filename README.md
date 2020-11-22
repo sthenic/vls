@@ -8,6 +8,8 @@ server](https://microsoft.github.io/language-server-protocol/) written in
 [Nim](https://nim-lang.org). The parsing is handled by the
 [`vparse`](https://github.com/sthenic/vparse) library.
 
+![](demo/demo.gif)
+
 ## Index
 
 - [Supported protocol features](#supported-protocol-features)
