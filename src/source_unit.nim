@@ -95,8 +95,10 @@ proc open*(unit: var SourceUnit, module_cache: ModuleCache, locations: Locations
    let parent_dir = parent_dir(filename)
    if parent_dir notin unit.configuration.include_paths:
       add(unit.configuration.include_paths, parent_dir)
+
    update(unit, module_cache, locations, text, cache_submodules = true)
-   cache_workspace(unit)
+   if unit.configuration.cache_workspace_on_open:
+      cache_workspace(unit)
 
 
 proc close*(unit: var SourceUnit) =
