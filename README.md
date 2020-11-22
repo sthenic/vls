@@ -139,11 +139,10 @@ The language server is configured with a
 [TOML](https://github.com/toml-lang/toml) file that's parsed by the
 [`vltoml`](https://github.com/sthenic/vltoml) library.
 
-When a text document is opened by the client (`textDocument/didOpen` request) or
-its contents change (`textDocument/didChange` request), the server looks for a
-configuration file. The search process walks from the directory of the input
-file up to the root directory looking for one of the following files (listed in
-the order of precedence):
+When a text document is opened by the client (`textDocument/didOpen` request),
+the server looks for a configuration file. The search process walks from the
+directory of the input file up to the root directory looking for one of the
+following files (listed in the order of precedence):
 
 1. `.vl.toml`
 2. `vl.toml`
