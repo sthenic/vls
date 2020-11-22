@@ -1,6 +1,7 @@
 import strutils
 import streams
 import os
+import tables
 import vparse
 import vlint
 when defined(logdebug):
@@ -69,11 +70,13 @@ iterator walk_module_declarations(unit: SourceUnit): tuple[filename: string, n: 
    let graph = new_graph(cache, unit.graph.module_cache, unit.graph.locations)
    for filename in walk_verilog_files(unit.configuration.include_paths):
       let fs = new_file_stream(filename)
-      if not is_nil(fs):
+      if is_nil(fs):
+         continue
+      elif not has_matching_checksum(unit.graph.module_cache, filename, compute_md5(fs)):
          when defined(logdebug):
             let t_start = cpu_time()
          let root = parse(graph, fs, filename, unit.configuration.include_paths,
-                          unit.configuration.defines)
+                          unit.configuration.defines, cache_submodules = false)
          when defined(logdebug):
             let t_diff_ms = (cpu_time() - t_start) * 1000
             log.debug("Parsed '$1' in $2 ms.", filename, format_float(t_diff_ms, ffDecimal, 1))
@@ -82,6 +85,13 @@ iterator walk_module_declarations(unit: SourceUnit): tuple[filename: string, n: 
          # the source text,
          for module in walk_sons(root, NkModuleDecl):
             yield (filename, module)
+      else:
+         close(fs)
+         log.debug("Yielding cached modules for unchanged file '$1'.", filename)
+         for module in walk_modules(unit.graph, filename):
+            log.debug("Yielding module '$1' ($2).", module.name, is_nil(module.n))
+            if not is_nil(module.n):
+               yield (filename, module.n)
 
 
 iterator walk_include_paths_starting_with(unit: SourceUnit, prefix: string): string {.inline.} =

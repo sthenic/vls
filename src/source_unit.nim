@@ -30,10 +30,7 @@ proc cache_workspace(unit: SourceUnit) =
       let fs = new_file_stream(filename)
       if is_nil(fs):
          continue
-      elif (
-         has_key(unit.graph.module_cache.checksums, filename) and
-         compute_md5(fs) != unit.graph.module_cache.checksums[filename]
-      ):
+      elif not has_matching_checksum(unit.graph.module_cache, filename, compute_md5(fs)):
          discard parse(graph, fs, filename, unit.configuration.include_paths,
                        unit.configuration.defines, cache_submodules = false)
       close(fs)
