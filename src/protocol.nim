@@ -597,14 +597,14 @@ template get_path_from_uri*(uri: string): string =
    # path part is "/c:/path/to/some/file". The leading '/' needs to be removed
    # in order for the path to be valid.
    when defined(windows):
-      strip(parse_uri(uri).path, leading = true, trailing = false, {'/'})
+      replace(strip(parse_uri(uri).path, true, false, {'/'}), '/', '\\')
    else:
       parse_uri(uri).path
 
 
 template construct_uri*(filename: string): string =
    when defined(windows):
-      "file:///" & filename
+      "file:///" & replace(filename, '\\', '/')
    else:
       "file://" & filename
 
