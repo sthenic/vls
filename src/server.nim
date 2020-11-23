@@ -118,7 +118,8 @@ proc process_text(s: var LspServer, uri, text: string) =
       open(unit, s.module_cache, s.locations, get_path_from_uri(uri), text, s.force_configuration_file)
       s.source_units[uri] = unit
 
-   if s.client_capabilities.diagnostics or s.force_diagnostics:
+   # We avoid publishing diagnostics for Verilog header files.
+   if (s.client_capabilities.diagnostics or s.force_diagnostics) and not ends_with(uri, ".vh"):
       publish_diagnostics(s, s.source_units[uri])
 
 

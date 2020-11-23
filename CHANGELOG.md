@@ -31,6 +31,7 @@ All notable changes to this project will be documented in this file.
 ## Changed
 
 - Require Nim v1.4.0.
+- Diagnostic messages are no longer shown for Verilog header files (`.vh`).
 
 ## Fixed
 
