@@ -133,6 +133,17 @@ lua require 'nvim_lsp'.vls.setup {}
       (add-to-list 'lsp-language-id-configuration '(verilog-mode . "verilog")))
 ```
 
+### Emacs ([Eglot](https://github.com/joaotavora/eglot))
+
+```lisp
+(defun verilog-eglot-hook ()
+  (company-mode)
+  (yas-minor-mode 1)
+  (eglot-ensure)
+  (add-to-list 'eglot-server-programs '(verilog-mode . ("vls"))))
+(add-hook 'verilog-mode-hook 'verilog-eglot-hook)
+```
+
 ## Configuration
 
 The language server is configured with a
