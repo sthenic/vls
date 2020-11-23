@@ -1,6 +1,7 @@
 [verilog]
 include_paths = [
-    "src"
+    "src",
+    "**"
 ]
 
 [vls]
