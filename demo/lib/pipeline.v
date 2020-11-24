@@ -4,8 +4,7 @@ module pipeline #(
     /* The width of the data ports. */
     parameter integer WIDTH = 0,
     /* The number of pipeline stages. */
-    parameter integer NOF_STAGES = 0,
-    parameter A_NEW_PARAMETER = "HELLO"
+    parameter integer NOF_STAGES = 0
 )(
     /* The clock signal. */
     input wire clk_i,

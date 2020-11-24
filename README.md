@@ -10,6 +10,8 @@ server](https://microsoft.github.io/language-server-protocol/) written in
 
 ![](demo/demo.gif)
 
+<sup>Visual Studio Code using the [`vls-vscode`](https://github.com/sthenic/vls-vscode) extension.</sup>
+
 ## Index
 
 - [Supported protocol features](#supported-protocol-features)
