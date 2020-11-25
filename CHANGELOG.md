@@ -2,9 +2,9 @@
 
 All notable changes to this project will be documented in this file.
 
-## [Unreleased]
+## [v0.3.0] - 2020-11-25
 
-## Added
+### Added
 
 - The diagnostic messages published for a source file now include:
 
@@ -28,12 +28,12 @@ All notable changes to this project will be documented in this file.
   VLS ... `endif ``. Hide code from the the language server by using `` `ifndef
   VLS ... `endif``.
 
-## Changed
+### Changed
 
 - Require Nim v1.4.0.
 - Diagnostic messages are no longer shown for Verilog header files (`.vh`).
 
-## Fixed
+### Fixed
 
 - Fix always listing the parameters declared in the module body in completion
   requests. According to the standard, these should only get included if the
