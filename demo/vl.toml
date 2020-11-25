@@ -1,6 +1,6 @@
 [verilog]
 include_paths = [
-    "lib/"
+    "**"
 ]
 
 [diagnostics]

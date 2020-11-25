@@ -55,6 +55,8 @@ $SLEEP
 xdotool mousemove --window $WID 180 170
 $SLEEPLONG
 $CLEARMOUSE
+
+# Add a named port connection for rst_i.
 $XTEXT "\[End]"
 $SLEEP
 $XTEXT "\r.r"
@@ -63,3 +65,63 @@ $XTEXT "\C "
 $SLEEP
 $XTEXT "\r,\Cs"
 $SLEEP
+
+# Connect local wires.
+$XTEXT "\[Up]\[Up]\[Up]\[Up]\[Left]\[Left]"
+$SLEEP
+$XTEXT "8"
+sleep 0.5
+$XTEXT "\[Down]\[End]\[Left]"
+sleep 0.5
+$XTEXT "3"
+$SLEEP
+$XTEXT "\[Down]\[Down]\[Left]\[Left]"
+sleep 0.5
+$XTEXT "clk"
+$XTEXT "\[Down]\[Left]\[Left]"
+sleep 0.5
+$XTEXT "rst"
+$XTEXT "\[Down]\[Left]\[Left]"
+sleep 0.5
+$XTEXT "to_pipeline"
+$XTEXT "\[Down]\[Left]"
+sleep 0.5
+$XTEXT "from_pipeline"
+$XTEXT "\[Down]"
+
+# Show 'undeclared identifier' message.
+xdotool mousemove --window $WID 270 245
+$SLEEPLONG
+xdotool mousemove --window $WID 200 90
+xdotool click 1
+$CLEARMOUSE
+
+# Add wire declarations.
+$XTEXT "\C\S\r\C\r\t"
+$XTEXT "wire clk;\r"
+$SLEEP
+$XTEXT "wire rst;\r"
+$SLEEP
+$XTEXT "wire [7:0] to_pipeline;\r"
+$SLEEP
+$XTEXT "wire [7:0] from_pipeline;\Cs"
+$SLEEP
+
+# Rename parameter.
+$XTEXT "\[Down]\[Down]\[Down]\[Home]\[Right]\[Right]"
+$SLEEP
+$XTEXT "\[F12]"
+$SLEEP
+$XTEXT "\C\SPrename"
+$SLEEPLONG
+$XTEXT "\r"
+$SLEEP
+$XTEXT "NEW_WIDTH"
+$SLEEP
+$XTEXT "\r"
+sleep 0.5
+$XTEXT "\Cs"
+sleep 0.5
+$XTEXT "\A1"
+sleep 0.5
+$XTEXT "\Cs"
