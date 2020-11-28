@@ -1,5 +1,5 @@
 # Package
-version = "0.3.0"
+version = "0.3.1"
 author = "Marcus Eriksson"
 description = "A Verilog IEEE 1364-2005 language server written in Nim."
 license = "MIT"
