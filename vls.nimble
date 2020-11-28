@@ -8,7 +8,7 @@ bin = @["vls"]
 
 # Dependencies
 requires "nim >= 1.4.0"
-requires "vparse >= 0.3.0"
+requires "vparse >= 0.3.1"
 requires "vltoml >= 0.2.0"
 requires "vlint >= 0.1.0"
 

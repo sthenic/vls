@@ -1195,6 +1195,25 @@ run_test("textDocument/declaration: concatenated port reference (2)",
    }])
 )
 
+run_test("textDocument/declaration: macro used as size specifier for sized integer literal",
+   new_lsp_request(15, "textDocument/declaration", %*{
+      "textDocument": {
+         "uri": src5_uri,
+      },
+      "position": {
+         "line": 47,
+         "character": 36
+      }
+   }),
+   new_lsp_response(125 + src5_uri_len, 15, %*[{
+      "uri": src5_uri,
+      "range": {
+         "start": {"line": 46, "character": 12},
+         "end" : {"line": 46, "character": 17}
+      }
+   }])
+)
+
 
 # Shut down the server.
 shutdown(ifs, ofs)

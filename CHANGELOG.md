@@ -2,6 +2,15 @@
 
 All notable changes to this project will be documented in this file.
 
+## [Unreleased]
+
+### Fixed
+
+- Support the syntax `` `WIDTH'hF0``, i.e. where the *size* specifier of a sized
+  integer literal is the result of a macro expansion. Many parsers seem to
+  support this syntax even though the standard appears to define this as not
+  legal Verilog since macros are not allowed to break number tokens.
+
 ## [v0.3.0] - 2020-11-25
 
 ### Added

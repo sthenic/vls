@@ -44,6 +44,9 @@
     module7 #(.WIDTH()) module7_inst (
     );
 
+    `define WIDTH 16
+    reg [`WIDTH-1:0] default_zero = `WIDTH'd0;
+
     /* FIXME: Rename operation in the port list renames this symbol too: */
     /* wire split_port_i; */
 
