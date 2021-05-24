@@ -2,6 +2,13 @@
 
 All notable changes to this project will be documented in this file.
 
+## [Unreleased]
+
+### Fixed
+
+- Fix a crash when constructing completion suggestions originating from an
+  `` `include `` file
+
 ## [v0.3.1] - 2020-11-28
 
 ### Fixed

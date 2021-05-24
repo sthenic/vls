@@ -708,7 +708,11 @@ proc add_declaration_information(unit: SourceUnit, item: var LspCompletionItem, 
       item.documentation.value = comment.s
 
    if n.loc.file != unit.graph.root.loc.file:
-      let filename = extract_filename(unit.graph.locations.file_maps[n.loc.file - 1].filename)
+      let location =  if (n.loc.file < 0):
+         to_physical(unit.graph.locations, n.loc)
+      else:
+         n.loc
+      let filename = extract_filename(unit.graph.locations.file_maps[location.file - 1].filename)
       add(item.documentation.value, "\n\n---\nFile: " & filename)
 
    case n.kind
