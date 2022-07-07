@@ -6,25 +6,11 @@ import strutils
 import ./log
 
 type
-   LspErrorCode* = enum
-      RPC_CONTENT_MODIFIED = -32801
-      RPC_REQUEST_CANCELLED = -32800
-      RPC_PARSE_ERROR = -32700
-      RPC_INTERNAL_ERROR = -32603
-      RPC_INVALID_PARAMS = -32602
-      RPC_METHOD_NOT_FOUND = -32601
-      RPC_INVALID_REQUEST = -32600
-      RPC_SERVER_ERROR_START = -32099
-      RPC_SERVER_NOT_INITIALIZED = -32002
-      RPC_UNKNOWN_ERROR_CODE = -32001
-      RPC_SERVER_ERROR_END = -32000
-      RPC_INVALID = 0
-
    LspMessageKind* = enum
       MkInvalid, MkRequest, MkNotification, MkResponseSuccess, MkResponseError
 
    LspError* = object
-      code*: LspErrorCode
+      code*: int
       message*: string
       data*: JsonNode
 
@@ -196,6 +182,21 @@ type
 const
    INDENT = 2
    CONTENT_TYPE_UTF8 = "application/vscode-jsonrpc; charset=utf-8"
+
+   # LSP error codes. These cannot be an enum since there are holes
+   # in the sequence.
+   RPC_CONTENT_MODIFIED* = -32801
+   RPC_REQUEST_CANCELLED* = -32800
+   RPC_PARSE_ERROR* = -32700
+   RPC_INTERNAL_ERROR* = -32603
+   RPC_INVALID_PARAMS* = -32602
+   RPC_METHOD_NOT_FOUND* = -32601
+   RPC_INVALID_REQUEST* = -32600
+   RPC_SERVER_ERROR_START* = -32099
+   RPC_SERVER_NOT_INITIALIZED* = -32002
+   RPC_UNKNOWN_ERROR_CODE* = -32001
+   RPC_SERVER_ERROR_END* = -32000
+   RPC_INVALID = 0
 
    LspMessageKindToStr: array[LspMessageKind, string] = [
       "Invalid", "Request", "Notification", "Response: success", "Response: error"
@@ -670,7 +671,7 @@ proc new_lsp_response*(length, id: int, res: JsonNode): LspMessage =
    result.length = length
 
 
-proc new_lsp_response*(id: int, code: LspErrorCode, message: string, data: JsonNode): LspMessage =
+proc new_lsp_response*(id: int, code: int, message: string, data: JsonNode): LspMessage =
    init(result)
    result.kind = MkResponseError
    result.id = id
@@ -679,7 +680,7 @@ proc new_lsp_response*(id: int, code: LspErrorCode, message: string, data: JsonN
    result.error.data = data
 
 
-proc new_lsp_response*(length, id: int, code: LspErrorCode, message: string, data: JsonNode): LspMessage =
+proc new_lsp_response*(length, id: int, code: int, message: string, data: JsonNode): LspMessage =
    # Used by the test framework.
    result = new_lsp_response(id, code, message, data)
    result.length = length
@@ -753,7 +754,7 @@ proc parse_error(content: JsonNode, msg: var LspMessage) =
    try:
       if content["error"]["code"].kind != JInt:
          raise new_lsp_parse_error("LSP message field 'error.code' has to be an integer.")
-      msg.error.code = LspErrorCode(get_int(content["error"]["code"]))
+      msg.error.code = get_int(content["error"]["code"])
    except KeyError:
       raise new_lsp_parse_error("Expected key 'code'.")
 

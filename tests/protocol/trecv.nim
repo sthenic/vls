@@ -178,7 +178,7 @@ reference = add_headers("""{
    }
 }""")
 run_test("Response error: w/o data", reference): new_lsp_response(
-   106, 0, LspErrorCode(-32700), "An error!", nil
+   106, 0, RPC_PARSE_ERROR, "An error!", nil
 )
 
 
@@ -194,7 +194,7 @@ reference = add_headers("""{
    }
 }""")
 run_test("Response error: w/ data", reference): new_lsp_response(
-   160, 0, LspErrorCode(-32700), "An error!", %*["foo", "bar", "baz"]
+   160, 0, RPC_PARSE_ERROR, "An error!", %*["foo", "bar", "baz"]
 )
 
 

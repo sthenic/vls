@@ -2,7 +2,6 @@ import streams
 import vltoml
 import vparse
 import os
-import tables
 when defined(logdebug):
    import times
    import strutils

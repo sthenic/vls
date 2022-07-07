@@ -57,7 +57,7 @@ template write_homedir(header, msg: string, args: varargs[string, `$`]) =
 
 template write_syslog(level: cint, msg: string, args: varargs[string, `$`]) =
    for line in split_lines(format(msg, args)):
-      syslog(level or LOG_USER, line)
+      syslog(level or LOG_USER, cstring(line))
 
 
 template write(level: cint, header, msg: string, args: varargs[string, `$`]) =
