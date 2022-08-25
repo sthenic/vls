@@ -102,14 +102,6 @@ https://github.com/natebosch/vim-lsc
 let g:lsc_server_commands['verilog'] = 'vls --force-diagnostics'
 ```
 
-### nvim-lsp
-
-https://github.com/hekwall/nvim-lsp
-
-```lua
-lua require 'nvim_lsp'.vls.setup {}
-```
-
 ### Emacs ([lsp-mode](https://github.com/emacs-lsp/lsp-mode))
 
 ```lisp
